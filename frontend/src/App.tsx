@@ -28,6 +28,7 @@ interface DatasetStatus {
   current_model?: string
   step?: string
   message?: string
+  current_images?: string[]
 }
 
 function App() {
@@ -144,7 +145,8 @@ function App() {
           failed: data.failed ?? prev?.failed ?? 0,
           current_model: data.current || data.current_model,
           step: data.step || prev?.step,
-          message: data.message || prev?.message
+          message: data.message || prev?.message,
+          current_images: data.images || prev?.current_images
         }))
         break
 
@@ -426,6 +428,23 @@ function App() {
                 <p className="text-xs text-red-400">
                   Failed: {datasetStatus.failed}
                 </p>
+              )}
+
+              {/* Rendered Images Preview */}
+              {datasetStatus.current_images && datasetStatus.current_images.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-xs text-gray-400 mb-2">Rendered Views:</p>
+                  <div className="grid grid-cols-6 md:grid-cols-12 gap-1">
+                    {datasetStatus.current_images.map((img, i) => (
+                      <img
+                        key={i}
+                        src={`data:image/png;base64,${img}`}
+                        alt={`View ${i + 1}`}
+                        className="w-full aspect-square rounded bg-gray-700 object-cover"
+                      />
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
           ) : (

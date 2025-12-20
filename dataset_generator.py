@@ -259,12 +259,15 @@ async def generate_dataset(
                 ext = model_path.suffix.lstrip(".")
                 print(f"  Read {len(model_bytes)} bytes, ext={ext}")
 
+                rendered_images_b64 = None
+
                 if use_local:
                     # Local rendering + RunPod embedding
                     import numpy as np
 
                     print(f"  Rendering 12 views...")
                     images, images_b64 = render_views(model_bytes, ext)
+                    rendered_images_b64 = images_b64  # Save for progress update
                     print(f"  Rendered {len(images)} views, sending to RunPod...")
                     embed_result = await embed_images(images_b64)
                     print(f"  Got embeddings from RunPod")
@@ -292,16 +295,21 @@ async def generate_dataset(
                 _status.indexed += 1
 
                 if progress_callback:
-                    await progress_callback({
+                    progress_data = {
                         "type": "dataset_progress",
                         "step": "indexing",
-                        "message": f"Indexing model {_status.indexed}/{len(objects)}",
+                        "message": f"Indexed {name[:30]}",
                         "total": count,
                         "downloaded": len(objects),
                         "indexed": _status.indexed,
                         "failed": _status.failed,
-                        "current": name
-                    })
+                        "current": name,
+                        "model_id": file_id
+                    }
+                    # Include rendered images if available
+                    if rendered_images_b64:
+                        progress_data["images"] = rendered_images_b64
+                    await progress_callback(progress_data)
 
             except Exception as e:
                 _status.failed += 1
