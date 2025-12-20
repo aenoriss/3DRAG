@@ -3,10 +3,14 @@
 
 Features:
 - Upload 3D models (GLB, OBJ, STL, PLY, FBX)
-- Automatic rendering + embedding via RunPod or local
+- Automatic rendering + embedding via Ollama (default) or RunPod
 - HNSW-based vector search
 - Text-based semantic search
 - WebSocket for real-time updates
+
+Embedding modes:
+- ollama (default): Gemma 3 27B vision + EmbeddingGemma (768-dim)
+- runpod: SigLIP2 via RunPod (1152-dim)
 """
 from __future__ import annotations
 
@@ -25,25 +29,40 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Check if we're in local rendering mode
+# Embedding mode: "ollama" (default) or "runpod"
+EMBEDDING_MODE = os.getenv("EMBEDDING_MODE", "ollama").lower()
+USE_OLLAMA = EMBEDDING_MODE == "ollama"
+
+# Check if we're in local rendering mode (for RunPod mode)
 USE_LOCAL_RENDERER = os.getenv("USE_LOCAL_RENDERER", "false").lower() == "true"
 
-# Always import RunPod client for embedding
-from runpod_client import (
-    embed_text,
-    embed_model_bytes,
-    embed_images,
-    get_stats as get_runpod_stats,
-    health_check
-)
-
-if USE_LOCAL_RENDERER:
+# Import based on mode
+if USE_OLLAMA:
+    from ollama_client import (
+        process_3d_model as ollama_process_3d_model,
+        embed_query as ollama_embed_query,
+        check_ollama
+    )
     from local_renderer import render_views
-    print("Running in LOCAL RENDER mode (local rendering + RunPod embedding)")
+    from faiss_index import get_index, FAISSIndex, EMBEDDING_DIM_GEMMA
+    EMBEDDING_DIM = EMBEDDING_DIM_GEMMA
+    print(f"Running in OLLAMA mode (Gemma 3 27B + EmbeddingGemma, {EMBEDDING_DIM}-dim)")
 else:
-    print("Running in RUNPOD mode (RunPod rendering + embedding)")
+    from runpod_client import (
+        embed_text,
+        embed_model_bytes,
+        embed_images,
+        get_stats as get_runpod_stats,
+        health_check
+    )
+    from faiss_index import get_index, FAISSIndex, EMBEDDING_DIM_SIGLIP
+    EMBEDDING_DIM = EMBEDDING_DIM_SIGLIP
 
-from faiss_index import get_index, FAISSIndex
+    if USE_LOCAL_RENDERER:
+        from local_renderer import render_views
+        print(f"Running in LOCAL RENDER mode (local rendering + RunPod, {EMBEDDING_DIM}-dim)")
+    else:
+        print(f"Running in RUNPOD mode (RunPod rendering + embedding, {EMBEDDING_DIM}-dim)")
 
 
 # WebSocket connection manager
@@ -76,11 +95,11 @@ ws_manager = ConnectionManager()
 # Lifespan handler for startup/shutdown
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Initialize FAISS index
-    app.state.index = get_index()
+    # Startup: Initialize FAISS index with correct dimension for mode
+    app.state.index = get_index(embedding_dim=EMBEDDING_DIM)
     app.state.ws_manager = ws_manager
     print(f"FAISS index ready: {app.state.index.total} models indexed")
-    print(f"Mode: {'LOCAL' if USE_LOCAL_RENDERER else 'RUNPOD'}")
+    print(f"Mode: {'OLLAMA' if USE_OLLAMA else ('LOCAL' if USE_LOCAL_RENDERER else 'RUNPOD')}")
     yield
     # Shutdown: Save index
     print("Shutting down...")
@@ -88,7 +107,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="3D Model Search API",
-    description="Search 3D models using natural language powered by SigLIP2",
+    description="Search 3D models using natural language (Ollama or SigLIP2)",
     version="2.0.0",
     lifespan=lifespan
 )
@@ -101,6 +120,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Serve preview images statically
+from pathlib import Path
+DATASET_DIR = Path("dataset")
+PREVIEWS_DIR = DATASET_DIR / "previews"
+PREVIEWS_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/previews", StaticFiles(directory=str(PREVIEWS_DIR)), name="previews")
 
 # Supported 3D formats
 SUPPORTED_FORMATS = {
@@ -164,42 +190,63 @@ async def health():
     """Detailed health check."""
     index: FAISSIndex = app.state.index
 
-    if USE_LOCAL_RENDERER:
-        runpod_status = {"mode": "local", "status": "disabled"}
+    # Check embedding backend based on mode
+    if USE_OLLAMA:
+        try:
+            ollama_status = await check_ollama()
+        except Exception as e:
+            ollama_status = {"status": "error", "error": str(e)}
+        backend_status = {"ollama": ollama_status}
+        mode = "ollama"
+    elif USE_LOCAL_RENDERER:
+        backend_status = {"runpod": {"mode": "local", "status": "disabled"}}
+        mode = "local"
     else:
         try:
             runpod_status = await health_check()
         except Exception as e:
             runpod_status = {"error": str(e)}
+        backend_status = {"runpod": runpod_status}
+        mode = "runpod"
 
     return {
         "api": "healthy",
-        "mode": "local" if USE_LOCAL_RENDERER else "runpod",
+        "mode": mode,
+        "embedding_dim": EMBEDDING_DIM,
         "index": {
             "status": "healthy",
             "models": index.total
         },
-        "runpod": runpod_status,
+        **backend_status,
         "websocket_connections": len(ws_manager.active_connections)
     }
 
 
 @app.get("/stats", response_model=StatsResponse)
-async def stats(include_runpod: bool = False):
+async def stats(include_backend: bool = False):
     """
     Get system statistics.
 
-    - **include_runpod**: Also fetch stats from RunPod (triggers cold start if idle)
+    - **include_backend**: Also fetch stats from embedding backend (Ollama or RunPod)
     """
     index: FAISSIndex = app.state.index
 
-    result = {"index": index.stats()}
+    result = {
+        "index": index.stats(),
+        "mode": "ollama" if USE_OLLAMA else ("local" if USE_LOCAL_RENDERER else "runpod")
+    }
 
-    if include_runpod:
-        try:
-            result["runpod"] = await get_runpod_stats()
-        except Exception as e:
-            result["runpod"] = {"error": str(e)}
+    if include_backend:
+        if USE_OLLAMA:
+            try:
+                result["ollama"] = await check_ollama()
+            except Exception as e:
+                result["ollama"] = {"error": str(e)}
+        elif not USE_LOCAL_RENDERER:
+            try:
+                result["runpod"] = await get_runpod_stats()
+            except Exception as e:
+                result["runpod"] = {"error": str(e)}
 
     return result
 
@@ -212,16 +259,22 @@ async def search(
     """
     Search for 3D models using natural language.
 
-    Uses SigLIP2 to embed the query and HNSW for fast similarity search.
+    Uses Ollama (default) or SigLIP2 to embed the query and HNSW for fast similarity search.
     """
     index: FAISSIndex = app.state.index
 
     if index.total == 0:
         return SearchResponse(query=q, results=[], total_indexed=0)
 
-    # Get text embedding from RunPod
-    result = await embed_text(q)
-    embedding = result["embedding"]
+    # Get text embedding based on mode
+    if USE_OLLAMA:
+        result = await ollama_embed_query(q)
+        if result["status"] != "ok":
+            raise HTTPException(status_code=500, detail=f"Ollama error: {result.get('error')}")
+        embedding = result["embedding"]
+    else:
+        result = await embed_text(q)
+        embedding = result["embedding"]
 
     # Search FAISS index
     results = index.search(embedding, k)
@@ -282,13 +335,13 @@ async def add_model(
             # Send images to RunPod for embedding
             embed_result = await embed_images(images_b64, include_stats=include_stats)
 
-            # Average the embeddings
+            # Max pooling: keeps strongest features, ignores bad views
             embeddings = np.array(embed_result["embeddings"], dtype=np.float32)
-            avg_embedding = np.mean(embeddings, axis=0)
-            avg_embedding = avg_embedding / np.linalg.norm(avg_embedding)
+            max_embedding = np.max(embeddings, axis=0)
+            max_embedding = max_embedding / np.linalg.norm(max_embedding)
 
             result = {
-                "embedding": avg_embedding.tolist(),
+                "embedding": max_embedding.tolist(),
                 "images_b64": images_b64,
                 "views_rendered": len(images)
             }
@@ -464,6 +517,37 @@ async def websocket_endpoint(websocket: WebSocket):
 # Local Rendering Endpoint (for testing)
 # ============================================================================
 
+@app.get("/test-runpod")
+async def test_runpod():
+    """
+    Quick test to verify RunPod embedding is working.
+    Sends a simple test image to RunPod and returns the result.
+    """
+    from PIL import Image
+    import io
+    import base64
+
+    # Create a simple test image (red square)
+    img = Image.new("RGB", (384, 384), color=(255, 0, 0))
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    img_b64 = base64.b64encode(buffer.getvalue()).decode()
+
+    try:
+        result = await embed_images([img_b64], include_stats=True)
+        return {
+            "status": "ok",
+            "message": "RunPod is working!",
+            "embedding_dim": len(result["embeddings"][0]) if "embeddings" in result else None,
+            "stats": result.get("stats")
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e)
+        }
+
+
 @app.post("/render")
 async def render_model_preview(
     file: UploadFile = File(..., description="3D model file")
@@ -541,7 +625,7 @@ async def start_dataset_generation(
             )
             # Reload the index in app state
             from faiss_index import FAISSIndex
-            app.state.index = FAISSIndex()
+            app.state.index = FAISSIndex(embedding_dim=EMBEDDING_DIM)
             return result
         except Exception as e:
             await ws_manager.broadcast({
@@ -586,7 +670,7 @@ async def delete_dataset():
 
     # Reinitialize empty index
     from faiss_index import FAISSIndex
-    app.state.index = FAISSIndex()
+    app.state.index = FAISSIndex(embedding_dim=EMBEDDING_DIM)
 
     await ws_manager.broadcast({
         "type": "dataset_cleared",
@@ -655,9 +739,10 @@ async def index_existing_models(
                 images, images_b64 = render_views(model_bytes, "glb")
                 embed_result = await embed_images(images_b64)
                 embeddings = np.array(embed_result["embeddings"], dtype=np.float32)
-                avg_embedding = np.mean(embeddings, axis=0)
-                avg_embedding = avg_embedding / np.linalg.norm(avg_embedding)
-                embedding = avg_embedding.tolist()
+                # Max pooling: keeps strongest features, ignores bad views
+                max_embedding = np.max(embeddings, axis=0)
+                max_embedding = max_embedding / np.linalg.norm(max_embedding)
+                embedding = max_embedding.tolist()
             else:
                 result = await embed_model_bytes(model_bytes, "glb")
                 embedding = result["embedding"]

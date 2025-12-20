@@ -191,15 +191,15 @@ def render_and_embed_model(model_bytes: bytes, file_format: str = "glb") -> dict
     finally:
         renderer.delete()
 
-    # Embed
+    # Embed with max pooling (keeps strongest features, ignores bad views)
     embeddings = embed_images_pil(images)
-    avg_embedding = np.mean(embeddings, axis=0)
-    avg_embedding = avg_embedding / np.linalg.norm(avg_embedding)
+    max_embedding = np.max(embeddings, axis=0)
+    max_embedding = max_embedding / np.linalg.norm(max_embedding)
 
     return {
-        "embedding": avg_embedding.tolist(),
+        "embedding": max_embedding.tolist(),
         "views_rendered": len(images),
-        "embedding_dim": len(avg_embedding)
+        "embedding_dim": len(max_embedding)
     }
 
 

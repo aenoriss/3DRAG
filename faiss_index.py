@@ -34,6 +34,11 @@ class ModelMetadata:
         return cls(**data)
 
 
+# Embedding dimensions for different modes
+EMBEDDING_DIM_SIGLIP = 1152   # SigLIP2 so400m (RunPod mode)
+EMBEDDING_DIM_GEMMA = 768     # EmbeddingGemma (Ollama mode)
+
+
 class FAISSIndex:
     """
     Thread-safe FAISS index for 3D model embeddings.
@@ -43,9 +48,12 @@ class FAISSIndex:
     - Dynamic datasets with frequent additions
     - Fast search with high recall
     - No training required
+
+    Supports two embedding modes:
+    - Ollama (default): 768-dim from EmbeddingGemma
+    - RunPod: 1152-dim from SigLIP2
     """
 
-    EMBEDDING_DIM = 1152  # SigLIP2 so400m embedding dimension
     HNSW_M = 32  # Number of neighbors per node (higher = better recall, more memory)
     HNSW_EF_CONSTRUCTION = 40  # Construction time accuracy (higher = better quality)
     HNSW_EF_SEARCH = 64  # Search time accuracy (higher = better recall, slower)
@@ -53,10 +61,12 @@ class FAISSIndex:
     def __init__(
         self,
         index_path: str = "models.index",
-        metadata_path: str = "metadata.json"
+        metadata_path: str = "metadata.json",
+        embedding_dim: int = EMBEDDING_DIM_GEMMA  # Default to Ollama/Gemma
     ):
         self.index_path = Path(index_path)
         self.metadata_path = Path(metadata_path)
+        self.embedding_dim = embedding_dim
         self.metadata: list[ModelMetadata] = []
         self._lock = threading.Lock()
 
@@ -74,11 +84,11 @@ class FAISSIndex:
             print(f"Loaded FAISS HNSW index with {self.index.ntotal} vectors")
         else:
             # Create new HNSW index
-            self.index = faiss.IndexHNSWFlat(self.EMBEDDING_DIM, self.HNSW_M)
+            self.index = faiss.IndexHNSWFlat(self.embedding_dim, self.HNSW_M)
             self.index.hnsw.efConstruction = self.HNSW_EF_CONSTRUCTION
             self.index.hnsw.efSearch = self.HNSW_EF_SEARCH
             self.metadata = []
-            print(f"Created new FAISS HNSW index (dim={self.EMBEDDING_DIM}, M={self.HNSW_M})")
+            print(f"Created new FAISS HNSW index (dim={self.embedding_dim}, M={self.HNSW_M})")
 
     def _save(self):
         """Save index and metadata to disk."""
@@ -118,9 +128,9 @@ class FAISSIndex:
             embedding = embedding.reshape(1, -1)
 
             # Verify dimension
-            if embedding.shape[1] != self.EMBEDDING_DIM:
+            if embedding.shape[1] != self.embedding_dim:
                 raise ValueError(
-                    f"Embedding dimension mismatch: expected {self.EMBEDDING_DIM}, "
+                    f"Embedding dimension mismatch: expected {self.embedding_dim}, "
                     f"got {embedding.shape[1]}"
                 )
 
@@ -224,9 +234,11 @@ class FAISSIndex:
             for dist, idx in zip(distances[0], indices[0]):
                 if idx >= 0 and idx < len(self.metadata):
                     meta = self.metadata[idx]
-                    # Convert L2 distance to similarity score (1 / (1 + dist))
-                    # For normalized vectors, smaller distance = more similar
-                    score = 1.0 / (1.0 + dist)
+                    # Convert L2 distance to cosine similarity for normalized vectors
+                    # L2² = 2 - 2*cos(θ), so cos(θ) = 1 - L2²/2
+                    cosine_sim = 1.0 - (dist / 2.0)
+                    # Clamp to [0, 1] range
+                    score = max(0.0, min(1.0, cosine_sim))
                     results.append({
                         "id": meta.id,
                         "name": meta.name,
@@ -260,7 +272,7 @@ class FAISSIndex:
         """Get index statistics."""
         return {
             "total_models": self.index.ntotal,
-            "embedding_dim": self.EMBEDDING_DIM,
+            "embedding_dim": self.embedding_dim,
             "index_type": "IndexHNSWFlat",
             "hnsw_m": self.HNSW_M,
             "hnsw_ef_construction": self.HNSW_EF_CONSTRUCTION,
@@ -288,10 +300,17 @@ _index: Optional[FAISSIndex] = None
 
 def get_index(
     index_path: str = "models.index",
-    metadata_path: str = "metadata.json"
+    metadata_path: str = "metadata.json",
+    embedding_dim: int = EMBEDDING_DIM_GEMMA
 ) -> FAISSIndex:
     """Get or create the global FAISS index instance."""
     global _index
     if _index is None:
-        _index = FAISSIndex(index_path, metadata_path)
+        _index = FAISSIndex(index_path, metadata_path, embedding_dim)
     return _index
+
+
+def reset_index():
+    """Reset the global index instance (for switching modes)."""
+    global _index
+    _index = None

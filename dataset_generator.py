@@ -4,6 +4,10 @@ Dataset Generator - Download and index models from Objaverse.
 Creates a mini-dataset of 100 models for testing.
 When regenerated, the previous dataset is deleted.
 Downloads GLB files directly from Hugging Face for efficiency.
+
+Supports two embedding modes:
+- ollama (default): Gemma 3 27B vision + EmbeddingGemma (768-dim)
+- runpod: SigLIP2 via RunPod (1152-dim)
 """
 from __future__ import annotations
 
@@ -13,6 +17,7 @@ import shutil
 import random
 import time
 import base64
+import os
 import concurrent.futures
 from pathlib import Path
 from typing import Optional, List, Dict, Callable, Any
@@ -22,6 +27,9 @@ from datetime import datetime
 # Dataset storage
 DATASET_DIR = Path("dataset")
 DATASET_SIZE = 100
+
+# Embedding mode: "ollama" (default) or "runpod"
+EMBEDDING_MODE = os.getenv("EMBEDDING_MODE", "ollama").lower()
 
 
 @dataclass
@@ -60,27 +68,23 @@ def reset_status():
     _status.cancelled = False
 
 
-async def clear_dataset():
-    """Delete existing dataset and clear FAISS index."""
-    from faiss_index import get_index
-
-    # Clear FAISS index files
-    index_path = Path("models.index")
-    metadata_path = Path("metadata.json")
-
-    if index_path.exists():
-        index_path.unlink()
-    if metadata_path.exists():
-        metadata_path.unlink()
-
-    # Clear dataset directory
+async def clear_dataset(clear_index: bool = False):
+    """Delete existing dataset directory. Optionally clear FAISS index."""
+    # Only clear dataset directory (renders, downloads)
     if DATASET_DIR.exists():
         shutil.rmtree(DATASET_DIR)
 
     DATASET_DIR.mkdir(exist_ok=True)
 
-    # Reinitialize index (will create fresh)
-    # Note: This requires restarting the server or reinitializing the singleton
+    # Optionally clear FAISS index
+    if clear_index:
+        index_path = Path("models.index")
+        metadata_path = Path("metadata.json")
+
+        if index_path.exists():
+            index_path.unlink()
+        if metadata_path.exists():
+            metadata_path.unlink()
 
 
 async def generate_dataset(
@@ -217,19 +221,27 @@ async def generate_dataset(
             })
 
         # Import here to avoid circular imports
-        from faiss_index import FAISSIndex
-        from runpod_client import embed_images
+        from faiss_index import FAISSIndex, EMBEDDING_DIM_GEMMA, EMBEDDING_DIM_SIGLIP
         from local_renderer import render_views
-        import os
 
-        # Check if we're in local mode
+        # Determine embedding mode
+        use_ollama = EMBEDDING_MODE == "ollama"
         use_local = os.getenv("USE_LOCAL_RENDERER", "false").lower() == "true"
 
-        # Create fresh index
-        index = FAISSIndex()
+        if use_ollama:
+            from ollama_client import process_3d_model, description_to_text
+            embedding_dim = EMBEDDING_DIM_GEMMA
+            print(f"Using Ollama mode (Gemma 3 27B + EmbeddingGemma, {embedding_dim}-dim)")
+        else:
+            from runpod_client import embed_images
+            embedding_dim = EMBEDDING_DIM_SIGLIP
+            print(f"Using RunPod mode (SigLIP2, {embedding_dim}-dim)")
+
+        # Create fresh index with correct dimension
+        index = FAISSIndex(embedding_dim=embedding_dim)
 
         # Process each model
-        print(f"Starting to index {len(objects)} models (use_local={use_local})...")
+        print(f"Starting to index {len(objects)} models...")
 
         for idx, (file_id, obj_data) in enumerate(objects.items()):
             # Check for cancellation
@@ -261,24 +273,54 @@ async def generate_dataset(
                 print(f"  Read {len(model_bytes)} bytes, ext={ext}")
 
                 rendered_images_b64 = None
+                description_text = None
 
-                if use_local:
+                # Render views (needed for both modes)
+                print(f"  Rendering 12 views...")
+                images, images_b64 = render_views(model_bytes, ext)
+                rendered_images_b64 = images_b64
+
+                # Save rendered images to folder
+                renders_dir = DATASET_DIR / "renders" / file_id
+                renders_dir.mkdir(parents=True, exist_ok=True)
+                for i, img in enumerate(images):
+                    img.save(renders_dir / f"view_{i:02d}.png")
+
+                # Save preview thumbnail (front view) to previews folder
+                previews_dir = DATASET_DIR / "previews"
+                previews_dir.mkdir(parents=True, exist_ok=True)
+                preview = images[0].resize((128, 128))
+                preview.save(previews_dir / f"{file_id}.jpg", "JPEG", quality=85)
+
+                if use_ollama:
+                    # Ollama mode: Gemma 3 27B vision + EmbeddingGemma
+                    print(f"  Processing with Ollama...")
+                    result = await process_3d_model(images_b64)
+
+                    if result["status"] != "ok":
+                        print(f"  Ollama error: {result.get('error', 'unknown')}")
+                        _status.failed += 1
+                        continue
+
+                    embedding = result["embedding"]
+                    description_text = result.get("text", "")
+                    print(f"  Description: {description_text[:50]}...")
+
+                elif use_local:
                     # Local rendering + RunPod embedding
                     import numpy as np
 
-                    print(f"  Rendering 12 views...")
-                    images, images_b64 = render_views(model_bytes, ext)
-                    rendered_images_b64 = images_b64  # Save for progress update
-                    print(f"  Rendered {len(images)} views, sending to RunPod...")
+                    print(f"  Sending to RunPod...")
                     embed_result = await embed_images(images_b64)
                     print(f"  Got embeddings from RunPod")
 
                     embeddings = np.array(embed_result["embeddings"], dtype=np.float32)
-                    avg_embedding = np.mean(embeddings, axis=0)
-                    avg_embedding = avg_embedding / np.linalg.norm(avg_embedding)
-                    embedding = avg_embedding.tolist()
+                    # Max pooling: keeps strongest features, ignores bad views
+                    max_embedding = np.max(embeddings, axis=0)
+                    max_embedding = max_embedding / np.linalg.norm(max_embedding)
+                    embedding = max_embedding.tolist()
                 else:
-                    # Full RunPod processing
+                    # Full RunPod processing (render on RunPod)
                     from runpod_client import embed_model_bytes
                     result = await embed_model_bytes(model_bytes, ext)
                     embedding = result["embedding"]
