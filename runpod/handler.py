@@ -28,9 +28,8 @@ print("Loading SigLIP2 model with GPU optimizations...")
 # Load model with FP16 for faster inference
 model = AutoModel.from_pretrained(
     "google/siglip2-so400m-patch14-384",
-    torch_dtype=torch.float16,
-    device_map="cuda"
-)
+    torch_dtype=torch.float16
+).to("cuda")
 processor = AutoProcessor.from_pretrained("google/siglip2-so400m-patch14-384")
 model.eval()
 
