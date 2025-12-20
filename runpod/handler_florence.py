@@ -61,10 +61,21 @@ def load_florence():
 
 
 def caption_image(image: Image.Image) -> str:
-    """Generate caption using Florence-2."""
+    """
+    Generate retrieval-optimized caption using Florence-2.
+
+    Uses DETAILED_CAPTION (not MORE_DETAILED) for balance of:
+    - Speed: fewer tokens generated
+    - Quality: enough detail for search
+    - Cost: shorter = cheaper
+    """
     global FLORENCE_MODEL, FLORENCE_PROCESSOR
 
-    task = "<MORE_DETAILED_CAPTION>"
+    # DETAILED_CAPTION is the sweet spot:
+    # - <CAPTION>: Too short, misses key features
+    # - <DETAILED_CAPTION>: Good balance (~30-50 tokens)
+    # - <MORE_DETAILED_CAPTION>: Verbose, slower, not better for search
+    task = "<DETAILED_CAPTION>"
 
     inputs = FLORENCE_PROCESSOR(
         text=task,
@@ -75,16 +86,16 @@ def caption_image(image: Image.Image) -> str:
     with torch.no_grad():
         outputs = FLORENCE_MODEL.generate(
             **inputs,
-            max_new_tokens=100,
-            num_beams=3,
+            max_new_tokens=60,  # Limit output for speed
+            num_beams=1,        # Greedy decoding = faster
             do_sample=False
         )
 
     caption = FLORENCE_PROCESSOR.batch_decode(outputs, skip_special_tokens=True)[0]
 
-    # Remove task prefix if present
-    if caption.startswith(task):
-        caption = caption[len(task):].strip()
+    # Clean up task prefix
+    if task in caption:
+        caption = caption.replace(task, "").strip()
 
     return caption
 
