@@ -11,6 +11,7 @@ FROM nvidia/cuda:12.4.0-runtime-ubuntu22.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 ENV OLLAMA_HOST=0.0.0.0
+ENV OLLAMA_MODELS=/app/ollama_models
 ENV HF_HOME=/app/hf_cache
 
 WORKDIR /app
