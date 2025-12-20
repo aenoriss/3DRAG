@@ -28,6 +28,7 @@ from PIL import Image
 # Dataset storage
 DATASET_DIR = Path("dataset")
 DATASET_SIZE = 100
+BATCH_SIZE = 10  # Process this many models at once for efficiency
 
 # Embedding mode: "ollama" (default) or "runpod"
 EMBEDDING_MODE = os.getenv("EMBEDDING_MODE", "ollama").lower()
@@ -241,132 +242,134 @@ async def generate_dataset(
         # Create fresh index with correct dimension
         index = FAISSIndex(embedding_dim=embedding_dim)
 
-        # Process each model
-        print(f"Starting to index {len(objects)} models...")
+        # Process in batches for efficiency
+        from ollama_client import process_batch
 
-        for idx, (file_id, obj_data) in enumerate(objects.items()):
-            # Check for cancellation
+        object_items = list(objects.items())
+        total_objects = len(object_items)
+        print(f"Starting to index {total_objects} models in batches of {BATCH_SIZE}...")
+
+        for batch_start in range(0, total_objects, BATCH_SIZE):
             if _status.cancelled:
                 print("Indexing cancelled by user")
                 raise asyncio.CancelledError("Cancelled by user")
 
-            _status.current_model = file_id
+            batch_end = min(batch_start + BATCH_SIZE, total_objects)
+            batch_items = object_items[batch_start:batch_end]
 
-            try:
-                local_path = obj_data["local_path"]
-                metadata = obj_data.get("metadata", {})
+            print(f"\n=== Batch {batch_start//BATCH_SIZE + 1}: models {batch_start+1}-{batch_end} ===")
 
-                # Get name from metadata or use file_id
-                name = metadata.get("name", file_id[:30])
-                category = metadata.get("source", None)
+            # Step 1: Render all images in this batch
+            batch_data = []
 
-                print(f"[{idx+1}/{len(objects)}] Processing: {name[:30]}...")
+            for idx, (file_id, obj_data) in enumerate(batch_items):
+                global_idx = batch_start + idx
+                _status.current_model = file_id
 
-                # Read model file
-                model_path = Path(local_path)
-                if not model_path.exists():
-                    print(f"  File not found: {local_path}")
-                    _status.failed += 1
-                    continue
-
-                model_bytes = model_path.read_bytes()
-                ext = model_path.suffix.lstrip(".")
-                print(f"  Read {len(model_bytes)} bytes, ext={ext}")
-
-                rendered_images_b64 = None
-                description_text = None
-
-                # Render single front view
-                print(f"  Rendering front view...")
-                images, images_b64 = render_views(model_bytes, ext, num_views=1)
-                rendered_images_b64 = images_b64
-
-                # Save rendered image
-                renders_dir = DATASET_DIR / "renders" / file_id
-                renders_dir.mkdir(parents=True, exist_ok=True)
-                images[0].save(renders_dir / f"view_00.png")
-
-                # Save preview thumbnail
-                previews_dir = DATASET_DIR / "previews"
-                previews_dir.mkdir(parents=True, exist_ok=True)
-                preview = images[0].resize((128, 128))
-                preview.save(previews_dir / f"{file_id}.jpg", "JPEG", quality=85)
-
-                # Delete original 3D model file (no longer needed after render)
                 try:
-                    model_path.unlink()
-                except Exception:
-                    pass  # Ignore deletion errors
+                    local_path = obj_data["local_path"]
+                    metadata = obj_data.get("metadata", {})
+                    name = metadata.get("name", file_id[:30])
+                    category = metadata.get("source", None)
 
-                if use_ollama:
-                    # Ollama mode: Gemma 3 27B vision + EmbeddingGemma
-                    print(f"  Processing with Ollama...")
-                    result = await process_3d_model(images_b64)
+                    print(f"[{global_idx+1}/{total_objects}] Rendering: {name[:30]}...")
 
-                    if result["status"] != "ok":
-                        print(f"  Ollama error: {result.get('error', 'unknown')}")
+                    model_path = Path(local_path)
+                    if not model_path.exists():
+                        print(f"  File not found")
                         _status.failed += 1
                         continue
 
-                    embedding = result["embedding"]
-                    description_text = result.get("text", "")
-                    print(f"  Description: {description_text[:50]}...")
+                    model_bytes = model_path.read_bytes()
+                    ext = model_path.suffix.lstrip(".")
 
-                elif use_local:
-                    # Local rendering + RunPod embedding
-                    import numpy as np
+                    images, images_b64 = render_views(model_bytes, ext, num_views=1)
 
-                    print(f"  Sending to RunPod...")
-                    embed_result = await embed_images(images_b64)
-                    print(f"  Got embeddings from RunPod")
+                    # Save files
+                    renders_dir = DATASET_DIR / "renders" / file_id
+                    renders_dir.mkdir(parents=True, exist_ok=True)
+                    images[0].save(renders_dir / f"view_00.png")
 
-                    embeddings = np.array(embed_result["embeddings"], dtype=np.float32)
-                    # Max pooling: keeps strongest features, ignores bad views
-                    max_embedding = np.max(embeddings, axis=0)
-                    max_embedding = max_embedding / np.linalg.norm(max_embedding)
-                    embedding = max_embedding.tolist()
+                    previews_dir = DATASET_DIR / "previews"
+                    previews_dir.mkdir(parents=True, exist_ok=True)
+                    images[0].resize((128, 128)).save(previews_dir / f"{file_id}.jpg", "JPEG", quality=85)
+
+                    # Delete 3D model file
+                    try:
+                        model_path.unlink()
+                    except Exception:
+                        pass
+
+                    batch_data.append({
+                        "file_id": file_id,
+                        "name": name,
+                        "category": category,
+                        "local_path": str(local_path),
+                        "image_b64": images_b64[0],
+                        "pil_image": images[0]
+                    })
+
+                except Exception as e:
+                    _status.failed += 1
+                    print(f"  Render failed: {e}")
+
+            if not batch_data:
+                continue
+
+            # Step 2: Send batch to RunPod
+            print(f"  Sending {len(batch_data)} images to RunPod...")
+
+            batch_request = [{"image": item["image_b64"]} for item in batch_data]
+            result = await process_batch(batch_request)
+
+            if result["status"] != "ok":
+                print(f"  Batch error: {result.get('error', 'unknown')}")
+                _status.failed += len(batch_data)
+                continue
+
+            batch_results = result.get("results", [])
+            stats = result.get("stats", {})
+            print(f"  Done: {stats.get('time_sec', 0):.2f}s total, {stats.get('time_per_model', 0):.3f}s/model")
+
+            # Step 3: Add to index
+            for i, item in enumerate(batch_data):
+                if i < len(batch_results):
+                    embed_result = batch_results[i]
+                    embedding = embed_result.get("embedding", [])
+                    text = embed_result.get("text", "")
+
+                    if embedding:
+                        index.add(
+                            embedding=embedding,
+                            model_id=item["file_id"],
+                            name=item["name"],
+                            category=item["category"],
+                            file_path=item["local_path"],
+                            save=False
+                        )
+                        _status.indexed += 1
+
+                        if progress_callback:
+                            import io
+                            thumb = item["pil_image"].resize((96, 96), Image.LANCZOS)
+                            buffer = io.BytesIO()
+                            thumb.save(buffer, format="JPEG", quality=70)
+                            await progress_callback({
+                                "type": "dataset_progress",
+                                "step": "indexing",
+                                "message": f"{text[:40]}...",
+                                "total": count,
+                                "downloaded": total_objects,
+                                "indexed": _status.indexed,
+                                "failed": _status.failed,
+                                "current": item["name"],
+                                "model_id": item["file_id"],
+                                "images": [base64.b64encode(buffer.getvalue()).decode()]
+                            })
+                    else:
+                        _status.failed += 1
                 else:
-                    # Full RunPod processing (render on RunPod)
-                    from runpod_client import embed_model_bytes
-                    result = await embed_model_bytes(model_bytes, ext)
-                    embedding = result["embedding"]
-
-                # Add to index
-                index.add(
-                    embedding=embedding,
-                    model_id=file_id,
-                    name=name,
-                    category=category,
-                    file_path=str(local_path),
-                    save=False  # Save at end for efficiency
-                )
-
-                _status.indexed += 1
-
-                if progress_callback:
-                    progress_data = {
-                        "type": "dataset_progress",
-                        "step": "indexing",
-                        "message": f"Indexed {name[:30]}",
-                        "total": count,
-                        "downloaded": len(objects),
-                        "indexed": _status.indexed,
-                        "failed": _status.failed,
-                        "current": name,
-                        "model_id": file_id
-                    }
-                    # Include thumbnail for UI preview
-                    if images:
-                        import io
-                        thumb = images[0].resize((96, 96), Image.LANCZOS)
-                        buffer = io.BytesIO()
-                        thumb.save(buffer, format="JPEG", quality=70)
-                        progress_data["images"] = [base64.b64encode(buffer.getvalue()).decode()]
-                    await progress_callback(progress_data)
-
-            except Exception as e:
-                _status.failed += 1
-                print(f"Failed to process {file_id}: {e}")
+                    _status.failed += 1
 
         # Save index
         index._save()

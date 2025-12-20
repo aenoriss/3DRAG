@@ -419,8 +419,8 @@ async def process_3d_model(images_b64: list[str]) -> dict:
             }
         }
     else:
-        # RunPod serverless pipeline
-        result = await _runpod_request({"images": images_b64})
+        # RunPod serverless pipeline (single image)
+        result = await _runpod_request({"image": images_b64[0]})
         if result["status"] != "ok":
             return result
 
@@ -431,6 +431,44 @@ async def process_3d_model(images_b64: list[str]) -> dict:
             "embedding": result.get("embedding", []),
             "dimension": result.get("dimension", 768),
             "vision_stats": result.get("stats", {})
+        }
+
+
+async def process_batch(batch_items: list[dict]) -> dict:
+    """
+    Process multiple 3D models in a single batch request.
+
+    Sends all images to RunPod in one request for parallel processing.
+    Much more efficient than individual requests.
+
+    Args:
+        batch_items: List of dicts, each with "image" (base64 string)
+
+    Returns:
+        Dict with "results" list containing embeddings and captions
+    """
+    if USE_LOCAL_OLLAMA:
+        # Local mode: process sequentially (no batch support)
+        results = []
+        for item in batch_items:
+            result = await process_3d_model([item["image"]])
+            results.append({
+                "embedding": result.get("embedding", []),
+                "text": result.get("text", ""),
+                "dimension": result.get("dimension", 768)
+            })
+        return {"status": "ok", "results": results}
+    else:
+        # RunPod batch processing
+        result = await _runpod_request({"batch": batch_items}, timeout=300.0)
+        if result["status"] != "ok":
+            return result
+
+        return {
+            "status": "ok",
+            "results": result.get("results", []),
+            "batch_size": result.get("batch_size", 0),
+            "stats": result.get("stats", {})
         }
 
 

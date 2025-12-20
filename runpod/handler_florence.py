@@ -2,11 +2,12 @@
 RunPod Serverless Handler - Florence-2 + EmbeddingGemma
 
 Fast captioning with Florence-2 (0.23B) + text embedding via Ollama.
+Supports batch processing for high throughput.
 
 Pipeline:
-1. Receive stitched grid image
-2. Florence-2 -> natural caption (~0.2s)
-3. EmbeddingGemma -> 768-dim embedding
+1. Receive batch of images
+2. Florence-2 batch inference -> captions
+3. EmbeddingGemma batch -> 768-dim embeddings
 """
 
 import runpod
@@ -18,12 +19,16 @@ import torch
 from PIL import Image
 import io
 import os
+from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import patch
 from transformers.dynamic_module_utils import get_imports
 
 # Florence-2 model (loaded once at startup)
 FLORENCE_MODEL = None
 FLORENCE_PROCESSOR = None
+
+# Thread pool for parallel embedding requests
+EMBED_POOL = ThreadPoolExecutor(max_workers=8)
 
 
 def _fixed_get_imports(filename: str) -> list:
@@ -40,7 +45,7 @@ OLLAMA_URL = "http://localhost:11434"
 EMBEDDING_MODEL = "embeddinggemma"
 
 # GPU cost per second (RTX 4090 = $0.00019/sec)
-GPU_COST_PER_SEC = float(__import__('os').getenv("GPU_COST_PER_SEC", "0.00019"))
+GPU_COST_PER_SEC = float(os.getenv("GPU_COST_PER_SEC", "0.00019"))
 
 # Cumulative stats
 STATS = {
@@ -59,11 +64,10 @@ def load_florence():
     from transformers import AutoProcessor, AutoModelForCausalLM
 
     model_id = "microsoft/Florence-2-base"  # 0.23B, fastest
-    # model_id = "microsoft/Florence-2-large"  # 0.77B, better quality
 
     print(f"Loading Florence-2 from {model_id}...")
 
-    # Patch to remove flash_attn requirement (not actually needed with eager/sdpa)
+    # Patch to remove flash_attn requirement
     with patch("transformers.dynamic_module_utils.get_imports", _fixed_get_imports):
         FLORENCE_PROCESSOR = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
         FLORENCE_MODEL = AutoModelForCausalLM.from_pretrained(
@@ -77,18 +81,14 @@ def load_florence():
 
 
 def clean_caption(caption: str) -> str:
-    """
-    Clean up caption for better embedding quality.
-
-    Removes filler phrases to get direct, searchable descriptions.
-    """
+    """Clean up caption for better embedding quality."""
     import re
 
     # Remove task tokens
     for token in ["<DETAILED_CAPTION>", "<MORE_DETAILED_CAPTION>", "<CAPTION>"]:
         caption = caption.replace(token, "")
 
-    # Remove common filler phrases (case-insensitive)
+    # Remove common filler phrases
     filler_patterns = [
         r"^the image (shows?|contains?|depicts?|features?|displays?)\s*",
         r"^this image (shows?|contains?|depicts?|features?|displays?)\s*",
@@ -102,86 +102,79 @@ def clean_caption(caption: str) -> str:
     for pattern in filler_patterns:
         caption = re.sub(pattern, "", caption, flags=re.IGNORECASE)
 
-    # Clean up whitespace
     caption = " ".join(caption.split())
-
-    # Capitalize first letter
     if caption:
         caption = caption[0].upper() + caption[1:]
 
     return caption
 
 
-def caption_image(image: Image.Image) -> str:
+def caption_images_batch(images: list[Image.Image]) -> list[str]:
     """
-    Generate retrieval-optimized caption using Florence-2.
+    Batch caption multiple images with Florence-2.
 
-    Uses MORE_DETAILED_CAPTION for richer descriptions, then cleans output.
+    Processes all images in a single forward pass for maximum GPU efficiency.
     """
     global FLORENCE_MODEL, FLORENCE_PROCESSOR
 
+    if not images:
+        return []
+
     task = "<MORE_DETAILED_CAPTION>"
 
+    # Process all images in batch
     inputs = FLORENCE_PROCESSOR(
-        text=task,
-        images=image,
-        return_tensors="pt"
+        text=[task] * len(images),
+        images=images,
+        return_tensors="pt",
+        padding=True
     ).to("cuda", torch.float16)
 
     with torch.no_grad():
         outputs = FLORENCE_MODEL.generate(
             **inputs,
-            max_new_tokens=100,  # Allow longer for detailed caption
-            num_beams=1,         # Greedy decoding = faster
+            max_new_tokens=100,
+            num_beams=1,
             do_sample=False
         )
 
-    caption = FLORENCE_PROCESSOR.batch_decode(outputs, skip_special_tokens=True)[0]
+    # Decode all outputs
+    captions = FLORENCE_PROCESSOR.batch_decode(outputs, skip_special_tokens=True)
 
-    # Clean up the caption
-    caption = clean_caption(caption)
-
-    return caption
-
-
-def stitch_views_grid(images_b64: list, grid_size: int = 2) -> Image.Image:
-    """Stitch multiple view images into a single grid image."""
-    images = []
-    for img_b64 in images_b64[:grid_size * grid_size]:
-        img_bytes = base64.b64decode(img_b64)
-        img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-        images.append(img)
-
-    if not images:
-        raise ValueError("No images to stitch")
-
-    w, h = images[0].size
-    grid_w = w * grid_size
-    grid_h = h * grid_size
-    grid = Image.new("RGB", (grid_w, grid_h), (128, 128, 128))
-
-    for i, img in enumerate(images):
-        row = i // grid_size
-        col = i % grid_size
-        grid.paste(img, (col * w, row * h))
-
-    return grid
+    # Clean all captions
+    return [clean_caption(c) for c in captions]
 
 
 def embed_text(text: str) -> list:
     """Generate embedding using EmbeddingGemma via Ollama."""
     resp = requests.post(
         f"{OLLAMA_URL}/api/embed",
-        json={
-            "model": EMBEDDING_MODEL,
-            "input": text
-        },
+        json={"model": EMBEDDING_MODEL, "input": text},
         timeout=30
     )
     resp.raise_for_status()
     result = resp.json()
     embeddings = result.get("embeddings", [])
     return embeddings[0] if embeddings else []
+
+
+def embed_texts_batch(texts: list[str]) -> list[list]:
+    """
+    Batch embed multiple texts.
+
+    Ollama supports batch embedding via input list.
+    """
+    if not texts:
+        return []
+
+    resp = requests.post(
+        f"{OLLAMA_URL}/api/embed",
+        json={"model": EMBEDDING_MODEL, "input": texts},
+        timeout=60
+    )
+    resp.raise_for_status()
+    result = resp.json()
+    return result.get("embeddings", [])
 
 
 def wait_for_ollama(timeout: int = 60):
@@ -210,7 +203,6 @@ if not wait_for_ollama(60):
 
 print("Ollama is running. Checking embedding model...")
 
-# Check if embedding model is available
 resp = requests.get(f"{OLLAMA_URL}/api/tags")
 models = [m["name"] for m in resp.json().get("models", [])]
 
@@ -220,7 +212,6 @@ if not any(EMBEDDING_MODEL in m for m in models):
 
 print("Embedding model ready!")
 
-# Load Florence-2
 load_florence()
 
 print("All models ready!")
@@ -235,11 +226,11 @@ def handler(event):
     RunPod serverless handler.
 
     Input formats:
-    - {"images": ["<base64>", ...]}  -> stitch + caption + embed
-    - {"image": "<base64>"}          -> single image, caption + embed
-    - {"text": "query"}              -> embed text for search
-    - {"stats": true}                -> return system stats
-    - {"reset": true}                -> reset stats
+    - {"batch": [{"image": "<b64>"}, ...]}  -> batch process multiple models
+    - {"image": "<base64>"}                 -> single image
+    - {"text": "query"}                     -> embed text for search
+    - {"stats": true}                       -> return system stats
+    - {"reset": true}                       -> reset stats
     """
     try:
         input_data = event.get("input", {})
@@ -278,50 +269,70 @@ def handler(event):
                 }
             }
 
-        # Multiple images -> use single best view (front)
-        if "images" in input_data:
+        # ====================================================================
+        # BATCH PROCESSING - Multiple models in one request
+        # ====================================================================
+        if "batch" in input_data:
             start = time.time()
+            batch = input_data["batch"]
 
-            # Use first image (front view) - cleaner than grid
-            images = input_data["images"]
-            img_bytes = base64.b64decode(images[0])
-            image = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+            # Decode all images
+            images = []
+            for item in batch:
+                img_b64 = item.get("image")
+                if img_b64:
+                    img_bytes = base64.b64decode(img_b64)
+                    img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+                    images.append(img)
 
-            # Caption with Florence-2
-            caption = caption_image(image)
+            if not images:
+                return {"error": "No valid images in batch"}
 
-            # Embed caption
-            embedding = embed_text(caption)
+            # Batch caption with Florence-2
+            captions = caption_images_batch(images)
+
+            # Batch embed with Ollama
+            embeddings = embed_texts_batch(captions)
 
             elapsed = time.time() - start
 
-            # Update cumulative stats
+            # Update stats
             STATS["total_requests"] += 1
-            STATS["total_embeddings"] += 1
+            STATS["total_embeddings"] += len(images)
             STATS["total_time_sec"] += elapsed
 
+            # Return results
+            results = []
+            for i, (caption, embedding) in enumerate(zip(captions, embeddings)):
+                results.append({
+                    "index": i,
+                    "embedding": embedding,
+                    "text": caption,
+                    "dimension": len(embedding) if embedding else 0
+                })
+
             return {
-                "embedding": embedding,
-                "text": caption,
-                "dimension": len(embedding),
+                "results": results,
+                "batch_size": len(images),
                 "stats": {
-                    "time_sec": round(elapsed, 3)
+                    "time_sec": round(elapsed, 3),
+                    "time_per_model": round(elapsed / len(images), 3) if images else 0
                 }
             }
 
-        # Single image
+        # Single image (legacy support)
         if "image" in input_data:
             start = time.time()
 
             img_bytes = base64.b64decode(input_data["image"])
             image = Image.open(io.BytesIO(img_bytes)).convert("RGB")
 
-            caption = caption_image(image)
+            captions = caption_images_batch([image])
+            caption = captions[0] if captions else ""
             embedding = embed_text(caption)
 
             elapsed = time.time() - start
 
-            # Update cumulative stats
             STATS["total_requests"] += 1
             STATS["total_embeddings"] += 1
             STATS["total_time_sec"] += elapsed
@@ -330,9 +341,7 @@ def handler(event):
                 "embedding": embedding,
                 "text": caption,
                 "dimension": len(embedding),
-                "stats": {
-                    "time_sec": round(elapsed, 3)
-                }
+                "stats": {"time_sec": round(elapsed, 3)}
             }
 
         # Text query embedding
@@ -341,7 +350,6 @@ def handler(event):
             embedding = embed_text(input_data["text"])
             elapsed = time.time() - start
 
-            # Update cumulative stats
             STATS["total_requests"] += 1
             STATS["total_text_queries"] += 1
             STATS["total_time_sec"] += elapsed
@@ -352,7 +360,7 @@ def handler(event):
                 "stats": {"time_sec": round(elapsed, 3)}
             }
 
-        return {"error": "No valid input. Use 'images', 'image', 'text', or 'stats'."}
+        return {"error": "No valid input. Use 'batch', 'image', 'text', or 'stats'."}
 
     except Exception as e:
         import traceback
