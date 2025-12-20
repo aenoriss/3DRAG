@@ -2,7 +2,29 @@
 RunPod Serverless Handler - Combined 3D Rendering + SigLIP2 Embedding
 
 Accepts 3D models, renders 12 views, embeds with SigLIP2, returns averaged embedding.
+Also supports image-only embedding (for local rendering mode).
 """
+
+import os
+import sys
+
+# CRITICAL: Set rendering platform BEFORE any OpenGL/pyrender imports
+os.environ["PYOPENGL_PLATFORM"] = "osmesa"
+
+# Prevent pyrender from importing the Viewer class (which requires X11/pyglet)
+class FakePygletWindow:
+    """Fake pyglet.window module to prevent X11 imports."""
+    class Window:
+        pass
+
+# Insert fake pyglet.window before pyrender can import it
+if "pyglet" not in sys.modules:
+    import types
+    pyglet_module = types.ModuleType("pyglet")
+    pyglet_module.window = types.ModuleType("pyglet.window")
+    pyglet_module.window.Window = FakePygletWindow.Window
+    sys.modules["pyglet"] = pyglet_module
+    sys.modules["pyglet.window"] = pyglet_module.window
 
 import runpod
 from transformers import AutoModel, AutoProcessor
@@ -11,14 +33,20 @@ import torch
 import base64
 import io
 import numpy as np
-import trimesh
 import time
 
-# Set EGL for GPU rendering
-import os
-os.environ["PYOPENGL_PLATFORM"] = "egl"
+# Lazy import for pyrender/trimesh (only needed for 3D model rendering)
+pyrender = None
+trimesh = None
 
-import pyrender
+def _ensure_rendering_imports():
+    """Import rendering libraries on first use."""
+    global pyrender, trimesh
+    if pyrender is None:
+        import pyrender as _pyrender
+        import trimesh as _trimesh
+        pyrender = _pyrender
+        trimesh = _trimesh
 
 # Pricing ($/second) - update as needed
 GPU_COST_PER_SECOND = 0.00019  # L4/A5000/3090
@@ -110,7 +138,7 @@ def create_camera_pose(elevation_deg: float, azimuth_deg: float, distance: float
     return pose
 
 
-def normalize_mesh(mesh: trimesh.Trimesh) -> trimesh.Trimesh:
+def normalize_mesh(mesh: "trimesh.Trimesh") -> "trimesh.Trimesh":
     """Center and scale mesh to fit in a unit sphere."""
     mesh.vertices -= mesh.centroid
     scale = 1.0 / np.max(np.abs(mesh.vertices))
@@ -118,7 +146,7 @@ def normalize_mesh(mesh: trimesh.Trimesh) -> trimesh.Trimesh:
     return mesh
 
 
-def create_scene(mesh: trimesh.Trimesh) -> pyrender.Scene:
+def create_scene(mesh: "trimesh.Trimesh") -> "pyrender.Scene":
     """Create a pyrender scene with mesh and 3-point lighting."""
     scene = pyrender.Scene(
         bg_color=np.array(BACKGROUND_COLOR),
@@ -171,6 +199,9 @@ def render_views(mesh_bytes: bytes, file_extension: str = "glb") -> list[Image.I
     Returns:
         List of 12 PIL Images
     """
+    # Lazy import rendering libraries
+    _ensure_rendering_imports()
+
     # Load mesh
     mesh = trimesh.load(
         io.BytesIO(mesh_bytes),

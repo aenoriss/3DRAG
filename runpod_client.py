@@ -7,12 +7,13 @@ Supports:
 - Image embedding
 - System stats
 """
+from __future__ import annotations
 
 import httpx
 import os
 import base64
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List, Union
 
 RUNPOD_API_KEY = os.getenv("RUNPOD_API_KEY")
 RUNPOD_ENDPOINT_ID = os.getenv("RUNPOD_ENDPOINT_ID")
@@ -21,11 +22,12 @@ BASE_URL = f"https://api.runpod.ai/v2/{RUNPOD_ENDPOINT_ID}"
 
 # Timeout for 3D model processing (render + embed can take a while on cold start)
 MODEL_TIMEOUT = 180.0  # 3 minutes for cold start
+IMAGE_TIMEOUT = 180.0  # 3 minutes for batch image embedding (cold start)
 DEFAULT_TIMEOUT = 60.0
 
 
 async def embed_model(
-    model_path: str | Path,
+    model_path: Union[str, Path],
     include_stats: bool = False
 ) -> dict:
     """
@@ -147,7 +149,7 @@ async def embed_text(
 
 
 async def embed_texts(
-    texts: list[str],
+    texts: List[str],
     include_stats: bool = False
 ) -> dict:
     """
@@ -181,7 +183,7 @@ async def embed_texts(
 
 
 async def embed_images(
-    images_b64: list[str],
+    images_b64: List[str],
     include_stats: bool = False
 ) -> dict:
     """
@@ -194,7 +196,8 @@ async def embed_images(
     Returns:
         dict with 'embeddings' (list[list[float]]) and optionally 'stats'
     """
-    async with httpx.AsyncClient(timeout=DEFAULT_TIMEOUT) as client:
+    print(f"  Calling RunPod embed_images with {len(images_b64)} images...")
+    async with httpx.AsyncClient(timeout=IMAGE_TIMEOUT) as client:
         response = await client.post(
             f"{BASE_URL}/runsync",
             headers={"Authorization": f"Bearer {RUNPOD_API_KEY}"},
@@ -205,8 +208,10 @@ async def embed_images(
                 }
             }
         )
+        print(f"  RunPod response status: {response.status_code}")
         response.raise_for_status()
         result = response.json()
+        print(f"  RunPod job status: {result.get('status')}")
 
         if result.get("status") == "COMPLETED":
             return result["output"]

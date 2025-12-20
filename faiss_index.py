@@ -4,13 +4,14 @@ FAISS Index Manager - Efficient vector indexing and search for 3D models.
 Uses IndexHNSWFlat for fast approximate nearest neighbor search.
 HNSW is ideal for dynamic datasets with frequent additions.
 """
+from __future__ import annotations
 
 import faiss
 import numpy as np
 import json
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List, Union
 from dataclasses import dataclass, asdict
 from datetime import datetime
 import threading

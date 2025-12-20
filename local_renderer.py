@@ -3,13 +3,14 @@ Local Renderer - CPU-based 3D rendering for testing without RunPod.
 
 Uses OSMesa (software rendering) so no GPU required.
 """
+from __future__ import annotations
 
 import numpy as np
 import trimesh
 import io
 import base64
 from PIL import Image
-from typing import Optional
+from typing import Optional, List, Tuple
 import os
 
 # Set OSMesa for CPU rendering

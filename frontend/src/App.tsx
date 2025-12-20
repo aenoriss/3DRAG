@@ -19,6 +19,17 @@ interface ProcessingModel {
   error?: string
 }
 
+interface DatasetStatus {
+  is_generating: boolean
+  total: number
+  downloaded: number
+  indexed: number
+  failed: number
+  current_model?: string
+  step?: string
+  message?: string
+}
+
 function App() {
   const [models, setModels] = useState<Model[]>([])
   const [processingModels, setProcessingModels] = useState<ProcessingModel[]>([])
@@ -26,6 +37,8 @@ function App() {
   const [wsConnected, setWsConnected] = useState(false)
   const [mode, setMode] = useState<string>('unknown')
   const [error, setError] = useState<string | null>(null)
+  const [datasetStatus, setDatasetStatus] = useState<DatasetStatus | null>(null)
+  const [datasetCount, setDatasetCount] = useState(100)
   const wsRef = useRef<WebSocket | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -106,6 +119,51 @@ function App() {
               : m
           )
         )
+        break
+
+      case 'dataset_status':
+        setDatasetStatus(prev => ({
+          ...prev,
+          is_generating: true,
+          total: data.total || prev?.total || 0,
+          downloaded: data.downloaded || prev?.downloaded || 0,
+          indexed: data.indexed || prev?.indexed || 0,
+          failed: data.failed || prev?.failed || 0,
+          step: data.status || prev?.step,
+          message: data.message || prev?.message
+        }))
+        break
+
+      case 'dataset_progress':
+        setDatasetStatus(prev => ({
+          ...prev,
+          is_generating: true,
+          total: data.total ?? prev?.total ?? 0,
+          downloaded: data.downloaded ?? prev?.downloaded ?? 0,
+          indexed: data.indexed ?? prev?.indexed ?? 0,
+          failed: data.failed ?? prev?.failed ?? 0,
+          current_model: data.current || data.current_model,
+          step: data.step || prev?.step,
+          message: data.message || prev?.message
+        }))
+        break
+
+      case 'dataset_complete':
+        setDatasetStatus(null)
+        fetchModels()
+        break
+
+      case 'dataset_error':
+        setDatasetStatus(null)
+        setError(`Dataset error: ${data.error}`)
+        break
+
+      case 'dataset_cleared':
+        fetchModels()
+        break
+
+      case 'dataset_cancelled':
+        setDatasetStatus(null)
         break
     }
   }
@@ -199,6 +257,73 @@ function App() {
     setProcessingModels(prev => prev.filter(m => m.status === 'processing'))
   }
 
+  const generateDataset = async () => {
+    try {
+      const res = await fetch(`${API_URL}/dataset/generate?count=${datasetCount}`, {
+        method: 'POST'
+      })
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.detail || 'Failed to start generation')
+      }
+      setDatasetStatus({
+        is_generating: true,
+        total: datasetCount,
+        downloaded: 0,
+        indexed: 0,
+        failed: 0
+      })
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  const deleteDataset = async () => {
+    if (!confirm('Delete all indexed models?')) return
+    try {
+      const res = await fetch(`${API_URL}/dataset`, { method: 'DELETE' })
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.detail || 'Failed to delete')
+      }
+      setModels([])
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  const cancelGeneration = async () => {
+    try {
+      await fetch(`${API_URL}/dataset/cancel`, { method: 'POST' })
+      setDatasetStatus(null)
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  const indexExisting = async () => {
+    try {
+      const res = await fetch(`${API_URL}/dataset/index-existing?limit=${datasetCount}`, {
+        method: 'POST'
+      })
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.detail || 'Failed to index')
+      }
+      setDatasetStatus({
+        is_generating: true,
+        total: datasetCount,
+        downloaded: datasetCount,
+        indexed: 0,
+        failed: 0,
+        step: 'indexing',
+        message: 'Indexing cached models...'
+      })
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8">
       {/* Header */}
@@ -227,6 +352,118 @@ function App() {
             <button onClick={() => setError(null)} className="text-red-400 hover:text-red-300">✕</button>
           </div>
         )}
+
+        {/* Dataset Generation */}
+        <div className="mb-8 p-6 bg-gray-800 rounded-xl border border-gray-700">
+          <h2 className="text-lg font-semibold mb-4">Objaverse Dataset</h2>
+
+          {datasetStatus?.is_generating ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" />
+                  <span className="text-yellow-400 font-medium">
+                    {datasetStatus.step === 'downloading' ? 'Downloading' :
+                     datasetStatus.step === 'indexing' ? 'Indexing' :
+                     datasetStatus.step === 'clearing' ? 'Clearing' :
+                     'Generating'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={cancelGeneration}
+                    className="px-3 py-1 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded text-sm transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+
+              {/* Step indicators */}
+              <div className="flex items-center gap-2 text-xs">
+                <div className={`flex items-center gap-1 ${datasetStatus.step === 'clearing' ? 'text-yellow-400' : datasetStatus.downloaded > 0 ? 'text-green-400' : 'text-gray-500'}`}>
+                  <span>{datasetStatus.downloaded > 0 ? '✓' : '○'}</span>
+                  <span>Clear</span>
+                </div>
+                <span className="text-gray-600">→</span>
+                <div className={`flex items-center gap-1 ${datasetStatus.step === 'downloading' ? 'text-yellow-400' : datasetStatus.downloaded > 0 && datasetStatus.step === 'indexing' ? 'text-green-400' : 'text-gray-500'}`}>
+                  <span>{datasetStatus.step === 'downloading' ? '◉' : datasetStatus.downloaded > 0 && datasetStatus.step === 'indexing' ? '✓' : '○'}</span>
+                  <span>Download ({datasetStatus.downloaded}/{datasetStatus.total})</span>
+                </div>
+                <span className="text-gray-600">→</span>
+                <div className={`flex items-center gap-1 ${datasetStatus.step === 'indexing' ? 'text-yellow-400' : 'text-gray-500'}`}>
+                  <span>{datasetStatus.step === 'indexing' ? '◉' : '○'}</span>
+                  <span>Index ({datasetStatus.indexed}/{datasetStatus.downloaded || datasetStatus.total})</span>
+                </div>
+              </div>
+
+              {/* Progress bar */}
+              <div className="w-full bg-gray-700 rounded-full h-2">
+                <div
+                  className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                  style={{
+                    width: `${datasetStatus.step === 'indexing'
+                      ? ((datasetStatus.indexed / (datasetStatus.downloaded || datasetStatus.total || 1)) * 100)
+                      : datasetStatus.step === 'downloading'
+                      ? ((datasetStatus.downloaded / (datasetStatus.total || 1)) * 100)
+                      : 0}%`
+                  }}
+                />
+              </div>
+
+              {/* Current status message */}
+              {datasetStatus.message && (
+                <p className="text-xs text-gray-400">
+                  {datasetStatus.message}
+                </p>
+              )}
+              {datasetStatus.current_model && (
+                <p className="text-xs text-gray-500 truncate">
+                  Current: {datasetStatus.current_model}
+                </p>
+              )}
+              {datasetStatus.failed > 0 && (
+                <p className="text-xs text-red-400">
+                  Failed: {datasetStatus.failed}
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-400">Count:</label>
+                <input
+                  type="number"
+                  min={10}
+                  max={1000}
+                  value={datasetCount}
+                  onChange={(e) => setDatasetCount(Number(e.target.value))}
+                  className="w-20 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-sm"
+                />
+              </div>
+              <button
+                onClick={generateDataset}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-medium transition-colors"
+              >
+                Download & Index
+              </button>
+              <button
+                onClick={indexExisting}
+                className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg text-sm font-medium transition-colors"
+              >
+                Index Cached
+              </button>
+              {models.length > 0 && (
+                <button
+                  onClick={deleteDataset}
+                  className="px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Delete
+                </button>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Drop Zone */}
         <div

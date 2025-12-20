@@ -8,6 +8,7 @@ Features:
 - Text-based semantic search
 - WebSocket for real-time updates
 """
+from __future__ import annotations
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Form, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,7 +19,7 @@ import numpy as np
 import asyncio
 import json
 import os
-from typing import Optional, Set
+from typing import Optional, Set, List
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -488,6 +489,249 @@ async def render_model_preview(
         }
     except Exception as e:
         raise HTTPException(500, f"Render error: {str(e)}")
+
+
+# ============================================================================
+# Dataset Generation Endpoints
+# ============================================================================
+
+from dataset_generator import (
+    generate_dataset,
+    get_status as get_dataset_status,
+    DatasetStatus,
+    clear_dataset,
+    cancel_generation,
+    DATASET_SIZE
+)
+
+# Background task for dataset generation
+_generation_task: Optional[asyncio.Task] = None
+
+
+@app.post("/dataset/generate")
+async def start_dataset_generation(
+    count: int = Query(DATASET_SIZE, ge=10, le=1000, description="Number of models to download")
+):
+    """
+    Start generating a new dataset from Objaverse-XL.
+
+    This will:
+    1. Delete the existing dataset and FAISS index
+    2. Download `count` GLB models from Objaverse-XL
+    3. Render and embed each model
+    4. Index them in FAISS
+
+    Progress updates are sent via WebSocket (streaming per-model).
+    """
+    global _generation_task
+
+    status = get_dataset_status()
+    if status.is_generating:
+        raise HTTPException(409, "Dataset generation already in progress")
+
+    async def progress_callback(data: dict):
+        await ws_manager.broadcast(data)
+
+    async def run_generation():
+        try:
+            # Reinitialize the index after clearing
+            result = await generate_dataset(
+                count=count,
+                progress_callback=progress_callback
+            )
+            # Reload the index in app state
+            from faiss_index import FAISSIndex
+            app.state.index = FAISSIndex()
+            return result
+        except Exception as e:
+            await ws_manager.broadcast({
+                "type": "dataset_error",
+                "error": str(e)
+            })
+            raise
+
+    _generation_task = asyncio.create_task(run_generation())
+
+    return {
+        "status": "started",
+        "count": count,
+        "message": "Dataset generation started. Watch WebSocket for progress."
+    }
+
+
+@app.get("/dataset/status")
+async def dataset_generation_status():
+    """Get current dataset generation status."""
+    status = get_dataset_status()
+    return {
+        "is_generating": status.is_generating,
+        "total": status.total,
+        "downloaded": status.downloaded,
+        "indexed": status.indexed,
+        "failed": status.failed,
+        "current_model": status.current_model,
+        "started_at": status.started_at,
+        "error": status.error
+    }
+
+
+@app.delete("/dataset")
+async def delete_dataset():
+    """Delete the current dataset and clear the FAISS index."""
+    status = get_dataset_status()
+    if status.is_generating:
+        raise HTTPException(409, "Cannot delete while generation is in progress")
+
+    await clear_dataset()
+
+    # Reinitialize empty index
+    from faiss_index import FAISSIndex
+    app.state.index = FAISSIndex()
+
+    await ws_manager.broadcast({
+        "type": "dataset_cleared",
+        "message": "Dataset deleted"
+    })
+
+    return {"status": "deleted", "message": "Dataset and index cleared"}
+
+
+@app.post("/dataset/index-existing")
+async def index_existing_models(
+    limit: int = Query(100, ge=1, le=1000, description="Max models to index")
+):
+    """
+    Index already downloaded models from ~/.objaverse cache.
+    Skips download phase - useful for re-indexing after fixing issues.
+    """
+    import objaverse
+    from pathlib import Path
+
+    index: FAISSIndex = app.state.index
+
+    # Find existing GLB files
+    cache_dir = Path.home() / ".objaverse" / "hf-objaverse-v1" / "glbs"
+    if not cache_dir.exists():
+        raise HTTPException(404, "No cached models found. Run generate first.")
+
+    glb_files = list(cache_dir.rglob("*.glb"))[:limit]
+    if not glb_files:
+        raise HTTPException(404, "No GLB files found in cache")
+
+    await ws_manager.broadcast({
+        "type": "dataset_progress",
+        "step": "indexing",
+        "message": f"Found {len(glb_files)} cached models, indexing...",
+        "total": len(glb_files),
+        "downloaded": len(glb_files),
+        "indexed": 0,
+        "failed": 0
+    })
+
+    # Get annotations for names
+    uids = [f.stem for f in glb_files]
+
+    def load_ann():
+        return objaverse.load_annotations(uids)
+
+    import concurrent.futures
+    loop = asyncio.get_event_loop()
+    with concurrent.futures.ThreadPoolExecutor() as pool:
+        annotations = await loop.run_in_executor(pool, load_ann)
+
+    indexed = 0
+    failed = 0
+
+    for glb_file in glb_files:
+        uid = glb_file.stem
+        ann = annotations.get(uid, {})
+        name = ann.get("name", uid[:20])
+
+        try:
+            model_bytes = glb_file.read_bytes()
+
+            if USE_LOCAL_RENDERER:
+                import numpy as np
+                images, images_b64 = render_views(model_bytes, "glb")
+                embed_result = await embed_images(images_b64)
+                embeddings = np.array(embed_result["embeddings"], dtype=np.float32)
+                avg_embedding = np.mean(embeddings, axis=0)
+                avg_embedding = avg_embedding / np.linalg.norm(avg_embedding)
+                embedding = avg_embedding.tolist()
+            else:
+                result = await embed_model_bytes(model_bytes, "glb")
+                embedding = result["embedding"]
+
+            index.add(
+                embedding=embedding,
+                model_id=uid,
+                name=name,
+                category=ann.get("categories", [None])[0] if ann.get("categories") else None,
+                file_path=str(glb_file),
+                save=False
+            )
+            indexed += 1
+
+            await ws_manager.broadcast({
+                "type": "dataset_progress",
+                "step": "indexing",
+                "message": f"Indexed {indexed}/{len(glb_files)}",
+                "total": len(glb_files),
+                "downloaded": len(glb_files),
+                "indexed": indexed,
+                "failed": failed,
+                "current": name
+            })
+
+        except Exception as e:
+            failed += 1
+            print(f"Failed to index {uid}: {e}")
+
+    index._save()
+
+    await ws_manager.broadcast({
+        "type": "dataset_complete",
+        "indexed": indexed,
+        "failed": failed
+    })
+
+    return {
+        "status": "completed",
+        "indexed": indexed,
+        "failed": failed,
+        "total": len(glb_files)
+    }
+
+
+@app.post("/dataset/cancel")
+async def cancel_dataset_generation_endpoint():
+    """Cancel ongoing dataset generation."""
+    global _generation_task
+
+    status = get_dataset_status()
+    if not status.is_generating:
+        raise HTTPException(400, "No generation in progress")
+
+    # Set cancellation flag - the loop will check this
+    cancel_generation()
+
+    # Wait a moment for the loop to notice
+    await asyncio.sleep(0.5)
+
+    if _generation_task:
+        _generation_task.cancel()
+        _generation_task = None
+
+    # Reset the status
+    from dataset_generator import reset_status
+    reset_status()
+
+    await ws_manager.broadcast({
+        "type": "dataset_cancelled",
+        "message": "Generation cancelled"
+    })
+
+    return {"status": "cancelled"}
 
 
 # ============================================================================
