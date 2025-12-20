@@ -1,0 +1,73 @@
+# RunPod Serverless - Florence-2 + EmbeddingGemma
+#
+# Build from repo root:
+#   docker build -f runpod/Dockerfile.florence -t your-registry/3drag-florence:latest .
+#
+# Requires GPU with 8GB+ VRAM (RTX 3060, L4, T4, etc.)
+# Image size: ~6GB
+
+FROM nvidia/cuda:12.4.0-runtime-ubuntu22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+ENV OLLAMA_HOST=0.0.0.0
+ENV HF_HOME=/app/hf_cache
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Ollama (for EmbeddingGemma)
+RUN curl -fsSL https://ollama.com/install.sh | sh
+
+# Install Python dependencies
+RUN pip3 install --no-cache-dir \
+    runpod \
+    requests \
+    pillow \
+    torch \
+    transformers \
+    einops \
+    timm
+
+# Copy handler
+COPY runpod/handler_florence.py /app/handler.py
+
+# Pre-download Florence-2 model during build
+RUN python3 -c "from transformers import AutoProcessor, AutoModelForCausalLM; \
+    AutoProcessor.from_pretrained('microsoft/Florence-2-base', trust_remote_code=True); \
+    AutoModelForCausalLM.from_pretrained('microsoft/Florence-2-base', trust_remote_code=True)"
+
+# Pre-pull embedding model
+RUN ollama serve & \
+    sleep 10 && \
+    ollama pull embeddinggemma && \
+    pkill ollama || true
+
+# Start script
+RUN echo '#!/bin/bash\n\
+set -e\n\
+echo "Starting Ollama server..."\n\
+ollama serve &\n\
+\n\
+# Wait for Ollama to be ready\n\
+for i in {1..30}; do\n\
+    if curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then\n\
+        echo "Ollama is ready!"\n\
+        break\n\
+    fi\n\
+    echo "Waiting for Ollama... ($i/30)"\n\
+    sleep 1\n\
+done\n\
+\n\
+echo "Starting RunPod handler..."\n\
+python3 -u handler.py\n\
+' > /app/start.sh && chmod +x /app/start.sh
+
+CMD ["/app/start.sh"]
