@@ -31,6 +31,15 @@ interface DatasetStatus {
   current_images?: string[]
 }
 
+interface SearchResult {
+  id: string
+  name: string
+  score: number
+  distance: number
+  category?: string
+  file_path?: string
+}
+
 function App() {
   const [models, setModels] = useState<Model[]>([])
   const [processingModels, setProcessingModels] = useState<ProcessingModel[]>([])
@@ -40,6 +49,9 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   const [datasetStatus, setDatasetStatus] = useState<DatasetStatus | null>(null)
   const [datasetCount, setDatasetCount] = useState(100)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
+  const [isSearching, setIsSearching] = useState(false)
   const wsRef = useRef<WebSocket | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -178,6 +190,29 @@ function App() {
     } catch (err) {
       console.error('Failed to fetch models:', err)
     }
+  }
+
+  const handleSearch = async (e?: React.FormEvent) => {
+    e?.preventDefault()
+    if (!searchQuery.trim()) return
+
+    setIsSearching(true)
+    setError(null)
+    try {
+      const res = await fetch(`${API_URL}/search?q=${encodeURIComponent(searchQuery)}&k=10`)
+      const data = await res.json()
+      setSearchResults(data.results || [])
+    } catch (err: any) {
+      setError(`Search failed: ${err.message}`)
+      setSearchResults([])
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  const clearSearch = () => {
+    setSearchQuery('')
+    setSearchResults([])
   }
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -354,6 +389,72 @@ function App() {
             <button onClick={() => setError(null)} className="text-red-400 hover:text-red-300">✕</button>
           </div>
         )}
+
+        {/* Search */}
+        <div className="mb-8 p-6 bg-gray-800 rounded-xl border border-gray-700">
+          <h2 className="text-lg font-semibold mb-4">Semantic Search</h2>
+          <form onSubmit={handleSearch} className="flex gap-3">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search for 3D models... (e.g., 'wooden chair', 'red car')"
+              className="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500"
+            />
+            <button
+              type="submit"
+              disabled={isSearching || !searchQuery.trim()}
+              className="px-6 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
+            >
+              {isSearching ? 'Searching...' : 'Search'}
+            </button>
+            {searchResults.length > 0 && (
+              <button
+                type="button"
+                onClick={clearSearch}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </form>
+
+          {/* Search Results */}
+          {searchResults.length > 0 && (
+            <div className="mt-4">
+              <p className="text-sm text-gray-400 mb-3">Found {searchResults.length} results for "{searchQuery}"</p>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                {searchResults.map((result, i) => (
+                  <div
+                    key={result.id}
+                    className="p-3 bg-gray-700/50 rounded-lg border border-gray-600"
+                  >
+                    <div className="relative mb-2">
+                      <img
+                        src={`${API_URL}/previews/${result.id}.jpg`}
+                        alt={result.name}
+                        className="w-full aspect-square rounded bg-gray-600 object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%23444" width="100" height="100"/><text x="50" y="55" text-anchor="middle" fill="%23666" font-size="12">No preview</text></svg>'
+                        }}
+                      />
+                      <span className="absolute top-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">
+                        #{i + 1}
+                      </span>
+                      <span className="absolute top-1 right-1 bg-blue-600/80 text-white text-xs px-1.5 py-0.5 rounded">
+                        {(result.score * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                    <h4 className="font-medium text-sm truncate" title={result.name}>{result.name}</h4>
+                    {result.category && (
+                      <span className="text-xs text-gray-400">{result.category}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Dataset Generation */}
         <div className="mb-8 p-6 bg-gray-800 rounded-xl border border-gray-700">

@@ -22,7 +22,7 @@ import io
 OLLAMA_URL = "http://localhost:11434"
 
 # Models
-VISION_MODEL = "gemma3:27b"
+VISION_MODEL = "minicpm-v"  # 8B, GPT-4o level, 75% fewer vision tokens
 EMBEDDING_MODEL = "embeddinggemma"
 
 # JSON Schema for structured output

@@ -6,8 +6,8 @@
 # Push:
 #   docker push your-registry/3drag-ollama:latest
 #
-# Requires GPU with 24GB+ VRAM (RTX 3090/4090, L40, A10G, etc.)
-# Image size: ~20GB (models baked in for fast cold starts)
+# Requires GPU with 16GB+ VRAM (RTX 4080, L4, A10G, etc.)
+# Image size: ~8GB (models baked in for fast cold starts)
 
 FROM nvidia/cuda:12.4.0-runtime-ubuntu22.04
 
@@ -37,10 +37,10 @@ RUN pip3 install --no-cache-dir \
 COPY runpod/handler_ollama.py /app/handler.py
 
 # Pre-pull models during build (baked into image for faster cold starts)
-# Gemma 3 27B Q4: ~16GB, EmbeddingGemma: ~300MB
+# MiniCPM-V 2.6: ~5GB, EmbeddingGemma: ~300MB
 RUN ollama serve & \
     sleep 10 && \
-    ollama pull gemma3:27b && \
+    ollama pull minicpm-v && \
     ollama pull embeddinggemma && \
     pkill ollama || true
 
