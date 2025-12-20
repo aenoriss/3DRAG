@@ -12,6 +12,7 @@ import asyncio
 import shutil
 import random
 import time
+import base64
 import concurrent.futures
 from pathlib import Path
 from typing import Optional, List, Dict, Callable, Any
@@ -306,9 +307,20 @@ async def generate_dataset(
                         "current": name,
                         "model_id": file_id
                     }
-                    # Include rendered images if available
+                    # Include small thumbnails (4 views, JPEG compressed)
                     if rendered_images_b64:
-                        progress_data["images"] = rendered_images_b64
+                        from PIL import Image
+                        import io
+                        thumbnails = []
+                        # Send 4 views: front, side, top, angled (indices 0, 2, 8, 10)
+                        for i in [0, 2, 8, 10]:
+                            if i < len(images):
+                                # Resize to 96x96 thumbnail and save as JPEG
+                                thumb = images[i].resize((96, 96), Image.LANCZOS)
+                                buffer = io.BytesIO()
+                                thumb.save(buffer, format="JPEG", quality=70)
+                                thumbnails.append(base64.b64encode(buffer.getvalue()).decode())
+                        progress_data["images"] = thumbnails
                     await progress_callback(progress_data)
 
             except Exception as e:

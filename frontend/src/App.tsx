@@ -430,17 +430,17 @@ function App() {
                 </p>
               )}
 
-              {/* Rendered Images Preview */}
+              {/* Rendered Images Preview (4 thumbnail views) */}
               {datasetStatus.current_images && datasetStatus.current_images.length > 0 && (
                 <div className="mt-4">
                   <p className="text-xs text-gray-400 mb-2">Rendered Views:</p>
-                  <div className="grid grid-cols-6 md:grid-cols-12 gap-1">
+                  <div className="flex gap-2">
                     {datasetStatus.current_images.map((img, i) => (
                       <img
                         key={i}
-                        src={`data:image/png;base64,${img}`}
+                        src={`data:image/jpeg;base64,${img}`}
                         alt={`View ${i + 1}`}
-                        className="w-full aspect-square rounded bg-gray-700 object-cover"
+                        className="w-16 h-16 rounded bg-gray-700 object-cover"
                       />
                     ))}
                   </div>
