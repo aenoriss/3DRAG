@@ -275,18 +275,17 @@ async def generate_dataset(
                 rendered_images_b64 = None
                 description_text = None
 
-                # Render views (needed for both modes)
-                print(f"  Rendering 12 views...")
-                images, images_b64 = render_views(model_bytes, ext)
+                # Render single front view
+                print(f"  Rendering front view...")
+                images, images_b64 = render_views(model_bytes, ext, num_views=1)
                 rendered_images_b64 = images_b64
 
-                # Save rendered images to folder
+                # Save rendered image
                 renders_dir = DATASET_DIR / "renders" / file_id
                 renders_dir.mkdir(parents=True, exist_ok=True)
-                for i, img in enumerate(images):
-                    img.save(renders_dir / f"view_{i:02d}.png")
+                images[0].save(renders_dir / f"view_00.png")
 
-                # Save preview thumbnail (front view) to previews folder
+                # Save preview thumbnail
                 previews_dir = DATASET_DIR / "previews"
                 previews_dir.mkdir(parents=True, exist_ok=True)
                 preview = images[0].resize((128, 128))
@@ -349,20 +348,13 @@ async def generate_dataset(
                         "current": name,
                         "model_id": file_id
                     }
-                    # Include small thumbnails (4 views, JPEG compressed)
-                    if rendered_images_b64:
-                        from PIL import Image
+                    # Include thumbnail for UI preview
+                    if images:
                         import io
-                        thumbnails = []
-                        # Send 4 views: front, side, top, angled (indices 0, 2, 8, 10)
-                        for i in [0, 2, 8, 10]:
-                            if i < len(images):
-                                # Resize to 96x96 thumbnail and save as JPEG
-                                thumb = images[i].resize((96, 96), Image.LANCZOS)
-                                buffer = io.BytesIO()
-                                thumb.save(buffer, format="JPEG", quality=70)
-                                thumbnails.append(base64.b64encode(buffer.getvalue()).decode())
-                        progress_data["images"] = thumbnails
+                        thumb = images[0].resize((96, 96), Image.LANCZOS)
+                        buffer = io.BytesIO()
+                        thumb.save(buffer, format="JPEG", quality=70)
+                        progress_data["images"] = [base64.b64encode(buffer.getvalue()).decode()]
                     await progress_callback(progress_data)
 
             except Exception as e:

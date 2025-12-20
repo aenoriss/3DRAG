@@ -118,14 +118,16 @@ def create_scene(mesh: trimesh.Trimesh) -> pyrender.Scene:
 
 def render_views(
     mesh_bytes: bytes,
-    file_extension: str = "glb"
+    file_extension: str = "glb",
+    num_views: int = 1
 ) -> tuple[list[Image.Image], list[str]]:
     """
-    Render 12 views of a 3D model.
+    Render views of a 3D model.
 
     Args:
         mesh_bytes: Raw bytes of the 3D model file
         file_extension: File format (glb, obj, stl, ply, etc.)
+        num_views: Number of views to render (default 1 = front only)
 
     Returns:
         Tuple of (list of PIL Images, list of base64 encoded PNGs)
@@ -165,7 +167,9 @@ def render_views(
     images_b64 = []
 
     try:
-        for elevation, azimuth in CAMERA_POSITIONS:
+        # Only render requested number of views
+        positions = CAMERA_POSITIONS[:num_views]
+        for elevation, azimuth in positions:
             pose = create_camera_pose(elevation, azimuth, distance)
             scene.set_pose(camera_node, pose)
             color, _ = renderer.render(scene)
