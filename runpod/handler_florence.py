@@ -76,22 +76,51 @@ def load_florence():
     print("Florence-2 loaded!")
 
 
+def clean_caption(caption: str) -> str:
+    """
+    Clean up caption for better embedding quality.
+
+    Removes filler phrases to get direct, searchable descriptions.
+    """
+    import re
+
+    # Remove task tokens
+    for token in ["<DETAILED_CAPTION>", "<MORE_DETAILED_CAPTION>", "<CAPTION>"]:
+        caption = caption.replace(token, "")
+
+    # Remove common filler phrases (case-insensitive)
+    filler_patterns = [
+        r"^the image (shows?|contains?|depicts?|features?|displays?)\s*",
+        r"^this image (shows?|contains?|depicts?|features?|displays?)\s*",
+        r"^in this image,?\s*",
+        r"^i (can )?see\s*",
+        r"^there (is|are)\s*",
+        r"^we (can )?see\s*",
+        r"^the picture (shows?|contains?)\s*",
+    ]
+
+    for pattern in filler_patterns:
+        caption = re.sub(pattern, "", caption, flags=re.IGNORECASE)
+
+    # Clean up whitespace
+    caption = " ".join(caption.split())
+
+    # Capitalize first letter
+    if caption:
+        caption = caption[0].upper() + caption[1:]
+
+    return caption
+
+
 def caption_image(image: Image.Image) -> str:
     """
     Generate retrieval-optimized caption using Florence-2.
 
-    Uses DETAILED_CAPTION (not MORE_DETAILED) for balance of:
-    - Speed: fewer tokens generated
-    - Quality: enough detail for search
-    - Cost: shorter = cheaper
+    Uses MORE_DETAILED_CAPTION for richer descriptions, then cleans output.
     """
     global FLORENCE_MODEL, FLORENCE_PROCESSOR
 
-    # DETAILED_CAPTION is the sweet spot:
-    # - <CAPTION>: Too short, misses key features
-    # - <DETAILED_CAPTION>: Good balance (~30-50 tokens)
-    # - <MORE_DETAILED_CAPTION>: Verbose, slower, not better for search
-    task = "<DETAILED_CAPTION>"
+    task = "<MORE_DETAILED_CAPTION>"
 
     inputs = FLORENCE_PROCESSOR(
         text=task,
@@ -102,16 +131,15 @@ def caption_image(image: Image.Image) -> str:
     with torch.no_grad():
         outputs = FLORENCE_MODEL.generate(
             **inputs,
-            max_new_tokens=60,  # Limit output for speed
-            num_beams=1,        # Greedy decoding = faster
+            max_new_tokens=100,  # Allow longer for detailed caption
+            num_beams=1,         # Greedy decoding = faster
             do_sample=False
         )
 
     caption = FLORENCE_PROCESSOR.batch_decode(outputs, skip_special_tokens=True)[0]
 
-    # Clean up task prefix
-    if task in caption:
-        caption = caption.replace(task, "").strip()
+    # Clean up the caption
+    caption = clean_caption(caption)
 
     return caption
 
@@ -250,21 +278,17 @@ def handler(event):
                 }
             }
 
-        # Multiple images -> stitch + process
+        # Multiple images -> use single best view (front)
         if "images" in input_data:
             start = time.time()
 
-            # Select 4 views and stitch
+            # Use first image (front view) - cleaner than grid
             images = input_data["images"]
-            indices = [0, 2, 4, 8]
-            selected = [images[i] for i in indices if i < len(images)]
-            while len(selected) < 4 and len(selected) < len(images):
-                selected.append(images[len(selected)])
-
-            grid_image = stitch_views_grid(selected)
+            img_bytes = base64.b64decode(images[0])
+            image = Image.open(io.BytesIO(img_bytes)).convert("RGB")
 
             # Caption with Florence-2
-            caption = caption_image(grid_image)
+            caption = caption_image(image)
 
             # Embed caption
             embedding = embed_text(caption)
