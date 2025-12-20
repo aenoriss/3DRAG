@@ -1,19 +1,17 @@
-# RunPod Serverless - Ollama (Gemma 3 27B + EmbeddingGemma)
+# RunPod Serverless - Florence-2 + EmbeddingGemma
 #
 # Build from repo root:
-#   docker build -f runpod/Dockerfile.ollama -t your-registry/3drag-ollama:latest .
+#   docker build -f runpod/Dockerfile.florence -t your-registry/3drag-florence:latest .
 #
-# Push:
-#   docker push your-registry/3drag-ollama:latest
-#
-# Requires GPU with 16GB+ VRAM (RTX 4080, L4, A10G, etc.)
-# Image size: ~8GB (models baked in for fast cold starts)
+# Requires GPU with 8GB+ VRAM (RTX 3060, L4, T4, etc.)
+# Image size: ~6GB
 
 FROM nvidia/cuda:12.4.0-runtime-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 ENV OLLAMA_HOST=0.0.0.0
+ENV HF_HOME=/app/hf_cache
 
 WORKDIR /app
 
@@ -22,29 +20,37 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
     curl \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Ollama
+# Install Ollama (for EmbeddingGemma)
 RUN curl -fsSL https://ollama.com/install.sh | sh
 
 # Install Python dependencies
 RUN pip3 install --no-cache-dir \
     runpod \
     requests \
-    pillow
+    pillow \
+    torch \
+    transformers \
+    einops \
+    timm
 
 # Copy handler
-COPY runpod/handler_ollama.py /app/handler.py
+COPY runpod/handler_florence.py /app/handler.py
 
-# Pre-pull models during build (baked into image for faster cold starts)
-# MiniCPM-V 2.6: ~5GB, EmbeddingGemma: ~300MB
+# Pre-download Florence-2 model during build
+RUN python3 -c "from transformers import AutoProcessor, AutoModelForCausalLM; \
+    AutoProcessor.from_pretrained('microsoft/Florence-2-base', trust_remote_code=True); \
+    AutoModelForCausalLM.from_pretrained('microsoft/Florence-2-base', trust_remote_code=True)"
+
+# Pre-pull embedding model
 RUN ollama serve & \
     sleep 10 && \
-    ollama pull minicpm-v && \
     ollama pull embeddinggemma && \
     pkill ollama || true
 
-# Start script: launch Ollama server, wait for ready, then run handler
+# Start script
 RUN echo '#!/bin/bash\n\
 set -e\n\
 echo "Starting Ollama server..."\n\

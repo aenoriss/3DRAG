@@ -1,11 +1,11 @@
 """
-RunPod Serverless Handler - Ollama (Gemma 3 27B + EmbeddingGemma)
+RunPod Serverless Handler - Florence-2 + EmbeddingGemma
 
-Receives rendered 3D model views, returns semantic embedding.
+Fast captioning with Florence-2 (0.77B) + text embedding via Ollama.
 
 Pipeline:
-1. Receive stitched grid image (or stitch on server)
-2. Gemma 3 27B vision -> structured JSON description
+1. Receive stitched grid image
+2. Florence-2 -> natural caption (~0.3s)
 3. EmbeddingGemma -> 768-dim embedding
 """
 
@@ -13,13 +13,18 @@ import runpod
 import subprocess
 import time
 import base64
-import json
 import requests
+import torch
 from PIL import Image
 import io
 
-# Ollama API (running locally on the pod)
+# Florence-2 model (loaded once at startup)
+FLORENCE_MODEL = None
+FLORENCE_PROCESSOR = None
+
+# Ollama for embeddings
 OLLAMA_URL = "http://localhost:11434"
+EMBEDDING_MODEL = "embeddinggemma"
 
 # GPU cost per second (RTX 4090 = $0.00019/sec)
 GPU_COST_PER_SEC = float(__import__('os').getenv("GPU_COST_PER_SEC", "0.00019"))
@@ -30,38 +35,72 @@ STATS = {
     "total_embeddings": 0,
     "total_text_queries": 0,
     "total_time_sec": 0.0,
-    "total_vision_tokens": 0,
     "started_at": time.time()
 }
 
-# Models
-VISION_MODEL = "minicpm-v"  # 8B, GPT-4o level, 75% fewer vision tokens
-EMBEDDING_MODEL = "embeddinggemma"
 
-# JSON Schema for structured output
-DESCRIPTION_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "category": {"type": "string"},
-        "subcategory": {"type": "string"},
-        "attributes": {"type": "array", "items": {"type": "string"}},
-        "purpose": {"type": "string"},
-        "similar_to": {"type": "array", "items": {"type": "string"}}
-    },
-    "required": ["category", "subcategory", "attributes", "purpose", "similar_to"]
-}
+def load_florence():
+    """Load Florence-2 model."""
+    global FLORENCE_MODEL, FLORENCE_PROCESSOR
 
-# Vision prompt
-VISION_PROMPT = """This image is a 2x2 grid of 4 rendered views of a single 3D model:
-- Top-left: FRONT view
-- Top-right: SIDE view
-- Bottom-left: BACK view
-- Bottom-right: TOP view
+    from transformers import AutoProcessor, AutoModelForCausalLM
 
-Analyze all 4 views together to identify this 3D object. Describe it for search indexing. Be concise. Use common search terms."""
+    model_id = "microsoft/Florence-2-base"  # 0.23B, fastest
+    # model_id = "microsoft/Florence-2-large"  # 0.77B, better quality
+
+    print(f"Loading Florence-2 from {model_id}...")
+
+    FLORENCE_PROCESSOR = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
+    FLORENCE_MODEL = AutoModelForCausalLM.from_pretrained(
+        model_id,
+        trust_remote_code=True,
+        torch_dtype=torch.float16
+    ).to("cuda")
+
+    print("Florence-2 loaded!")
 
 
-def stitch_views_grid(images_b64: list, grid_size: int = 2) -> str:
+def caption_image(image: Image.Image) -> str:
+    """
+    Generate retrieval-optimized caption using Florence-2.
+
+    Uses DETAILED_CAPTION (not MORE_DETAILED) for balance of:
+    - Speed: fewer tokens generated
+    - Quality: enough detail for search
+    - Cost: shorter = cheaper
+    """
+    global FLORENCE_MODEL, FLORENCE_PROCESSOR
+
+    # DETAILED_CAPTION is the sweet spot:
+    # - <CAPTION>: Too short, misses key features
+    # - <DETAILED_CAPTION>: Good balance (~30-50 tokens)
+    # - <MORE_DETAILED_CAPTION>: Verbose, slower, not better for search
+    task = "<DETAILED_CAPTION>"
+
+    inputs = FLORENCE_PROCESSOR(
+        text=task,
+        images=image,
+        return_tensors="pt"
+    ).to("cuda", torch.float16)
+
+    with torch.no_grad():
+        outputs = FLORENCE_MODEL.generate(
+            **inputs,
+            max_new_tokens=60,  # Limit output for speed
+            num_beams=1,        # Greedy decoding = faster
+            do_sample=False
+        )
+
+    caption = FLORENCE_PROCESSOR.batch_decode(outputs, skip_special_tokens=True)[0]
+
+    # Clean up task prefix
+    if task in caption:
+        caption = caption.replace(task, "").strip()
+
+    return caption
+
+
+def stitch_views_grid(images_b64: list, grid_size: int = 2) -> Image.Image:
     """Stitch multiple view images into a single grid image."""
     images = []
     for img_b64 in images_b64[:grid_size * grid_size]:
@@ -82,64 +121,11 @@ def stitch_views_grid(images_b64: list, grid_size: int = 2) -> str:
         col = i % grid_size
         grid.paste(img, (col * w, row * h))
 
-    buffer = io.BytesIO()
-    grid.save(buffer, format="JPEG", quality=85)
-    return base64.b64encode(buffer.getvalue()).decode()
-
-
-def describe_image(image_b64: str) -> dict:
-    """Use Gemma 3 27B to describe the 3D object."""
-    resp = requests.post(
-        f"{OLLAMA_URL}/api/generate",
-        json={
-            "model": VISION_MODEL,
-            "prompt": VISION_PROMPT,
-            "images": [image_b64],
-            "stream": False,
-            "format": DESCRIPTION_SCHEMA,
-            "options": {
-                "temperature": 0,
-                "num_predict": 150
-            }
-        },
-        timeout=120
-    )
-    resp.raise_for_status()
-    result = resp.json()
-
-    response_text = result.get("response", "")
-    try:
-        description = json.loads(response_text)
-    except json.JSONDecodeError:
-        description = {"raw": response_text}
-
-    return {
-        "description": description,
-        "eval_count": result.get("eval_count", 0),
-        "eval_duration_ms": result.get("eval_duration", 0) / 1e6
-    }
-
-
-def description_to_text(description: dict) -> str:
-    """Convert structured description to embedding-friendly text."""
-    parts = []
-    if "category" in description:
-        parts.append(description["category"])
-    if "subcategory" in description:
-        parts.append(description["subcategory"])
-    if "attributes" in description and isinstance(description["attributes"], list):
-        parts.extend(description["attributes"])
-    if "purpose" in description:
-        parts.append(description["purpose"])
-    if "similar_to" in description and isinstance(description["similar_to"], list):
-        parts.extend(description["similar_to"])
-    if not parts and "raw" in description:
-        return description["raw"][:500]
-    return " ".join(parts) if parts else "unknown object"
+    return grid
 
 
 def embed_text(text: str) -> list:
-    """Generate embedding using EmbeddingGemma."""
+    """Generate embedding using EmbeddingGemma via Ollama."""
     resp = requests.post(
         f"{OLLAMA_URL}/api/embed",
         json={
@@ -169,7 +155,7 @@ def wait_for_ollama(timeout: int = 60):
 
 
 # ============================================================================
-# STARTUP - Start Ollama and pull models
+# STARTUP
 # ============================================================================
 
 print("Starting Ollama server...")
@@ -178,21 +164,22 @@ subprocess.Popen(["ollama", "serve"], stdout=subprocess.DEVNULL, stderr=subproce
 if not wait_for_ollama(60):
     raise RuntimeError("Ollama failed to start")
 
-print("Ollama is running. Checking models...")
+print("Ollama is running. Checking embedding model...")
 
-# Check if models are available
+# Check if embedding model is available
 resp = requests.get(f"{OLLAMA_URL}/api/tags")
 models = [m["name"] for m in resp.json().get("models", [])]
-
-if not any(VISION_MODEL in m for m in models):
-    print(f"Pulling {VISION_MODEL}...")
-    subprocess.run(["ollama", "pull", VISION_MODEL], check=True)
 
 if not any(EMBEDDING_MODEL in m for m in models):
     print(f"Pulling {EMBEDDING_MODEL}...")
     subprocess.run(["ollama", "pull", EMBEDDING_MODEL], check=True)
 
-print("Models ready!")
+print("Embedding model ready!")
+
+# Load Florence-2
+load_florence()
+
+print("All models ready!")
 
 
 # ============================================================================
@@ -204,10 +191,11 @@ def handler(event):
     RunPod serverless handler.
 
     Input formats:
-    - {"images": ["<base64>", ...]}  -> stitch + describe + embed
-    - {"image": "<base64>"}          -> single grid image, describe + embed
+    - {"images": ["<base64>", ...]}  -> stitch + caption + embed
+    - {"image": "<base64>"}          -> single image, caption + embed
     - {"text": "query"}              -> embed text for search
     - {"stats": true}                -> return system stats
+    - {"reset": true}                -> reset stats
     """
     try:
         input_data = event.get("input", {})
@@ -218,14 +206,11 @@ def handler(event):
             STATS["total_embeddings"] = 0
             STATS["total_text_queries"] = 0
             STATS["total_time_sec"] = 0.0
-            STATS["total_vision_tokens"] = 0
             STATS["started_at"] = time.time()
             return {"status": "reset", "message": "Stats reset successfully"}
 
         # Stats endpoint
         if input_data.get("stats"):
-            resp = requests.get(f"{OLLAMA_URL}/api/tags")
-            models = [m["name"] for m in resp.json().get("models", [])]
             uptime = time.time() - STATS["started_at"]
             avg_time = STATS["total_time_sec"] / STATS["total_requests"] if STATS["total_requests"] > 0 else 0
             estimated_cost = STATS["total_time_sec"] * GPU_COST_PER_SEC
@@ -233,8 +218,7 @@ def handler(event):
 
             return {
                 "status": "ready",
-                "models": models,
-                "vision_model": VISION_MODEL,
+                "vision_model": "Florence-2-base",
                 "embedding_model": EMBEDDING_MODEL,
                 "embedding_dim": 768,
                 "cumulative": {
@@ -242,7 +226,6 @@ def handler(event):
                     "total_embeddings": STATS["total_embeddings"],
                     "total_text_queries": STATS["total_text_queries"],
                     "total_time_sec": round(STATS["total_time_sec"], 3),
-                    "total_vision_tokens": STATS["total_vision_tokens"],
                     "avg_time_sec": round(avg_time, 3),
                     "uptime_sec": round(uptime, 1),
                     "estimated_cost_usd": round(estimated_cost, 6),
@@ -264,62 +247,51 @@ def handler(event):
 
             grid_image = stitch_views_grid(selected)
 
-            # Describe
-            desc_result = describe_image(grid_image)
-            description = desc_result["description"]
+            # Caption with Florence-2
+            caption = caption_image(grid_image)
 
-            # Convert to text
-            text = description_to_text(description)
-
-            # Embed
-            embedding = embed_text(text)
+            # Embed caption
+            embedding = embed_text(caption)
 
             elapsed = time.time() - start
-            vision_tokens = desc_result.get("eval_count", 0)
 
             # Update cumulative stats
             STATS["total_requests"] += 1
             STATS["total_embeddings"] += 1
             STATS["total_time_sec"] += elapsed
-            STATS["total_vision_tokens"] += vision_tokens
 
             return {
                 "embedding": embedding,
-                "description": description,
-                "text": text,
+                "text": caption,
                 "dimension": len(embedding),
                 "stats": {
-                    "time_sec": round(elapsed, 3),
-                    "vision_tokens": vision_tokens
+                    "time_sec": round(elapsed, 3)
                 }
             }
 
-        # Single grid image
+        # Single image
         if "image" in input_data:
             start = time.time()
 
-            desc_result = describe_image(input_data["image"])
-            description = desc_result["description"]
-            text = description_to_text(description)
-            embedding = embed_text(text)
+            img_bytes = base64.b64decode(input_data["image"])
+            image = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+
+            caption = caption_image(image)
+            embedding = embed_text(caption)
 
             elapsed = time.time() - start
-            vision_tokens = desc_result.get("eval_count", 0)
 
             # Update cumulative stats
             STATS["total_requests"] += 1
             STATS["total_embeddings"] += 1
             STATS["total_time_sec"] += elapsed
-            STATS["total_vision_tokens"] += vision_tokens
 
             return {
                 "embedding": embedding,
-                "description": description,
-                "text": text,
+                "text": caption,
                 "dimension": len(embedding),
                 "stats": {
-                    "time_sec": round(elapsed, 3),
-                    "vision_tokens": vision_tokens
+                    "time_sec": round(elapsed, 3)
                 }
             }
 
