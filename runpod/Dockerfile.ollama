@@ -26,13 +26,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install Ollama (for EmbeddingGemma)
 RUN curl -fsSL https://ollama.com/install.sh | sh
 
-# Install Python dependencies
+# Install Python dependencies (pin transformers for Florence-2 compatibility)
 RUN pip3 install --no-cache-dir \
     runpod \
     requests \
     pillow \
     torch \
-    transformers \
+    transformers==4.40.0 \
     einops \
     timm
 
@@ -40,9 +40,10 @@ RUN pip3 install --no-cache-dir \
 COPY runpod/handler_florence.py /app/handler.py
 
 # Pre-download Florence-2 model during build
+ENV ATTN_IMPLEMENTATION=eager
 RUN python3 -c "from transformers import AutoProcessor, AutoModelForCausalLM; \
     AutoProcessor.from_pretrained('microsoft/Florence-2-base', trust_remote_code=True); \
-    AutoModelForCausalLM.from_pretrained('microsoft/Florence-2-base', trust_remote_code=True)"
+    AutoModelForCausalLM.from_pretrained('microsoft/Florence-2-base', trust_remote_code=True, attn_implementation='eager')"
 
 # Pre-pull embedding model
 RUN ollama serve & \
