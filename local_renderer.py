@@ -13,8 +13,14 @@ from PIL import Image
 from typing import Optional, List, Tuple
 import os
 
-# Set OSMesa for CPU rendering
-os.environ["PYOPENGL_PLATFORM"] = "osmesa"
+# GPU rendering (EGL) is ~20x faster than CPU (OSMesa)
+# Set USE_GPU_RENDER=true to enable (requires NVIDIA GPU + EGL)
+USE_GPU = os.getenv("USE_GPU_RENDER", "false").lower() == "true"
+
+if USE_GPU:
+    os.environ["PYOPENGL_PLATFORM"] = "egl"
+else:
+    os.environ["PYOPENGL_PLATFORM"] = "osmesa"
 
 import pyrender
 
