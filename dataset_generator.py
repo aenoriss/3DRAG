@@ -28,7 +28,7 @@ from PIL import Image
 # Dataset storage
 DATASET_DIR = Path("dataset")
 DATASET_SIZE = 100
-BATCH_SIZE = 10  # Process this many models at once for efficiency
+BATCH_SIZE = 50  # Process this many models at once (GPU can handle 100+, but keep reasonable)
 
 # Embedding mode: "ollama" (default) or "runpod"
 EMBEDDING_MODE = os.getenv("EMBEDDING_MODE", "ollama").lower()
