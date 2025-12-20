@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Optional, List, Dict, Callable, Any
 from dataclasses import dataclass
 from datetime import datetime
+from PIL import Image
 
 # Dataset storage
 DATASET_DIR = Path("dataset")
