@@ -19,14 +19,71 @@ import time
 import base64
 import os
 import concurrent.futures
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from typing import Optional, List, Dict, Callable, Any
 from dataclasses import dataclass
 from datetime import datetime
 from PIL import Image
 
+# Number of parallel render processes
+RENDER_WORKERS = os.cpu_count() or 4
+
 # Dataset storage
 DATASET_DIR = Path("dataset")
+
+
+def render_single_model(args: tuple) -> dict:
+    """
+    Render a single model (runs in separate process).
+
+    Args:
+        args: (file_id, local_path, name, category)
+
+    Returns:
+        Dict with render result or error
+    """
+    file_id, local_path, name, category = args
+
+    try:
+        from local_renderer import render_views
+
+        model_path = Path(local_path)
+        if not model_path.exists():
+            return {"error": "File not found", "file_id": file_id}
+
+        model_bytes = model_path.read_bytes()
+        ext = model_path.suffix.lstrip(".")
+
+        images, images_b64 = render_views(model_bytes, ext, num_views=1)
+
+        # Save files
+        renders_dir = DATASET_DIR / "renders" / file_id
+        renders_dir.mkdir(parents=True, exist_ok=True)
+        images[0].save(renders_dir / f"view_00.png")
+
+        previews_dir = DATASET_DIR / "previews"
+        previews_dir.mkdir(parents=True, exist_ok=True)
+        images[0].resize((128, 128)).save(previews_dir / f"{file_id}.jpg", "JPEG", quality=85)
+
+        # Delete 3D model file
+        try:
+            model_path.unlink()
+        except Exception:
+            pass
+
+        return {
+            "file_id": file_id,
+            "name": name,
+            "category": category,
+            "local_path": str(local_path),
+            "image_b64": images_b64[0],
+        }
+
+    except Exception as e:
+        return {"error": str(e), "file_id": file_id}
+
+
 DATASET_SIZE = 100
 BATCH_SIZE = 100  # Process all models in one batch (GPU has 40GB, we use ~8GB)
 
@@ -259,59 +316,31 @@ async def generate_dataset(
 
             print(f"\n=== Batch {batch_start//BATCH_SIZE + 1}: models {batch_start+1}-{batch_end} ===")
 
-            # Step 1: Render all images in this batch
+            # Step 1: Render all images in parallel
+            render_args = []
+            for file_id, obj_data in batch_items:
+                local_path = obj_data["local_path"]
+                metadata = obj_data.get("metadata", {})
+                name = metadata.get("name", file_id[:30])
+                category = metadata.get("source", None)
+                render_args.append((file_id, local_path, name, category))
+
+            print(f"  Rendering {len(render_args)} models with {RENDER_WORKERS} workers...")
+            render_start = time.time()
+
             batch_data = []
+            with ProcessPoolExecutor(max_workers=RENDER_WORKERS) as executor:
+                results = list(executor.map(render_single_model, render_args))
 
-            for idx, (file_id, obj_data) in enumerate(batch_items):
-                global_idx = batch_start + idx
-                _status.current_model = file_id
-
-                try:
-                    local_path = obj_data["local_path"]
-                    metadata = obj_data.get("metadata", {})
-                    name = metadata.get("name", file_id[:30])
-                    category = metadata.get("source", None)
-
-                    print(f"[{global_idx+1}/{total_objects}] Rendering: {name[:30]}...")
-
-                    model_path = Path(local_path)
-                    if not model_path.exists():
-                        print(f"  File not found")
-                        _status.failed += 1
-                        continue
-
-                    model_bytes = model_path.read_bytes()
-                    ext = model_path.suffix.lstrip(".")
-
-                    images, images_b64 = render_views(model_bytes, ext, num_views=1)
-
-                    # Save files
-                    renders_dir = DATASET_DIR / "renders" / file_id
-                    renders_dir.mkdir(parents=True, exist_ok=True)
-                    images[0].save(renders_dir / f"view_00.png")
-
-                    previews_dir = DATASET_DIR / "previews"
-                    previews_dir.mkdir(parents=True, exist_ok=True)
-                    images[0].resize((128, 128)).save(previews_dir / f"{file_id}.jpg", "JPEG", quality=85)
-
-                    # Delete 3D model file
-                    try:
-                        model_path.unlink()
-                    except Exception:
-                        pass
-
-                    batch_data.append({
-                        "file_id": file_id,
-                        "name": name,
-                        "category": category,
-                        "local_path": str(local_path),
-                        "image_b64": images_b64[0],
-                        "pil_image": images[0]
-                    })
-
-                except Exception as e:
+            for result in results:
+                if "error" in result:
                     _status.failed += 1
-                    print(f"  Render failed: {e}")
+                    print(f"  Render failed: {result['file_id']}: {result['error']}")
+                else:
+                    batch_data.append(result)
+
+            render_time = time.time() - render_start
+            print(f"  Rendered {len(batch_data)} models in {render_time:.1f}s ({render_time/len(batch_data):.2f}s/model)")
 
             if not batch_data:
                 continue
@@ -350,10 +379,11 @@ async def generate_dataset(
                         _status.indexed += 1
 
                         if progress_callback:
-                            import io
-                            thumb = item["pil_image"].resize((96, 96), Image.LANCZOS)
-                            buffer = io.BytesIO()
-                            thumb.save(buffer, format="JPEG", quality=70)
+                            # Use the already-saved preview thumbnail
+                            preview_path = DATASET_DIR / "previews" / f"{item['file_id']}.jpg"
+                            thumb_b64 = ""
+                            if preview_path.exists():
+                                thumb_b64 = base64.b64encode(preview_path.read_bytes()).decode()
                             await progress_callback({
                                 "type": "dataset_progress",
                                 "step": "indexing",
@@ -364,7 +394,7 @@ async def generate_dataset(
                                 "failed": _status.failed,
                                 "current": item["name"],
                                 "model_id": item["file_id"],
-                                "images": [base64.b64encode(buffer.getvalue()).decode()]
+                                "images": [thumb_b64] if thumb_b64 else []
                             })
                     else:
                         _status.failed += 1
