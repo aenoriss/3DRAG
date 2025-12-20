@@ -1,11 +1,11 @@
 """
 RunPod Serverless Handler - Florence-2 + EmbeddingGemma
 
-Fast captioning with Florence-2 (0.77B) + text embedding via Ollama.
+Fast captioning with Florence-2 (0.23B) + text embedding via Ollama.
 
 Pipeline:
 1. Receive stitched grid image
-2. Florence-2 -> natural caption (~0.3s)
+2. Florence-2 -> natural caption (~0.2s)
 3. EmbeddingGemma -> 768-dim embedding
 """
 
@@ -17,10 +17,23 @@ import requests
 import torch
 from PIL import Image
 import io
+import os
+from unittest.mock import patch
+from transformers.dynamic_module_utils import get_imports
 
 # Florence-2 model (loaded once at startup)
 FLORENCE_MODEL = None
 FLORENCE_PROCESSOR = None
+
+
+def _fixed_get_imports(filename: str) -> list:
+    """Patch to remove flash_attn from imports (not actually needed)."""
+    if not str(filename).endswith("modeling_florence2.py"):
+        return get_imports(filename)
+    imports = get_imports(filename)
+    if "flash_attn" in imports:
+        imports.remove("flash_attn")
+    return imports
 
 # Ollama for embeddings
 OLLAMA_URL = "http://localhost:11434"
@@ -40,7 +53,7 @@ STATS = {
 
 
 def load_florence():
-    """Load Florence-2 model."""
+    """Load Florence-2 model with flash_attn import patch."""
     global FLORENCE_MODEL, FLORENCE_PROCESSOR
 
     from transformers import AutoProcessor, AutoModelForCausalLM
@@ -50,13 +63,15 @@ def load_florence():
 
     print(f"Loading Florence-2 from {model_id}...")
 
-    FLORENCE_PROCESSOR = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
-    FLORENCE_MODEL = AutoModelForCausalLM.from_pretrained(
-        model_id,
-        trust_remote_code=True,
-        torch_dtype=torch.float16,
-        attn_implementation="eager"
-    ).to("cuda")
+    # Patch to remove flash_attn requirement (not actually needed with eager/sdpa)
+    with patch("transformers.dynamic_module_utils.get_imports", _fixed_get_imports):
+        FLORENCE_PROCESSOR = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
+        FLORENCE_MODEL = AutoModelForCausalLM.from_pretrained(
+            model_id,
+            trust_remote_code=True,
+            torch_dtype=torch.float16,
+            attn_implementation="eager"
+        ).to("cuda")
 
     print("Florence-2 loaded!")
 
