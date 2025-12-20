@@ -15,6 +15,6 @@ RUN python -c "from transformers import AutoModel, AutoProcessor; \
     AutoModel.from_pretrained('google/siglip2-so400m-patch14-384'); \
     AutoProcessor.from_pretrained('google/siglip2-so400m-patch14-384')"
 
-COPY handler.py /app/handler.py
+COPY runpod/handler.py /app/handler.py
 
 CMD ["python", "-u", "handler.py"]
