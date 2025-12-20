@@ -36,21 +36,12 @@ RUN pip3 install --no-cache-dir \
     timm \
     "numpy<2.0"
 
-# Copy handler
+# Copy handler and download script
 COPY runpod/handler_florence.py /app/handler.py
+COPY runpod/download_model.py /app/download_model.py
 
-# Pre-download Florence-2 model during build (with flash_attn patch)
-RUN python3 -c "\
-from unittest.mock import patch; \
-from transformers.dynamic_module_utils import get_imports; \
-def fix(f): \
-    i = get_imports(f); \
-    return [x for x in i if x != 'flash_attn'] if 'florence2' in str(f) else i; \
-\
-with patch('transformers.dynamic_module_utils.get_imports', fix): \
-    from transformers import AutoProcessor, AutoModelForCausalLM; \
-    AutoProcessor.from_pretrained('microsoft/Florence-2-base', trust_remote_code=True); \
-    AutoModelForCausalLM.from_pretrained('microsoft/Florence-2-base', trust_remote_code=True)"
+# Pre-download Florence-2 model during build
+RUN python3 /app/download_model.py
 
 # Pre-pull embedding model
 RUN ollama serve & \
