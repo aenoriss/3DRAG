@@ -6,3 +6,8 @@ numpy
 pillow
 pydantic
 python-multipart
+python-dotenv
+trimesh
+pyrender
+PyOpenGL
+websockets
