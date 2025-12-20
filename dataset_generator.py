@@ -291,6 +291,12 @@ async def generate_dataset(
                 preview = images[0].resize((128, 128))
                 preview.save(previews_dir / f"{file_id}.jpg", "JPEG", quality=85)
 
+                # Delete original 3D model file (no longer needed after render)
+                try:
+                    model_path.unlink()
+                except Exception:
+                    pass  # Ignore deletion errors
+
                 if use_ollama:
                     # Ollama mode: Gemma 3 27B vision + EmbeddingGemma
                     print(f"  Processing with Ollama...")
