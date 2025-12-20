@@ -40,6 +40,30 @@ interface SearchResult {
   file_path?: string
 }
 
+interface CumulativeStats {
+  total_requests: number
+  total_embeddings: number
+  total_text_queries: number
+  total_time_sec: number
+  total_vision_tokens: number
+  avg_time_sec: number
+  uptime_sec: number
+  estimated_cost_usd: number
+  cost_per_model_usd: number
+  gpu_cost_per_sec: number
+}
+
+interface OllamaStats {
+  status: string
+  mode: string
+  endpoint?: string
+  models?: string[]
+  vision_model?: string
+  embedding_model?: string
+  embedding_dim?: number
+  cumulative?: CumulativeStats
+}
+
 function App() {
   const [models, setModels] = useState<Model[]>([])
   const [processingModels, setProcessingModels] = useState<ProcessingModel[]>([])
@@ -52,6 +76,9 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
+  const [ollamaStats, setOllamaStats] = useState<OllamaStats | null>(null)
+  const [isLoadingStats, setIsLoadingStats] = useState(false)
+  const [showStats, setShowStats] = useState(false)
   const wsRef = useRef<WebSocket | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -189,6 +216,30 @@ function App() {
       setModels(data.models || [])
     } catch (err) {
       console.error('Failed to fetch models:', err)
+    }
+  }
+
+  const fetchStats = async () => {
+    setIsLoadingStats(true)
+    try {
+      const res = await fetch(`${API_URL}/stats?include_backend=true`)
+      const data = await res.json()
+      if (data.ollama) {
+        setOllamaStats(data.ollama)
+      }
+    } catch (err) {
+      console.error('Failed to fetch stats:', err)
+    } finally {
+      setIsLoadingStats(false)
+    }
+  }
+
+  const resetStats = async () => {
+    try {
+      await fetch(`${API_URL}/stats/reset`, { method: 'POST' })
+      await fetchStats()
+    } catch (err: any) {
+      setError(`Failed to reset stats: ${err.message}`)
     }
   }
 
@@ -418,6 +469,116 @@ function App() {
               </button>
             )}
           </form>
+
+          {/* Stats Toggle */}
+          <div className="mt-4 flex justify-end">
+            <button
+              onClick={() => {
+                setShowStats(!showStats)
+                if (!showStats && !ollamaStats) fetchStats()
+              }}
+              className="text-sm text-gray-400 hover:text-white flex items-center gap-1"
+            >
+              {showStats ? '▼' : '▶'} RunPod Metrics
+            </button>
+          </div>
+
+          {/* Stats Panel */}
+          {showStats && (
+            <div className="mt-4 p-4 bg-gray-700/50 rounded-lg border border-gray-600">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-200">Embedding Pipeline Stats</h3>
+                <div className="flex gap-2">
+                  <button
+                    onClick={fetchStats}
+                    disabled={isLoadingStats}
+                    className="px-3 py-1 text-xs bg-gray-600 hover:bg-gray-500 rounded transition-colors disabled:opacity-50"
+                  >
+                    {isLoadingStats ? 'Loading...' : 'Refresh'}
+                  </button>
+                  <button
+                    onClick={resetStats}
+                    className="px-3 py-1 text-xs bg-red-600/30 hover:bg-red-600/50 text-red-400 rounded transition-colors"
+                  >
+                    Reset
+                  </button>
+                </div>
+              </div>
+
+              {ollamaStats ? (
+                <div className="space-y-4">
+                  {/* Status Row */}
+                  <div className="flex items-center gap-4 text-sm">
+                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                      ollamaStats.status === 'ok' || ollamaStats.status === 'ready'
+                        ? 'bg-green-500/20 text-green-400'
+                        : 'bg-red-500/20 text-red-400'
+                    }`}>
+                      {ollamaStats.status === 'ok' || ollamaStats.status === 'ready' ? '● Online' : '○ Offline'}
+                    </span>
+                    <span className="text-gray-400">
+                      {ollamaStats.vision_model} + {ollamaStats.embedding_model}
+                    </span>
+                    <span className="text-gray-500 text-xs">
+                      {ollamaStats.embedding_dim}-dim
+                    </span>
+                  </div>
+
+                  {/* Metrics Grid */}
+                  {ollamaStats.cumulative && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {/* Total Embeddings */}
+                      <div className="p-3 bg-gray-800 rounded-lg">
+                        <div className="text-2xl font-bold text-blue-400">
+                          {ollamaStats.cumulative.total_embeddings}
+                        </div>
+                        <div className="text-xs text-gray-400">Models Indexed</div>
+                      </div>
+
+                      {/* Avg Time */}
+                      <div className="p-3 bg-gray-800 rounded-lg">
+                        <div className="text-2xl font-bold text-green-400">
+                          {ollamaStats.cumulative.avg_time_sec.toFixed(2)}s
+                        </div>
+                        <div className="text-xs text-gray-400">Avg Time/Model</div>
+                      </div>
+
+                      {/* Total Cost */}
+                      <div className="p-3 bg-gray-800 rounded-lg">
+                        <div className="text-2xl font-bold text-yellow-400">
+                          ${ollamaStats.cumulative.estimated_cost_usd.toFixed(4)}
+                        </div>
+                        <div className="text-xs text-gray-400">Total GPU Cost</div>
+                      </div>
+
+                      {/* Cost per Model */}
+                      <div className="p-3 bg-gray-800 rounded-lg">
+                        <div className="text-2xl font-bold text-purple-400">
+                          ${ollamaStats.cumulative.cost_per_model_usd.toFixed(5)}
+                        </div>
+                        <div className="text-xs text-gray-400">Cost/Model</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Secondary Stats */}
+                  {ollamaStats.cumulative && (
+                    <div className="flex flex-wrap gap-4 text-xs text-gray-400 pt-2 border-t border-gray-600">
+                      <span>Total Time: {ollamaStats.cumulative.total_time_sec.toFixed(1)}s</span>
+                      <span>Vision Tokens: {ollamaStats.cumulative.total_vision_tokens.toLocaleString()}</span>
+                      <span>Text Queries: {ollamaStats.cumulative.total_text_queries}</span>
+                      <span>Uptime: {Math.floor(ollamaStats.cumulative.uptime_sec / 60)}m</span>
+                      <span>GPU Rate: ${ollamaStats.cumulative.gpu_cost_per_sec}/sec</span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center text-gray-400 py-4">
+                  {isLoadingStats ? 'Loading stats...' : 'Click Refresh to load stats'}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Search Results */}
           {searchResults.length > 0 && (

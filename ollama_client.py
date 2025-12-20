@@ -152,6 +152,14 @@ async def _runpod_request(payload: dict, timeout: float = RUNPOD_TIMEOUT) -> dic
             return {"status": "error", "error": str(e)}
 
 
+async def reset_stats() -> dict:
+    """Reset cumulative stats on RunPod endpoint."""
+    if USE_LOCAL_OLLAMA:
+        return {"status": "ok", "message": "Local mode - no stats to reset"}
+    else:
+        return await _runpod_request({"reset": True}, timeout=30.0)
+
+
 async def check_ollama() -> dict:
     """Check if Ollama is running and models are available."""
     if USE_LOCAL_OLLAMA:

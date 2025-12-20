@@ -41,7 +41,8 @@ if USE_OLLAMA:
     from ollama_client import (
         process_3d_model as ollama_process_3d_model,
         embed_query as ollama_embed_query,
-        check_ollama
+        check_ollama,
+        reset_stats as ollama_reset_stats
     )
     from local_renderer import render_views
     from faiss_index import get_index, FAISSIndex, EMBEDDING_DIM_GEMMA
@@ -249,6 +250,19 @@ async def stats(include_backend: bool = False):
                 result["runpod"] = {"error": str(e)}
 
     return result
+
+
+@app.post("/stats/reset")
+async def reset_stats():
+    """Reset cumulative stats on the embedding backend."""
+    if USE_OLLAMA:
+        try:
+            result = await ollama_reset_stats()
+            return result
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+    else:
+        raise HTTPException(status_code=400, detail="Reset only available in Ollama mode")
 
 
 @app.get("/search", response_model=SearchResponse)

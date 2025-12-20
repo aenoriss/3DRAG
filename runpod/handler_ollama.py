@@ -21,6 +21,19 @@ import io
 # Ollama API (running locally on the pod)
 OLLAMA_URL = "http://localhost:11434"
 
+# GPU cost per second (RTX 4090 = $0.00019/sec)
+GPU_COST_PER_SEC = float(__import__('os').getenv("GPU_COST_PER_SEC", "0.00019"))
+
+# Cumulative stats
+STATS = {
+    "total_requests": 0,
+    "total_embeddings": 0,
+    "total_text_queries": 0,
+    "total_time_sec": 0.0,
+    "total_vision_tokens": 0,
+    "started_at": time.time()
+}
+
 # Models
 VISION_MODEL = "minicpm-v"  # 8B, GPT-4o level, 75% fewer vision tokens
 EMBEDDING_MODEL = "embeddinggemma"
@@ -199,16 +212,43 @@ def handler(event):
     try:
         input_data = event.get("input", {})
 
+        # Reset stats
+        if input_data.get("reset"):
+            STATS["total_requests"] = 0
+            STATS["total_embeddings"] = 0
+            STATS["total_text_queries"] = 0
+            STATS["total_time_sec"] = 0.0
+            STATS["total_vision_tokens"] = 0
+            STATS["started_at"] = time.time()
+            return {"status": "reset", "message": "Stats reset successfully"}
+
         # Stats endpoint
         if input_data.get("stats"):
             resp = requests.get(f"{OLLAMA_URL}/api/tags")
             models = [m["name"] for m in resp.json().get("models", [])]
+            uptime = time.time() - STATS["started_at"]
+            avg_time = STATS["total_time_sec"] / STATS["total_requests"] if STATS["total_requests"] > 0 else 0
+            estimated_cost = STATS["total_time_sec"] * GPU_COST_PER_SEC
+            cost_per_model = estimated_cost / STATS["total_embeddings"] if STATS["total_embeddings"] > 0 else 0
+
             return {
                 "status": "ready",
                 "models": models,
                 "vision_model": VISION_MODEL,
                 "embedding_model": EMBEDDING_MODEL,
-                "embedding_dim": 768
+                "embedding_dim": 768,
+                "cumulative": {
+                    "total_requests": STATS["total_requests"],
+                    "total_embeddings": STATS["total_embeddings"],
+                    "total_text_queries": STATS["total_text_queries"],
+                    "total_time_sec": round(STATS["total_time_sec"], 3),
+                    "total_vision_tokens": STATS["total_vision_tokens"],
+                    "avg_time_sec": round(avg_time, 3),
+                    "uptime_sec": round(uptime, 1),
+                    "estimated_cost_usd": round(estimated_cost, 6),
+                    "cost_per_model_usd": round(cost_per_model, 6),
+                    "gpu_cost_per_sec": GPU_COST_PER_SEC
+                }
             }
 
         # Multiple images -> stitch + process
@@ -235,6 +275,13 @@ def handler(event):
             embedding = embed_text(text)
 
             elapsed = time.time() - start
+            vision_tokens = desc_result.get("eval_count", 0)
+
+            # Update cumulative stats
+            STATS["total_requests"] += 1
+            STATS["total_embeddings"] += 1
+            STATS["total_time_sec"] += elapsed
+            STATS["total_vision_tokens"] += vision_tokens
 
             return {
                 "embedding": embedding,
@@ -243,7 +290,7 @@ def handler(event):
                 "dimension": len(embedding),
                 "stats": {
                     "time_sec": round(elapsed, 3),
-                    "vision_tokens": desc_result.get("eval_count", 0)
+                    "vision_tokens": vision_tokens
                 }
             }
 
@@ -257,13 +304,23 @@ def handler(event):
             embedding = embed_text(text)
 
             elapsed = time.time() - start
+            vision_tokens = desc_result.get("eval_count", 0)
+
+            # Update cumulative stats
+            STATS["total_requests"] += 1
+            STATS["total_embeddings"] += 1
+            STATS["total_time_sec"] += elapsed
+            STATS["total_vision_tokens"] += vision_tokens
 
             return {
                 "embedding": embedding,
                 "description": description,
                 "text": text,
                 "dimension": len(embedding),
-                "stats": {"time_sec": round(elapsed, 3)}
+                "stats": {
+                    "time_sec": round(elapsed, 3),
+                    "vision_tokens": vision_tokens
+                }
             }
 
         # Text query embedding
@@ -271,6 +328,11 @@ def handler(event):
             start = time.time()
             embedding = embed_text(input_data["text"])
             elapsed = time.time() - start
+
+            # Update cumulative stats
+            STATS["total_requests"] += 1
+            STATS["total_text_queries"] += 1
+            STATS["total_time_sec"] += elapsed
 
             return {
                 "embedding": embedding,
