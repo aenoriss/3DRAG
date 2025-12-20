@@ -489,6 +489,39 @@ async def get_model(model_id: str):
     return model
 
 
+@app.delete("/models/{model_id}")
+async def delete_model(model_id: str):
+    """
+    Delete a model from the index.
+
+    Note: This rebuilds the FAISS index without the deleted vector.
+    """
+    index: FAISSIndex = app.state.index
+
+    # Check if model exists
+    model = index.get_by_id(model_id)
+    if not model:
+        raise HTTPException(404, f"Model '{model_id}' not found")
+
+    # Remove from index
+    removed = index.remove_by_id(model_id)
+    if not removed:
+        raise HTTPException(500, f"Failed to remove model '{model_id}'")
+
+    # Broadcast deletion
+    await ws_manager.broadcast({
+        "type": "model_deleted",
+        "model_id": model_id,
+        "total_models": index.total
+    })
+
+    return {
+        "status": "deleted",
+        "model_id": model_id,
+        "remaining_models": index.total
+    }
+
+
 # ============================================================================
 # WebSocket Endpoint
 # ============================================================================

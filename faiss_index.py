@@ -258,6 +258,62 @@ class FAISSIndex:
                     return meta.to_dict()
             return None
 
+    def remove_by_id(self, model_id: str, save: bool = True) -> bool:
+        """
+        Remove a model from the index by ID.
+
+        Note: HNSW doesn't support direct removal, so we rebuild the index
+        without the deleted vector. This is O(n) but acceptable for small datasets.
+
+        Args:
+            model_id: ID of the model to remove
+            save: Whether to persist to disk
+
+        Returns:
+            True if model was found and removed, False otherwise
+        """
+        with self._lock:
+            # Find the index of the model
+            idx_to_remove = None
+            for i, meta in enumerate(self.metadata):
+                if meta.id == model_id:
+                    idx_to_remove = i
+                    break
+
+            if idx_to_remove is None:
+                return False
+
+            # If only one item, just clear everything
+            if self.index.ntotal == 1:
+                self.index = faiss.IndexHNSWFlat(self.embedding_dim, self.HNSW_M)
+                self.index.hnsw.efConstruction = self.HNSW_EF_CONSTRUCTION
+                self.index.hnsw.efSearch = self.HNSW_EF_SEARCH
+                self.metadata = []
+                if save:
+                    self._save()
+                return True
+
+            # Extract all vectors from the index
+            all_vectors = np.zeros((self.index.ntotal, self.embedding_dim), dtype=np.float32)
+            for i in range(self.index.ntotal):
+                all_vectors[i] = self.index.reconstruct(i)
+
+            # Remove the vector at idx_to_remove
+            remaining_vectors = np.delete(all_vectors, idx_to_remove, axis=0)
+            remaining_metadata = self.metadata[:idx_to_remove] + self.metadata[idx_to_remove + 1:]
+
+            # Rebuild the index
+            self.index = faiss.IndexHNSWFlat(self.embedding_dim, self.HNSW_M)
+            self.index.hnsw.efConstruction = self.HNSW_EF_CONSTRUCTION
+            self.index.hnsw.efSearch = self.HNSW_EF_SEARCH
+            self.index.add(remaining_vectors)
+            self.metadata = remaining_metadata
+
+            if save:
+                self._save()
+
+            return True
+
     def list_all(self, skip: int = 0, limit: int = 100) -> list[dict]:
         """List all indexed models."""
         with self._lock:
