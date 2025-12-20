@@ -219,45 +219,49 @@ async def generate_dataset(
         with concurrent.futures.ThreadPoolExecutor() as pool:
             annotations = await loop.run_in_executor(pool, load_annotations)
 
-        # Download all at once (objaverse handles parallelism internally)
+        # Download in small batches (rate limited by Objaverse/HuggingFace)
         print(f"Downloading {len(selected_uids)} GLB files...")
 
-        if _status.cancelled:
-            raise asyncio.CancelledError("Cancelled by user")
-
-        # Download all in one batch
-        def download_all(uids):
-            return objaverse.load_objects(uids, download_processes=8)
-
-        with concurrent.futures.ThreadPoolExecutor() as pool:
-            paths = await loop.run_in_executor(pool, download_all, selected_uids)
-
-        # Build objects dict
+        DOWNLOAD_BATCH = 5  # Small batches to avoid rate limiting
         objects = {}
-        for uid, path in paths.items():
-            ann = annotations.get(uid, {})
-            objects[uid] = {
-                "local_path": path,
-                "metadata": {
-                    "name": ann.get("name", uid[:20]),
-                    "categories": ann.get("categories", []),
-                    "tags": ann.get("tags", [])
+
+        for i in range(0, len(selected_uids), DOWNLOAD_BATCH):
+            if _status.cancelled:
+                raise asyncio.CancelledError("Cancelled by user")
+
+            batch_uids = selected_uids[i:i + DOWNLOAD_BATCH]
+
+            def download_batch(uids):
+                return objaverse.load_objects(uids, download_processes=4)
+
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                paths = await loop.run_in_executor(pool, download_batch, batch_uids)
+
+            for uid, path in paths.items():
+                ann = annotations.get(uid, {})
+                objects[uid] = {
+                    "local_path": path,
+                    "metadata": {
+                        "name": ann.get("name", uid[:20]),
+                        "categories": ann.get("categories", []),
+                        "tags": ann.get("tags", [])
+                    }
                 }
-            }
 
-        _status.downloaded = len(objects)
+            _status.downloaded = len(objects)
+
+            if progress_callback:
+                await progress_callback({
+                    "type": "dataset_progress",
+                    "step": "downloading",
+                    "message": f"Downloaded {len(objects)}/{count}",
+                    "total": count,
+                    "downloaded": len(objects),
+                    "indexed": 0,
+                    "failed": _status.failed
+                })
+
         print(f"Download complete: {len(objects)}/{count} objects")
-
-        if progress_callback:
-            await progress_callback({
-                "type": "dataset_progress",
-                "step": "downloading",
-                "message": f"Downloaded {len(objects)}/{count}",
-                "total": count,
-                "downloaded": len(objects),
-                "indexed": 0,
-                "failed": _status.failed
-            })
 
         if progress_callback:
             await progress_callback({
