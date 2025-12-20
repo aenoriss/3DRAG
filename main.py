@@ -713,7 +713,7 @@ async def delete_dataset():
     if status.is_generating:
         raise HTTPException(409, "Cannot delete while generation is in progress")
 
-    await clear_dataset()
+    await clear_dataset(clear_index=True)
 
     # Reinitialize empty index
     from faiss_index import FAISSIndex
