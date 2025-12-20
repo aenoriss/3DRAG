@@ -24,6 +24,7 @@ class ModelMetadata:
     name: str
     category: Optional[str] = None
     file_path: Optional[str] = None
+    caption: Optional[str] = None
     indexed_at: Optional[str] = None
 
     def to_dict(self) -> dict:
@@ -31,6 +32,9 @@ class ModelMetadata:
 
     @classmethod
     def from_dict(cls, data: dict) -> "ModelMetadata":
+        # Handle legacy data without caption field
+        if 'caption' not in data:
+            data['caption'] = None
         return cls(**data)
 
 
@@ -103,17 +107,19 @@ class FAISSIndex:
         name: str,
         category: Optional[str] = None,
         file_path: Optional[str] = None,
+        caption: Optional[str] = None,
         save: bool = True
     ) -> int:
         """
         Add a single embedding to the index.
 
         Args:
-            embedding: 1152-dim normalized embedding from SigLIP2
+            embedding: Normalized embedding vector
             model_id: Unique identifier for the model
             name: Display name
             category: Optional category
             file_path: Optional path to the original model file
+            caption: Optional generated caption/description
             save: Whether to persist to disk immediately
 
         Returns:
@@ -143,6 +149,7 @@ class FAISSIndex:
                 name=name,
                 category=category,
                 file_path=file_path,
+                caption=caption,
                 indexed_at=datetime.utcnow().isoformat()
             )
             self.metadata.append(meta)
@@ -243,6 +250,7 @@ class FAISSIndex:
                         "id": meta.id,
                         "name": meta.name,
                         "category": meta.category,
+                        "caption": meta.caption,
                         "score": float(score),
                         "distance": float(dist),
                         "file_path": meta.file_path

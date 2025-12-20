@@ -13,7 +13,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libosmesa6 \
     libosmesa6-dev \
     freeglut3-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Ollama
+RUN curl -fsSL https://ollama.com/install.sh | sh
+
+# Set Ollama models directory to persist across container restarts
+ENV OLLAMA_MODELS=/app/ollama_models
 
 # Install Python dependencies
 RUN pip install --no-cache-dir \
@@ -25,13 +32,22 @@ RUN pip install --no-cache-dir \
     trimesh \
     pyrender \
     PyOpenGL \
-    PyOpenGL_accelerate
+    PyOpenGL_accelerate \
+    objaverse \
+    requests \
+    einops \
+    timm
 
-# Pre-download model (faster cold starts)
-RUN python -c "from transformers import AutoModel, AutoProcessor; \
-    AutoModel.from_pretrained('google/siglip2-so400m-patch14-384'); \
-    AutoProcessor.from_pretrained('google/siglip2-so400m-patch14-384')"
+# Pre-download Florence-2 model (faster cold starts)
+RUN python -c "from transformers import AutoModelForCausalLM, AutoProcessor; \
+    AutoProcessor.from_pretrained('microsoft/Florence-2-base', trust_remote_code=True); \
+    AutoModelForCausalLM.from_pretrained('microsoft/Florence-2-base', trust_remote_code=True)"
 
+# Pre-pull Ollama embedding model
+RUN ollama serve & sleep 5 && ollama pull embeddinggemma && pkill ollama
+
+# Copy application code
+COPY runpod/modules /app/modules
 COPY runpod/handler.py /app/handler.py
 
 CMD ["python", "-u", "handler.py"]

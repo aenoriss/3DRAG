@@ -3,11 +3,8 @@ Dataset Generator - Download and index models from Objaverse.
 
 Creates a mini-dataset of 100 models for testing.
 When regenerated, the previous dataset is deleted.
-Downloads GLB files directly from Hugging Face for efficiency.
 
-Supports two embedding modes:
-- ollama (default): Gemma 3 27B vision + EmbeddingGemma (768-dim)
-- runpod: SigLIP2 via RunPod (1152-dim)
+All heavy processing (download, render, caption, embed) happens on RunPod GPU.
 """
 from __future__ import annotations
 
@@ -15,80 +12,18 @@ import objaverse
 import asyncio
 import shutil
 import random
-import time
 import base64
-import os
 import concurrent.futures
-from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
-from typing import Optional, List, Dict, Callable, Any
+from typing import Optional, Dict, Callable
 from dataclasses import dataclass
 from datetime import datetime
-from PIL import Image
-
-# Number of parallel render processes
-RENDER_WORKERS = os.cpu_count() or 4
 
 # Dataset storage
 DATASET_DIR = Path("dataset")
 
-
-def render_single_model(args: tuple) -> dict:
-    """
-    Render a single model (runs in separate process).
-
-    Args:
-        args: (file_id, local_path, name, category)
-
-    Returns:
-        Dict with render result or error
-    """
-    file_id, local_path, name, category = args
-
-    try:
-        from local_renderer import render_views
-
-        model_path = Path(local_path)
-        if not model_path.exists():
-            return {"error": "File not found", "file_id": file_id}
-
-        model_bytes = model_path.read_bytes()
-        ext = model_path.suffix.lstrip(".")
-
-        images, images_b64 = render_views(model_bytes, ext, num_views=1)
-
-        # Save files
-        renders_dir = DATASET_DIR / "renders" / file_id
-        renders_dir.mkdir(parents=True, exist_ok=True)
-        images[0].save(renders_dir / f"view_00.png")
-
-        previews_dir = DATASET_DIR / "previews"
-        previews_dir.mkdir(parents=True, exist_ok=True)
-        images[0].resize((128, 128)).save(previews_dir / f"{file_id}.jpg", "JPEG", quality=85)
-
-        # Delete 3D model file
-        try:
-            model_path.unlink()
-        except Exception:
-            pass
-
-        return {
-            "file_id": file_id,
-            "name": name,
-            "category": category,
-            "local_path": str(local_path),
-            "image_b64": images_b64[0],
-        }
-
-    except Exception as e:
-        return {"error": str(e), "file_id": file_id}
-
-
 DATASET_SIZE = 100
-BATCH_SIZE = 100  # Process all models in one batch (GPU has 40GB, we use ~8GB)
-
-# Embedding mode: "ollama" (default) or "runpod"
-EMBEDDING_MODE = os.getenv("EMBEDDING_MODE", "ollama").lower()
+BATCH_SIZE = 20  # UIDs per RunPod request (balance between throughput and reliability)
 
 
 @dataclass
@@ -97,7 +32,7 @@ class DatasetStatus:
     is_generating: bool = False
     cancelled: bool = False
     total: int = 0
-    downloaded: int = 0
+    processed: int = 0
     indexed: int = 0
     failed: int = 0
     current_model: Optional[str] = None
@@ -129,13 +64,11 @@ def reset_status():
 
 async def clear_dataset(clear_index: bool = False):
     """Delete existing dataset directory. Optionally clear FAISS index."""
-    # Only clear dataset directory (renders, downloads)
     if DATASET_DIR.exists():
         shutil.rmtree(DATASET_DIR)
 
     DATASET_DIR.mkdir(exist_ok=True)
 
-    # Optionally clear FAISS index
     if clear_index:
         index_path = Path("models.index")
         metadata_path = Path("metadata.json")
@@ -151,10 +84,16 @@ async def generate_dataset(
     progress_callback: Optional[Callable[[Dict], None]] = None
 ) -> Dict:
     """
-    Generate a new dataset from Objaverse-XL.
+    Generate a new dataset from Objaverse.
+
+    All processing happens on RunPod GPU:
+    1. Download models from Objaverse
+    2. Render views with GPU (EGL)
+    3. Caption with Florence-2
+    4. Embed with EmbeddingGemma
 
     Args:
-        count: Number of models to download (default 100)
+        count: Number of models to process (default 100)
         progress_callback: Optional callback for progress updates
 
     Returns:
@@ -178,28 +117,27 @@ async def generate_dataset(
                 "status": "clearing",
                 "message": "Clearing existing dataset...",
                 "total": count,
-                "downloaded": 0,
+                "processed": 0,
                 "indexed": 0,
                 "failed": 0
             })
 
         await clear_dataset()
 
-        # Get UIDs and annotations from Objaverse 1.0 (simpler, direct HF downloads)
+        # Load UIDs from Objaverse
         loop = asyncio.get_event_loop()
 
         if progress_callback:
             await progress_callback({
                 "type": "dataset_progress",
-                "step": "downloading",
-                "message": "Loading Objaverse annotations...",
+                "step": "loading",
+                "message": "Loading Objaverse UIDs...",
                 "total": count,
-                "downloaded": 0,
+                "processed": 0,
                 "indexed": 0,
                 "failed": 0
             })
 
-        # Load UIDs in thread
         def load_uids():
             return objaverse.load_uids()
 
@@ -209,192 +147,104 @@ async def generate_dataset(
         print(f"Loaded {len(all_uids)} UIDs from Objaverse")
 
         # Sample random UIDs
-        selected_uids = random.sample(all_uids, min(count, len(all_uids)))
-        print(f"Selected {len(selected_uids)} objects to download")
+        selected_uids = random.sample(list(all_uids), min(count, len(all_uids)))
+        print(f"Selected {len(selected_uids)} objects to process")
 
-        # Load annotations for selected UIDs
-        def load_annotations():
-            return objaverse.load_annotations(selected_uids)
+        # Import FAISS index
+        from faiss_index import FAISSIndex, EMBEDDING_DIM_GEMMA
+        from runpod_client import process_uids
 
-        with concurrent.futures.ThreadPoolExecutor() as pool:
-            annotations = await loop.run_in_executor(pool, load_annotations)
+        # Create fresh index
+        index = FAISSIndex(embedding_dim=EMBEDDING_DIM_GEMMA)
 
-        # Download in small batches (rate limited by Objaverse/HuggingFace)
-        print(f"Downloading {len(selected_uids)} GLB files...")
+        # Create previews directory
+        previews_dir = DATASET_DIR / "previews"
+        previews_dir.mkdir(parents=True, exist_ok=True)
 
-        DOWNLOAD_BATCH = 5  # Small batches to avoid rate limiting
-        objects = {}
+        # Process in batches via RunPod
+        total_uids = len(selected_uids)
+        print(f"Processing {total_uids} models in batches of {BATCH_SIZE}...")
 
-        for i in range(0, len(selected_uids), DOWNLOAD_BATCH):
+        for batch_start in range(0, total_uids, BATCH_SIZE):
             if _status.cancelled:
+                print("Processing cancelled by user")
                 raise asyncio.CancelledError("Cancelled by user")
 
-            batch_uids = selected_uids[i:i + DOWNLOAD_BATCH]
+            batch_end = min(batch_start + BATCH_SIZE, total_uids)
+            batch_uids = selected_uids[batch_start:batch_end]
 
-            def download_batch(uids):
-                return objaverse.load_objects(uids, download_processes=4)
-
-            with concurrent.futures.ThreadPoolExecutor() as pool:
-                paths = await loop.run_in_executor(pool, download_batch, batch_uids)
-
-            for uid, path in paths.items():
-                ann = annotations.get(uid, {})
-                objects[uid] = {
-                    "local_path": path,
-                    "metadata": {
-                        "name": ann.get("name", uid[:20]),
-                        "categories": ann.get("categories", []),
-                        "tags": ann.get("tags", [])
-                    }
-                }
-
-            _status.downloaded = len(objects)
+            print(f"\n=== Batch {batch_start//BATCH_SIZE + 1}: models {batch_start+1}-{batch_end} ===")
 
             if progress_callback:
                 await progress_callback({
                     "type": "dataset_progress",
-                    "step": "downloading",
-                    "message": f"Downloaded {len(objects)}/{count}",
+                    "step": "processing",
+                    "message": f"Processing batch {batch_start//BATCH_SIZE + 1}...",
                     "total": count,
-                    "downloaded": len(objects),
-                    "indexed": 0,
+                    "processed": _status.processed,
+                    "indexed": _status.indexed,
                     "failed": _status.failed
                 })
 
-        print(f"Download complete: {len(objects)}/{count} objects")
+            try:
+                # Send UIDs to RunPod for full processing
+                result = await process_uids(batch_uids)
 
-        if progress_callback:
-            await progress_callback({
-                "type": "dataset_progress",
-                "step": "indexing",
-                "message": f"Starting to index {len(objects)} models...",
-                "total": count,
-                "downloaded": len(objects),
-                "indexed": 0,
-                "failed": 0
-            })
+                results = result.get("results", [])
+                print(f"  Received {len(results)} results from RunPod")
+                print(f"  Time: {result.get('time_sec', 0):.1f}s, {result.get('time_per_model', 0):.2f}s/model")
 
-        # Import here to avoid circular imports
-        from faiss_index import FAISSIndex, EMBEDDING_DIM_GEMMA, EMBEDDING_DIM_SIGLIP
-        from local_renderer import render_views
+                for item in results:
+                    uid = item.get("uid", "")
+                    name = item.get("name", uid[:20])
+                    caption = item.get("caption", "")
+                    embedding = item.get("embedding", [])
+                    preview_b64 = item.get("preview", "")
 
-        # Determine embedding mode
-        use_ollama = EMBEDDING_MODE == "ollama"
-        use_local = os.getenv("USE_LOCAL_RENDERER", "false").lower() == "true"
+                    _status.processed += 1
 
-        if use_ollama:
-            from ollama_client import process_3d_model, description_to_text
-            embedding_dim = EMBEDDING_DIM_GEMMA
-            print(f"Using Ollama mode (Gemma 3 27B + EmbeddingGemma, {embedding_dim}-dim)")
-        else:
-            from runpod_client import embed_images
-            embedding_dim = EMBEDDING_DIM_SIGLIP
-            print(f"Using RunPod mode (SigLIP2, {embedding_dim}-dim)")
-
-        # Create fresh index with correct dimension
-        index = FAISSIndex(embedding_dim=embedding_dim)
-
-        # Process in batches for efficiency
-        from ollama_client import process_batch
-
-        object_items = list(objects.items())
-        total_objects = len(object_items)
-        print(f"Starting to index {total_objects} models in batches of {BATCH_SIZE}...")
-
-        for batch_start in range(0, total_objects, BATCH_SIZE):
-            if _status.cancelled:
-                print("Indexing cancelled by user")
-                raise asyncio.CancelledError("Cancelled by user")
-
-            batch_end = min(batch_start + BATCH_SIZE, total_objects)
-            batch_items = object_items[batch_start:batch_end]
-
-            print(f"\n=== Batch {batch_start//BATCH_SIZE + 1}: models {batch_start+1}-{batch_end} ===")
-
-            # Step 1: Render all images in parallel
-            render_args = []
-            for file_id, obj_data in batch_items:
-                local_path = obj_data["local_path"]
-                metadata = obj_data.get("metadata", {})
-                name = metadata.get("name", file_id[:30])
-                category = metadata.get("source", None)
-                render_args.append((file_id, local_path, name, category))
-
-            print(f"  Rendering {len(render_args)} models with {RENDER_WORKERS} workers...")
-            render_start = time.time()
-
-            batch_data = []
-            with ProcessPoolExecutor(max_workers=RENDER_WORKERS) as executor:
-                results = list(executor.map(render_single_model, render_args))
-
-            for result in results:
-                if "error" in result:
-                    _status.failed += 1
-                    print(f"  Render failed: {result['file_id']}: {result['error']}")
-                else:
-                    batch_data.append(result)
-
-            render_time = time.time() - render_start
-            print(f"  Rendered {len(batch_data)} models in {render_time:.1f}s ({render_time/len(batch_data):.2f}s/model)")
-
-            if not batch_data:
-                continue
-
-            # Step 2: Send batch to RunPod
-            print(f"  Sending {len(batch_data)} images to RunPod...")
-
-            batch_request = [{"image": item["image_b64"]} for item in batch_data]
-            result = await process_batch(batch_request)
-
-            if result["status"] != "ok":
-                print(f"  Batch error: {result.get('error', 'unknown')}")
-                _status.failed += len(batch_data)
-                continue
-
-            batch_results = result.get("results", [])
-            stats = result.get("stats", {})
-            print(f"  Done: {stats.get('time_sec', 0):.2f}s total, {stats.get('time_per_model', 0):.3f}s/model")
-
-            # Step 3: Add to index
-            for i, item in enumerate(batch_data):
-                if i < len(batch_results):
-                    embed_result = batch_results[i]
-                    embedding = embed_result.get("embedding", [])
-                    text = embed_result.get("text", "")
-
-                    if embedding:
-                        index.add(
-                            embedding=embedding,
-                            model_id=item["file_id"],
-                            name=item["name"],
-                            category=item["category"],
-                            file_path=item["local_path"],
-                            save=False
-                        )
-                        _status.indexed += 1
-
-                        if progress_callback:
-                            # Use the already-saved preview thumbnail
-                            preview_path = DATASET_DIR / "previews" / f"{item['file_id']}.jpg"
-                            thumb_b64 = ""
-                            if preview_path.exists():
-                                thumb_b64 = base64.b64encode(preview_path.read_bytes()).decode()
-                            await progress_callback({
-                                "type": "dataset_progress",
-                                "step": "indexing",
-                                "message": f"{text[:40]}...",
-                                "total": count,
-                                "downloaded": total_objects,
-                                "indexed": _status.indexed,
-                                "failed": _status.failed,
-                                "current": item["name"],
-                                "model_id": item["file_id"],
-                                "images": [thumb_b64] if thumb_b64 else []
-                            })
-                    else:
+                    if not embedding:
                         _status.failed += 1
-                else:
-                    _status.failed += 1
+                        print(f"  No embedding for {uid}")
+                        continue
+
+                    # Save preview image
+                    if preview_b64:
+                        try:
+                            preview_path = previews_dir / f"{uid}.png"
+                            preview_bytes = base64.b64decode(preview_b64)
+                            preview_path.write_bytes(preview_bytes)
+                        except Exception as e:
+                            print(f"  Failed to save preview for {uid}: {e}")
+
+                    # Add to index
+                    index.add(
+                        embedding=embedding,
+                        model_id=uid,
+                        name=name,
+                        category=None,
+                        file_path=None,
+                        caption=caption,
+                        save=False
+                    )
+                    _status.indexed += 1
+
+                    if progress_callback:
+                        await progress_callback({
+                            "type": "dataset_progress",
+                            "step": "indexing",
+                            "message": f"{caption[:40]}..." if caption else name,
+                            "total": count,
+                            "processed": _status.processed,
+                            "indexed": _status.indexed,
+                            "failed": _status.failed,
+                            "current": name,
+                            "model_id": uid
+                        })
+
+            except Exception as e:
+                print(f"  Batch error: {e}")
+                _status.failed += len(batch_uids)
 
         # Save index
         index._save()
@@ -405,10 +255,9 @@ async def generate_dataset(
         result = {
             "status": "completed",
             "total_requested": count,
-            "downloaded": _status.downloaded,
+            "processed": _status.processed,
             "indexed": _status.indexed,
-            "failed": _status.failed,
-            "duration_seconds": None  # TODO: calculate
+            "failed": _status.failed
         }
 
         if progress_callback:
@@ -423,7 +272,6 @@ async def generate_dataset(
         print("Generation cancelled, cleaning up...")
         _status.is_generating = False
         _status.error = "Cancelled"
-        # Clean up on cancel
         await clear_dataset()
         raise
 
@@ -431,7 +279,6 @@ async def generate_dataset(
         print(f"Generation error: {e}, cleaning up...")
         _status.is_generating = False
         _status.error = str(e)
-        # Clean up on error
         await clear_dataset()
         raise
 

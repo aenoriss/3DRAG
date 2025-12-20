@@ -1,315 +1,210 @@
 """
-RunPod Serverless Handler - SigLIP2 Embedding Service
+RunPod Serverless Handler - Full 3D Model Processing Pipeline
 
-Supports:
-- Image embedding (base64 images from local rendering)
-- Text embedding
-- 3D model rendering + embedding (optional, requires pyrender)
+Handles the complete pipeline on GPU:
+1. Download models from Objaverse
+2. Render views with GPU (EGL)
+3. Caption with Florence-2
+4. Embed with EmbeddingGemma
+
+Input formats:
+- {"uids": ["uid1", "uid2", ...]} -> Process specific models
+- {"text": "query"}              -> Embed search query
+- {"stats": true}                -> Return system stats
 """
 
 import runpod
-from transformers import AutoModel, AutoProcessor
-from PIL import Image
-import torch
-import base64
-import io
-import numpy as np
+import subprocess
 import time
+import os
 
-# Pricing ($/second) - update as needed
-GPU_COST_PER_SECOND = 0.00019  # L4/A5000/3090
+# Stats tracking
+STATS = {
+    "total_requests": 0,
+    "total_models": 0,
+    "total_text_queries": 0,
+    "total_time_sec": 0.0,
+    "started_at": time.time()
+}
 
-# ============================================================================
-# MODEL LOADING (cold start) - GPU Optimized
-# ============================================================================
-
-print("Loading SigLIP2 model with GPU optimizations...")
-
-# Load model with FP16 for faster inference
-model = AutoModel.from_pretrained(
-    "google/siglip2-so400m-patch14-384",
-    torch_dtype=torch.float16
-).to("cuda")
-processor = AutoProcessor.from_pretrained("google/siglip2-so400m-patch14-384")
-model.eval()
-
-# Try to compile model for faster inference (PyTorch 2.0+)
-try:
-    model = torch.compile(model, mode="reduce-overhead")
-    print("Model compiled with torch.compile()")
-except Exception as e:
-    print(f"torch.compile not available: {e}")
-
-# Warmup inference to optimize CUDA kernels
-print("Warming up CUDA kernels...")
-with torch.inference_mode():
-    dummy_input = processor(
-        images=[Image.new("RGB", (384, 384))],
-        return_tensors="pt"
-    ).to("cuda", dtype=torch.float16)
-    _ = model.get_image_features(**dummy_input)
-    torch.cuda.synchronize()
-
-print(f"Model loaded on {torch.cuda.get_device_name(0)}!")
-print(f"GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
-
-# ============================================================================
-# EMBEDDING FUNCTIONS - GPU Optimized
-# ============================================================================
-
-@torch.inference_mode()
-def embed_images_pil(images: list[Image.Image]) -> np.ndarray:
-    """Embed PIL images and return normalized embeddings (GPU optimized)."""
-    inputs = processor(images=images, return_tensors="pt")
-    inputs = {k: v.to("cuda", dtype=torch.float16) if v.dtype == torch.float32 else v.to("cuda")
-              for k, v in inputs.items()}
-
-    emb = model.get_image_features(**inputs)
-    emb = emb / emb.norm(dim=-1, keepdim=True)
-    return emb.float().cpu().numpy()
+GPU_COST_PER_SEC = float(os.getenv("GPU_COST_PER_SEC", "0.00019"))
 
 
-@torch.inference_mode()
-def embed_images_b64(images_b64: list[str]) -> np.ndarray:
-    """Embed base64-encoded images."""
-    images = []
-    for img_b64 in images_b64:
-        img_bytes = base64.b64decode(img_b64)
-        img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-        images.append(img)
-    return embed_images_pil(images)
+def startup():
+    """Initialize all models and services."""
+    print("=== Starting RunPod Worker ===")
+
+    # Start Ollama
+    print("Starting Ollama server...")
+    subprocess.Popen(["ollama", "serve"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    from modules.embedder import wait_for_ollama, ensure_model_loaded
+    if not wait_for_ollama(60):
+        raise RuntimeError("Ollama failed to start")
+    ensure_model_loaded()
+    print("Ollama ready!")
+
+    # Load Florence-2
+    from modules.captioner import load_florence
+    load_florence()
+
+    print("=== Worker Ready ===")
 
 
-@torch.inference_mode()
-def embed_text(texts: list[str]) -> np.ndarray:
-    """Embed text strings (GPU optimized)."""
-    inputs = processor(text=texts, return_tensors="pt", padding=True).to("cuda")
-
-    emb = model.get_text_features(**inputs)
-    emb = emb / emb.norm(dim=-1, keepdim=True)
-    return emb.float().cpu().numpy()
+# Initialize on import
+startup()
 
 
-# ============================================================================
-# 3D RENDERING (optional - lazy loaded)
-# ============================================================================
+def process_models(uids: list[str]) -> list[dict]:
+    """
+    Process a list of model UIDs.
 
-_rendering_available = None
+    Downloads, renders, captions, and embeds each model.
 
-def _check_rendering():
-    """Check if 3D rendering is available."""
-    global _rendering_available
-    if _rendering_available is None:
-        try:
-            import os
-            os.environ["PYOPENGL_PLATFORM"] = "osmesa"
-            import pyrender
-            import trimesh
-            _rendering_available = True
-            print("3D rendering available (pyrender + trimesh)")
-        except Exception as e:
-            _rendering_available = False
-            print(f"3D rendering not available: {e}")
-    return _rendering_available
+    Args:
+        uids: List of Objaverse UIDs
 
+    Returns:
+        List of results with embeddings
+    """
+    from modules.downloader import download_models, get_annotations
+    from modules.renderer import render_models_batch
+    from modules.captioner import caption_images_batch
+    from modules.embedder import embed_texts_batch
 
-def render_and_embed_model(model_bytes: bytes, file_format: str = "glb") -> dict:
-    """Render 3D model and return embedding. Requires pyrender."""
-    import os
-    os.environ["PYOPENGL_PLATFORM"] = "osmesa"
-    import pyrender
-    import trimesh
+    results = []
 
-    CAMERA_POSITIONS = [
-        (0, 0), (0, 45), (0, 90), (0, 135),
-        (0, 180), (0, 225), (0, 270), (0, 315),
-        (90, 0), (-90, 0),
-        (45, 0), (45, 180),
-    ]
-    RENDER_SIZE = 384
-    BACKGROUND_COLOR = [0.5, 0.5, 0.5, 1.0]
+    # Download all models
+    print(f"Downloading {len(uids)} models...")
+    paths = download_models(uids, download_processes=4)
 
-    def create_camera_pose(elevation_deg, azimuth_deg, distance):
-        elevation = np.radians(elevation_deg)
-        azimuth = np.radians(azimuth_deg)
-        x = distance * np.cos(elevation) * np.sin(azimuth)
-        y = distance * np.sin(elevation)
-        z = distance * np.cos(elevation) * np.cos(azimuth)
-        camera_pos = np.array([x, y, z])
-        forward = -camera_pos / np.linalg.norm(camera_pos)
-        if abs(elevation_deg) > 89:
-            up = np.array([0, 0, -1 if elevation_deg > 0 else 1])
+    # Load annotations only for these UIDs (not all 800k+)
+    annotations = get_annotations(uids)
+
+    # Parallel GPU rendering (32 workers default for 80GB GPU)
+    from modules.renderer import MAX_RENDER_WORKERS
+    print(f"Rendering {len(paths)} models in parallel ({MAX_RENDER_WORKERS} workers)...")
+    models_to_render = [(uid, path) for uid, path in paths.items()]
+    render_results = render_models_batch(models_to_render, num_views=1, max_workers=MAX_RENDER_WORKERS)
+
+    # Process render results
+    render_data = []
+    for result in render_results:
+        uid = result["uid"]
+        if result["success"]:
+            ann = annotations.get(uid, {})
+            render_data.append({
+                "uid": uid,
+                "name": ann.get("name", uid[:20]),
+                "image": result["images"][0] if result["images"] else None,
+                "image_b64": result["images_b64"][0] if result["images_b64"] else None
+            })
         else:
-            up = np.array([0, 1, 0])
-        right = np.cross(forward, up)
-        right = right / np.linalg.norm(right)
-        up = np.cross(right, forward)
-        pose = np.eye(4)
-        pose[:3, 0] = right
-        pose[:3, 1] = up
-        pose[:3, 2] = -forward
-        pose[:3, 3] = camera_pos
-        return pose
+            print(f"  Render failed for {uid}: {result.get('error')}")
 
-    # Load mesh
-    mesh = trimesh.load(io.BytesIO(model_bytes), file_type=file_format.lower(), force='mesh')
-    if isinstance(mesh, trimesh.Scene):
-        meshes = [g for g in mesh.geometry.values() if isinstance(g, trimesh.Trimesh)]
-        mesh = trimesh.util.concatenate(meshes) if meshes else None
-        if mesh is None:
-            raise ValueError("No valid meshes found")
+        # Clean up downloaded file
+        if uid in paths:
+            try:
+                os.unlink(paths[uid])
+            except Exception:
+                pass
 
-    # Normalize
-    mesh.vertices -= mesh.centroid
-    mesh.vertices *= 1.0 / np.max(np.abs(mesh.vertices))
+    if not render_data:
+        return []
 
-    # Create scene
-    scene = pyrender.Scene(bg_color=np.array(BACKGROUND_COLOR), ambient_light=[0.3, 0.3, 0.3])
-    scene.add(pyrender.Mesh.from_trimesh(mesh))
+    # Batch caption
+    print(f"Captioning {len(render_data)} images...")
+    images = [d["image"] for d in render_data if d["image"]]
+    captions = caption_images_batch(images)
 
-    # Lighting
-    for intensity, rot in [(3.0, [[0.707,0,0.707],[0.354,0.866,-0.354],[-0.612,0.5,0.612]]),
-                           (1.5, [[-0.707,0,0.707],[-0.183,0.966,-0.183],[-0.683,-0.259,-0.683]]),
-                           (2.0, [[-1,0,0],[0,0.866,0.5],[0,-0.5,0.866]])]:
-        light = pyrender.DirectionalLight(color=[1.0, 1.0, 1.0], intensity=intensity)
-        pose = np.eye(4)
-        pose[:3, :3] = np.array(rot)
-        scene.add(light, pose=pose)
+    # Batch embed
+    print(f"Embedding {len(captions)} captions...")
+    embeddings = embed_texts_batch(captions)
 
-    # Render views
-    camera = pyrender.PerspectiveCamera(yfov=np.pi / 4.0)
-    camera_node = scene.add(camera)
-    renderer = pyrender.OffscreenRenderer(RENDER_SIZE, RENDER_SIZE)
+    # Build results
+    for i, data in enumerate(render_data):
+        if i < len(embeddings) and embeddings[i]:
+            results.append({
+                "uid": data["uid"],
+                "name": data["name"],
+                "caption": captions[i] if i < len(captions) else "",
+                "embedding": embeddings[i],
+                "preview": data["image_b64"]
+            })
 
-    images = []
-    try:
-        for elevation, azimuth in CAMERA_POSITIONS:
-            pose = create_camera_pose(elevation, azimuth, 2.5)
-            scene.set_pose(camera_node, pose)
-            color, _ = renderer.render(scene)
-            images.append(Image.fromarray(color))
-    finally:
-        renderer.delete()
+    return results
 
-    # Embed with max pooling (keeps strongest features, ignores bad views)
-    embeddings = embed_images_pil(images)
-    max_embedding = np.max(embeddings, axis=0)
-    max_embedding = max_embedding / np.linalg.norm(max_embedding)
-
-    return {
-        "embedding": max_embedding.tolist(),
-        "views_rendered": len(images),
-        "embedding_dim": len(max_embedding)
-    }
-
-
-# ============================================================================
-# MAIN HANDLER
-# ============================================================================
 
 def handler(event):
-    """
-    RunPod serverless handler.
-
-    Input formats:
-    - {"images": ["<base64>", ...]}   → batch image embeddings (for local rendering)
-    - {"image": "<base64>"}           → single image embedding
-    - {"text": "a red chair"}         → single text embedding
-    - {"texts": ["chair", "table"]}   → batch text embeddings
-    - {"model": "<base64>", "format": "glb"}  → render + embed 3D model
-    - {"stats": true}                 → return system stats
-    """
+    """RunPod serverless handler."""
     try:
         input_data = event.get("input", {})
-        include_stats = input_data.get("include_stats", False)
 
         # Stats endpoint
         if input_data.get("stats"):
-            gpu_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "N/A"
-            gpu_memory = torch.cuda.get_device_properties(0).total_memory / (1024**3) if torch.cuda.is_available() else 0
+            uptime = time.time() - STATS["started_at"]
+            avg_time = STATS["total_time_sec"] / STATS["total_requests"] if STATS["total_requests"] > 0 else 0
+            estimated_cost = STATS["total_time_sec"] * GPU_COST_PER_SEC
+            cost_per_model = estimated_cost / STATS["total_models"] if STATS["total_models"] > 0 else 0
+
             return {
                 "status": "ready",
-                "gpu": gpu_name,
-                "gpu_memory_gb": round(gpu_memory, 1),
-                "model": "siglip2-so400m-patch14-384",
-                "embedding_dim": 1152,
-                "rendering_available": _check_rendering()
+                "cumulative": {
+                    "total_requests": STATS["total_requests"],
+                    "total_models": STATS["total_models"],
+                    "total_text_queries": STATS["total_text_queries"],
+                    "total_time_sec": round(STATS["total_time_sec"], 3),
+                    "avg_time_sec": round(avg_time, 3),
+                    "uptime_sec": round(uptime, 1),
+                    "estimated_cost_usd": round(estimated_cost, 6),
+                    "cost_per_model_usd": round(cost_per_model, 6),
+                    "gpu_cost_per_sec": GPU_COST_PER_SEC
+                }
             }
 
-        # Batch images (primary use case for local rendering)
-        if "images" in input_data:
+        # Process specific UIDs
+        if "uids" in input_data:
             start = time.time()
-            embeddings = embed_images_b64(input_data["images"])
+            uids = input_data["uids"]
+
+            results = process_models(uids)
+
             elapsed = time.time() - start
+            STATS["total_requests"] += 1
+            STATS["total_models"] += len(results)
+            STATS["total_time_sec"] += elapsed
 
-            result = {"embeddings": embeddings.tolist()}
-            if include_stats:
-                result["stats"] = {
-                    "time_sec": round(elapsed, 4),
-                    "images_count": len(input_data["images"]),
-                    "cost_usd": round(elapsed * GPU_COST_PER_SECOND, 8)
-                }
-            return result
+            return {
+                "results": results,
+                "processed": len(results),
+                "requested": len(uids),
+                "time_sec": round(elapsed, 3),
+                "time_per_model": round(elapsed / len(results), 3) if results else 0
+            }
 
-        # Single image
-        if "image" in input_data:
-            start = time.time()
-            embeddings = embed_images_b64([input_data["image"]])
-            elapsed = time.time() - start
-
-            result = {"embedding": embeddings[0].tolist()}
-            if include_stats:
-                result["stats"] = {"time_sec": round(elapsed, 4)}
-            return result
-
-        # Single text
+        # Text query embedding
         if "text" in input_data:
             start = time.time()
-            embeddings = embed_text([input_data["text"]])
+            from modules.embedder import embed_text
+            embedding = embed_text(input_data["text"])
             elapsed = time.time() - start
 
-            result = {"embedding": embeddings[0].tolist()}
-            if include_stats:
-                result["stats"] = {"time_sec": round(elapsed, 4)}
-            return result
+            STATS["total_requests"] += 1
+            STATS["total_text_queries"] += 1
+            STATS["total_time_sec"] += elapsed
 
-        # Batch texts
-        if "texts" in input_data:
-            start = time.time()
-            embeddings = embed_text(input_data["texts"])
-            elapsed = time.time() - start
+            return {
+                "embedding": embedding,
+                "dimension": len(embedding),
+                "time_sec": round(elapsed, 3)
+            }
 
-            result = {"embeddings": embeddings.tolist()}
-            if include_stats:
-                result["stats"] = {"time_sec": round(elapsed, 4), "texts_count": len(input_data["texts"])}
-            return result
-
-        # 3D Model (optional - requires pyrender)
-        if "model" in input_data:
-            if not _check_rendering():
-                return {"error": "3D rendering not available. Use local rendering mode."}
-
-            start = time.time()
-            model_b64 = input_data["model"]
-            file_format = input_data.get("format", "glb")
-            model_bytes = base64.b64decode(model_b64)
-
-            result = render_and_embed_model(model_bytes, file_format)
-            elapsed = time.time() - start
-
-            if include_stats:
-                result["stats"] = {
-                    "time_sec": round(elapsed, 4),
-                    "cost_usd": round(elapsed * GPU_COST_PER_SECOND, 8)
-                }
-            return result
-
-        return {"error": "No valid input. Use 'images', 'image', 'text', 'texts', 'model', or 'stats'."}
+        return {"error": "No valid input. Use 'uids', 'text', or 'stats'."}
 
     except Exception as e:
         import traceback
         return {"error": str(e), "traceback": traceback.format_exc()}
 
 
-# Start the serverless worker
+# Start worker
 runpod.serverless.start({"handler": handler})
