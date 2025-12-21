@@ -62,7 +62,7 @@ def startup():
 startup()
 
 
-INTERNAL_BATCH_SIZE = 1000  # Process all in one pass
+INTERNAL_BATCH_SIZE = 500  # Balance: disk space vs. overhead
 
 
 def process_models(uids: list[str]) -> list[dict]:
@@ -94,6 +94,25 @@ def process_models(uids: list[str]) -> list[dict]:
         total_batches = (total + INTERNAL_BATCH_SIZE - 1) // INTERNAL_BATCH_SIZE
 
         print(f"\n=== Batch {batch_num}/{total_batches}: {len(batch_uids)} models ===")
+
+        # Clean up temp/cache files before each batch to prevent disk full
+        import tempfile
+        import glob
+        import shutil
+        # Clean temp dir
+        for ext in ["*.glb", "*.obj", "*.stl", "*.gltf"]:
+            for tmp in glob.glob(os.path.join(tempfile.gettempdir(), ext)):
+                try:
+                    os.unlink(tmp)
+                except Exception:
+                    pass
+        # Clean objaverse cache
+        objaverse_cache = os.path.expanduser("~/.objaverse/hf-objaverse-v1/glbs")
+        if os.path.exists(objaverse_cache):
+            try:
+                shutil.rmtree(objaverse_cache)
+            except Exception:
+                pass
 
         # Download batch
         print(f"  Downloading {len(batch_uids)} models...")
