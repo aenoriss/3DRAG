@@ -15,7 +15,8 @@ Input formats:
 
 # MUST be set before importing pyrender/pyglet
 import os
-os.environ["PYOPENGL_PLATFORM"] = "egl"
+os.environ["PYOPENGL_PLATFORM"] = "osmesa"  # Software rendering, no X11 needed
+os.environ["PYGLET_HEADLESS"] = "true"  # Pyglet headless mode
 
 import runpod
 import time
