@@ -25,11 +25,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install Python dependencies
 RUN pip install --no-cache-dir \
-    transformers \
+    "transformers>=4.40.0,<4.50.0" \
     torch \
     pillow \
     runpod \
-    numpy \
+    "numpy<2.0" \
     trimesh \
     pyrender \
     PyOpenGL \
