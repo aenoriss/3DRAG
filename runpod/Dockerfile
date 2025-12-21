@@ -3,6 +3,7 @@ FROM runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04
 WORKDIR /app
 
 # Install system dependencies for EGL/OpenGL headless rendering + X11 libs for pyglet
+# Also install assimp for FBX/DAE/3DS support
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1-mesa-glx \
     libgl1-mesa-dri \
@@ -19,6 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxinerama1 \
     libxrandr2 \
     libxi6 \
+    libassimp-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -37,7 +39,11 @@ RUN pip install --no-cache-dir \
     einops \
     timm \
     sentence-transformers \
-    huggingface_hub
+    huggingface_hub \
+    pyassimp \
+    pygltflib \
+    networkx \
+    scipy
 
 # Copy application code
 COPY runpod/modules /app/modules
