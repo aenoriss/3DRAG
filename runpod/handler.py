@@ -13,10 +13,18 @@ Input formats:
 - {"stats": true}                -> Return system stats
 """
 
-# MUST be set before importing pyrender/pyglet
+# Start virtual X server for pyglet (before any imports)
 import os
-os.environ["PYOPENGL_PLATFORM"] = "osmesa"  # Software rendering, no X11 needed
-os.environ["PYGLET_HEADLESS"] = "true"  # Pyglet headless mode
+import subprocess
+
+# Start Xvfb (virtual framebuffer) for pyglet
+xvfb_proc = subprocess.Popen(
+    ["Xvfb", ":99", "-screen", "0", "1024x768x24"],
+    stdout=subprocess.DEVNULL,
+    stderr=subprocess.DEVNULL
+)
+os.environ["DISPLAY"] = ":99"
+os.environ["PYOPENGL_PLATFORM"] = "egl"  # GPU-accelerated rendering
 
 import runpod
 import time
