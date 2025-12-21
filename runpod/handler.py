@@ -62,7 +62,7 @@ def startup():
 startup()
 
 
-INTERNAL_BATCH_SIZE = 100  # Process in batches of 100 internally
+INTERNAL_BATCH_SIZE = 1000  # Process all in one pass
 
 
 def process_models(uids: list[str]) -> list[dict]:

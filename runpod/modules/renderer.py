@@ -83,18 +83,33 @@ def render_model(
 
     # Load mesh
     mesh_path = Path(model_path)
+    if not mesh_path.exists():
+        raise ValueError(f"File not found: {model_path}")
+
     mesh = trimesh.load(str(mesh_path), force='mesh')
 
     if isinstance(mesh, trimesh.Scene):
         meshes = [g for g in mesh.geometry.values() if isinstance(g, trimesh.Trimesh)]
-        if meshes:
-            mesh = trimesh.util.concatenate(meshes)
-        else:
-            raise ValueError("No valid mesh found in scene")
+        if not meshes:
+            raise ValueError("No geometry in scene")
+        mesh = trimesh.util.concatenate(meshes)
+
+    # Validate mesh has triangles
+    if not hasattr(mesh, 'vertices') or len(mesh.vertices) == 0:
+        raise ValueError("Empty mesh (no vertices)")
+    if not hasattr(mesh, 'faces') or len(mesh.faces) == 0:
+        raise ValueError("Empty mesh (no faces)")
 
     # Center and normalize
-    mesh.vertices -= mesh.centroid
-    scale = 1.0 / max(mesh.extents)
+    centroid = mesh.centroid
+    if np.isnan(centroid).any():
+        raise ValueError("Invalid geometry (NaN centroid)")
+    mesh.vertices -= centroid
+
+    extents = mesh.extents
+    if max(extents) == 0:
+        raise ValueError("Zero-size mesh")
+    scale = 1.0 / max(extents)
     mesh.vertices *= scale
 
     # Create pyrender scene
