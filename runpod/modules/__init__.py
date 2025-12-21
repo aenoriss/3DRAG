@@ -1,9 +1,8 @@
-"""RunPod modules for 3D model processing pipeline."""
+"""RunPod modules for 3D model processing pipeline.
 
-from .downloader import download_models, get_annotations
-from .renderer import render_model, render_models_batch, MAX_RENDER_WORKERS
-from .captioner import caption_image, caption_images_batch, load_florence
-from .embedder import embed_text, embed_texts_batch, load_model
+Modules are imported lazily to avoid triggering pyrender/pyglet
+display initialization before PYOPENGL_PLATFORM is set.
+"""
 
 __all__ = [
     "download_models",
