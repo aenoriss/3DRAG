@@ -32,14 +32,12 @@ RUN pip install --no-cache-dir \
     timm \
     sentence-transformers
 
-# Copy application code first (needed for pre-download with patches)
+# Copy application code
 COPY runpod/modules /app/modules
 COPY runpod/handler.py /app/handler.py
+COPY runpod/download_models.py /app/download_models.py
 
-# Florence-2 downloads at runtime (flash_attn patch required, handled by captioner module)
-
-# Pre-download sentence-transformers model
-RUN python -c "from sentence_transformers import SentenceTransformer; \
-    SentenceTransformer('all-mpnet-base-v2')"
+# Pre-download all models (Florence-2 + sentence-transformers)
+RUN python download_models.py
 
 CMD ["python", "-u", "handler.py"]
