@@ -18,6 +18,29 @@ from typing import List, Tuple, Dict, Any
 
 import pyrender
 
+# Debug: Check OpenGL platform
+print(f"[renderer] PYOPENGL_PLATFORM = {os.environ.get('PYOPENGL_PLATFORM', 'not set')}", flush=True)
+print(f"[renderer] DISPLAY = {os.environ.get('DISPLAY', 'not set')}", flush=True)
+
+# Try to detect GPU/EGL
+try:
+    import OpenGL.EGL as egl
+    print(f"[renderer] EGL module imported: True", flush=True)
+
+    # Try to get EGL display
+    display = egl.eglGetDisplay(egl.EGL_DEFAULT_DISPLAY)
+    if display != egl.EGL_NO_DISPLAY:
+        major, minor = egl.EGLint(), egl.EGLint()
+        if egl.eglInitialize(display, major, minor):
+            print(f"[renderer] EGL initialized: {major.value}.{minor.value}", flush=True)
+            egl.eglTerminate(display)
+        else:
+            print(f"[renderer] EGL initialize failed", flush=True)
+    else:
+        print(f"[renderer] EGL_NO_DISPLAY - no GPU?", flush=True)
+except Exception as e:
+    print(f"[renderer] EGL check failed: {e}", flush=True)
+
 # Render settings
 RENDER_SIZE = 384
 BACKGROUND_COLOR = [0.5, 0.5, 0.5, 1.0]
@@ -131,8 +154,18 @@ def render_model(
     # Calculate camera distance
     distance = 2.5
 
-    # Render views
+    # Render views (log only first time to avoid spam)
+    global _renderer_logged
+    if '_renderer_logged' not in globals():
+        _renderer_logged = False
+
     renderer = pyrender.OffscreenRenderer(RENDER_SIZE, RENDER_SIZE)
+
+    if not _renderer_logged:
+        platform_name = renderer._platform.__class__.__name__ if hasattr(renderer, '_platform') else 'unknown'
+        print(f"[renderer] OffscreenRenderer platform: {platform_name}", flush=True)
+        _renderer_logged = True
+
     images = []
     images_b64 = []
 
