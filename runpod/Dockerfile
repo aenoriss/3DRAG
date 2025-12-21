@@ -38,7 +38,8 @@ RUN pip install --no-cache-dir \
     requests \
     einops \
     timm \
-    sentence-transformers
+    sentence-transformers \
+    huggingface_hub
 
 # Copy application code
 COPY runpod/modules /app/modules

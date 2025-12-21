@@ -1,34 +1,16 @@
 """Pre-download models during Docker build (no GPU required)."""
 
-from unittest.mock import patch
-from transformers.dynamic_module_utils import get_imports
-
-
-def _fixed_get_imports(filename: str) -> list:
-    """Patch to remove flash_attn from imports."""
-    if not str(filename).endswith("modeling_florence2.py"):
-        return get_imports(filename)
-    imports = get_imports(filename)
-    if "flash_attn" in imports:
-        imports.remove("flash_attn")
-    return imports
+from huggingface_hub import snapshot_download
 
 
 def download_florence():
-    """Download Florence-2 weights (CPU only, no GPU needed)."""
-    from transformers import AutoProcessor, AutoModelForCausalLM
-
-    print("[download_models] Starting Florence-2-base download...")
-    with patch("transformers.dynamic_module_utils.get_imports", _fixed_get_imports):
-        print("[download_models] Downloading processor...")
-        AutoProcessor.from_pretrained("microsoft/Florence-2-base", trust_remote_code=True)
-        print("[download_models] Downloading model weights...")
-        AutoModelForCausalLM.from_pretrained(
-            "microsoft/Florence-2-base",
-            trust_remote_code=True,
-            attn_implementation="eager"  # Avoid SDPA check
-        )
-    print("[download_models] Florence-2 downloaded!")
+    """Download Florence-2 weights (files only, no model loading)."""
+    print("[download_models] Downloading Florence-2-base files...")
+    snapshot_download(
+        repo_id="microsoft/Florence-2-base",
+        local_dir_use_symlinks=False
+    )
+    print("[download_models] Florence-2 files downloaded!")
 
 
 def download_sentence_transformer():
