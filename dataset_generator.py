@@ -208,12 +208,15 @@ async def generate_dataset(
                         print(f"  No embedding for {uid}")
                         continue
 
-                    # Save preview image
+                    # Save preview image as jpg
                     if preview_b64:
                         try:
-                            preview_path = previews_dir / f"{uid}.png"
+                            from PIL import Image
+                            import io
                             preview_bytes = base64.b64decode(preview_b64)
-                            preview_path.write_bytes(preview_bytes)
+                            img = Image.open(io.BytesIO(preview_bytes))
+                            preview_path = previews_dir / f"{uid}.jpg"
+                            img.convert("RGB").save(preview_path, "JPEG", quality=85)
                         except Exception as e:
                             print(f"  Failed to save preview for {uid}: {e}")
 
