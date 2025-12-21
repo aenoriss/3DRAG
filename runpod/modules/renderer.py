@@ -152,8 +152,8 @@ def render_model(
     ambient = pyrender.DirectionalLight(color=[1.0, 1.0, 1.0], intensity=1.0)
     scene.add(ambient, pose=create_camera_pose(-30, -135, 2))
 
-    # Calculate camera distance
-    distance = 2.5
+    # Calculate camera distance (smaller = more zoomed in)
+    distance = 2.0  # Slightly zoomed in from 2.5
 
     # Render views (log only first time to avoid spam)
     global _renderer_logged

@@ -122,7 +122,9 @@ async def generate_dataset(
                 "failed": 0
             })
 
-        await clear_dataset()
+        # Don't clear dataset - preserve existing previews
+        # Only ensure the directory exists
+        DATASET_DIR.mkdir(exist_ok=True)
 
         # Load UIDs from Objaverse
         loop = asyncio.get_event_loop()
@@ -262,17 +264,17 @@ async def generate_dataset(
         return result
 
     except asyncio.CancelledError:
-        print("Generation cancelled, cleaning up...")
+        print("Generation cancelled")
         _status.is_generating = False
         _status.error = "Cancelled"
-        await clear_dataset()
+        # Don't clear dataset - preserve existing previews and index
         raise
 
     except Exception as e:
-        print(f"Generation error: {e}, cleaning up...")
+        print(f"Generation error: {e}")
         _status.is_generating = False
         _status.error = str(e)
-        await clear_dataset()
+        # Don't clear dataset - preserve existing previews and index
         raise
 
 
