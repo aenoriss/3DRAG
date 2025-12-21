@@ -20,8 +20,8 @@ BASE_URL = f"https://api.runpod.ai/v2/{RUNPOD_ENDPOINT_ID}"
 
 print(f"[RunPod Client] Endpoint: {RUNPOD_ENDPOINT_ID}")
 
-# Timeout for processing (rendering + captioning can take time)
-PROCESS_TIMEOUT = 300.0  # 5 minutes for batch processing
+# Timeout for processing (all models in one request)
+PROCESS_TIMEOUT = 1800.0  # 30 minutes for large batches
 DEFAULT_TIMEOUT = 60.0
 POLL_INTERVAL = 2.0  # seconds between status checks
 

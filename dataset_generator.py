@@ -23,7 +23,7 @@ from datetime import datetime
 DATASET_DIR = Path("dataset")
 
 DATASET_SIZE = 100
-BATCH_SIZE = 20  # UIDs per RunPod request (balance between throughput and reliability)
+# All UIDs sent in one request - RunPod handles internal batching
 
 
 @dataclass
@@ -161,93 +161,83 @@ async def generate_dataset(
         previews_dir = DATASET_DIR / "previews"
         previews_dir.mkdir(parents=True, exist_ok=True)
 
-        # Process in batches via RunPod
+        # Send all UIDs to RunPod in one request (RunPod handles internal batching)
         total_uids = len(selected_uids)
-        print(f"Processing {total_uids} models in batches of {BATCH_SIZE}...")
+        print(f"Sending {total_uids} models to RunPod...")
 
-        for batch_start in range(0, total_uids, BATCH_SIZE):
-            if _status.cancelled:
-                print("Processing cancelled by user")
-                raise asyncio.CancelledError("Cancelled by user")
+        if progress_callback:
+            await progress_callback({
+                "type": "dataset_progress",
+                "step": "processing",
+                "message": f"Processing {total_uids} models on RunPod...",
+                "total": count,
+                "processed": 0,
+                "indexed": 0,
+                "failed": 0
+            })
 
-            batch_end = min(batch_start + BATCH_SIZE, total_uids)
-            batch_uids = selected_uids[batch_start:batch_end]
+        try:
+            # Send all UIDs to RunPod - it handles batching internally
+            result = await process_uids(selected_uids)
 
-            print(f"\n=== Batch {batch_start//BATCH_SIZE + 1}: models {batch_start+1}-{batch_end} ===")
+            results = result.get("results", [])
+            print(f"Received {len(results)} results from RunPod")
+            print(f"Time: {result.get('time_sec', 0):.1f}s, {result.get('time_per_model', 0):.2f}s/model")
 
-            if progress_callback:
-                await progress_callback({
-                    "type": "dataset_progress",
-                    "step": "processing",
-                    "message": f"Processing batch {batch_start//BATCH_SIZE + 1}...",
-                    "total": count,
-                    "processed": _status.processed,
-                    "indexed": _status.indexed,
-                    "failed": _status.failed
-                })
+            for item in results:
+                uid = item.get("uid", "")
+                name = item.get("name", uid[:20])
+                caption = item.get("caption", "")
+                embedding = item.get("embedding", [])
+                preview_b64 = item.get("preview", "")
 
-            try:
-                # Send UIDs to RunPod for full processing
-                result = await process_uids(batch_uids)
+                _status.processed += 1
 
-                results = result.get("results", [])
-                print(f"  Received {len(results)} results from RunPod")
-                print(f"  Time: {result.get('time_sec', 0):.1f}s, {result.get('time_per_model', 0):.2f}s/model")
+                if not embedding:
+                    _status.failed += 1
+                    print(f"  No embedding for {uid}")
+                    continue
 
-                for item in results:
-                    uid = item.get("uid", "")
-                    name = item.get("name", uid[:20])
-                    caption = item.get("caption", "")
-                    embedding = item.get("embedding", [])
-                    preview_b64 = item.get("preview", "")
+                # Save preview image as jpg
+                if preview_b64:
+                    try:
+                        from PIL import Image
+                        import io
+                        preview_bytes = base64.b64decode(preview_b64)
+                        img = Image.open(io.BytesIO(preview_bytes))
+                        preview_path = previews_dir / f"{uid}.jpg"
+                        img.convert("RGB").save(preview_path, "JPEG", quality=85)
+                    except Exception as e:
+                        print(f"  Failed to save preview for {uid}: {e}")
 
-                    _status.processed += 1
+                # Add to index
+                index.add(
+                    embedding=embedding,
+                    model_id=uid,
+                    name=name,
+                    category=None,
+                    file_path=None,
+                    caption=caption,
+                    save=False
+                )
+                _status.indexed += 1
 
-                    if not embedding:
-                        _status.failed += 1
-                        print(f"  No embedding for {uid}")
-                        continue
+                if progress_callback:
+                    await progress_callback({
+                        "type": "dataset_progress",
+                        "step": "indexing",
+                        "message": f"{caption[:40]}..." if caption else name,
+                        "total": count,
+                        "processed": _status.processed,
+                        "indexed": _status.indexed,
+                        "failed": _status.failed,
+                        "current": name,
+                        "model_id": uid
+                    })
 
-                    # Save preview image as jpg
-                    if preview_b64:
-                        try:
-                            from PIL import Image
-                            import io
-                            preview_bytes = base64.b64decode(preview_b64)
-                            img = Image.open(io.BytesIO(preview_bytes))
-                            preview_path = previews_dir / f"{uid}.jpg"
-                            img.convert("RGB").save(preview_path, "JPEG", quality=85)
-                        except Exception as e:
-                            print(f"  Failed to save preview for {uid}: {e}")
-
-                    # Add to index
-                    index.add(
-                        embedding=embedding,
-                        model_id=uid,
-                        name=name,
-                        category=None,
-                        file_path=None,
-                        caption=caption,
-                        save=False
-                    )
-                    _status.indexed += 1
-
-                    if progress_callback:
-                        await progress_callback({
-                            "type": "dataset_progress",
-                            "step": "indexing",
-                            "message": f"{caption[:40]}..." if caption else name,
-                            "total": count,
-                            "processed": _status.processed,
-                            "indexed": _status.indexed,
-                            "failed": _status.failed,
-                            "current": name,
-                            "model_id": uid
-                        })
-
-            except Exception as e:
-                print(f"  Batch error: {e}")
-                _status.failed += len(batch_uids)
+        except Exception as e:
+            print(f"RunPod error: {e}")
+            _status.failed += total_uids
 
         # Save index
         index._save()

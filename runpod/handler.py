@@ -60,84 +60,103 @@ def startup():
 startup()
 
 
+INTERNAL_BATCH_SIZE = 100  # Process in batches of 100 internally
+
+
 def process_models(uids: list[str]) -> list[dict]:
     """
-    Process a list of model UIDs.
+    Process a list of model UIDs with internal batching.
 
-    Downloads, renders, captions, and embeds each model.
+    Downloads, renders, captions, and embeds in batches of INTERNAL_BATCH_SIZE.
 
     Args:
-        uids: List of Objaverse UIDs
+        uids: List of Objaverse UIDs (can be thousands)
 
     Returns:
         List of results with embeddings
     """
     from modules.downloader import download_models, get_annotations
-    from modules.renderer import render_models_batch
+    from modules.renderer import render_models_batch, MAX_RENDER_WORKERS
     from modules.captioner import caption_images_batch
     from modules.embedder import embed_texts_batch
 
-    results = []
+    all_results = []
+    total = len(uids)
 
-    # Download all models
-    print(f"Downloading {len(uids)} models...")
-    paths = download_models(uids, download_processes=4)
+    print(f"[handler] Processing {total} models in batches of {INTERNAL_BATCH_SIZE}...")
 
-    # Load annotations only for these UIDs (not all 800k+)
-    annotations = get_annotations(uids)
+    for batch_start in range(0, total, INTERNAL_BATCH_SIZE):
+        batch_end = min(batch_start + INTERNAL_BATCH_SIZE, total)
+        batch_uids = uids[batch_start:batch_end]
+        batch_num = batch_start // INTERNAL_BATCH_SIZE + 1
+        total_batches = (total + INTERNAL_BATCH_SIZE - 1) // INTERNAL_BATCH_SIZE
 
-    # Parallel GPU rendering (32 workers default for 80GB GPU)
-    from modules.renderer import MAX_RENDER_WORKERS
-    print(f"Rendering {len(paths)} models in parallel ({MAX_RENDER_WORKERS} workers)...")
-    models_to_render = [(uid, path) for uid, path in paths.items()]
-    render_results = render_models_batch(models_to_render, num_views=1, max_workers=MAX_RENDER_WORKERS)
+        print(f"\n=== Batch {batch_num}/{total_batches}: {len(batch_uids)} models ===")
 
-    # Process render results
-    render_data = []
-    for result in render_results:
-        uid = result["uid"]
-        if result["success"]:
-            ann = annotations.get(uid, {})
-            render_data.append({
-                "uid": uid,
-                "name": ann.get("name", uid[:20]),
-                "image": result["images"][0] if result["images"] else None,
-                "image_b64": result["images_b64"][0] if result["images_b64"] else None
-            })
-        else:
-            print(f"  Render failed for {uid}: {result.get('error')}")
+        # Download batch
+        print(f"  Downloading {len(batch_uids)} models...")
+        paths = download_models(batch_uids, download_processes=4)
 
-        # Clean up downloaded file
-        if uid in paths:
-            try:
-                os.unlink(paths[uid])
-            except Exception:
-                pass
+        # Load annotations
+        annotations = get_annotations(batch_uids)
 
-    if not render_data:
-        return []
+        # Render batch
+        print(f"  Rendering {len(paths)} models ({MAX_RENDER_WORKERS} workers)...")
+        models_to_render = [(uid, path) for uid, path in paths.items()]
+        render_results = render_models_batch(models_to_render, num_views=1, max_workers=MAX_RENDER_WORKERS)
 
-    # Batch caption
-    print(f"Captioning {len(render_data)} images...")
-    images = [d["image"] for d in render_data if d["image"]]
-    captions = caption_images_batch(images)
+        # Process render results
+        render_data = []
+        for result in render_results:
+            uid = result["uid"]
+            if result["success"]:
+                ann = annotations.get(uid, {})
+                render_data.append({
+                    "uid": uid,
+                    "name": ann.get("name", uid[:20]),
+                    "image": result["images"][0] if result["images"] else None,
+                    "image_b64": result["images_b64"][0] if result["images_b64"] else None
+                })
+            else:
+                print(f"    Render failed: {uid[:20]}...")
 
-    # Batch embed
-    print(f"Embedding {len(captions)} captions...")
-    embeddings = embed_texts_batch(captions)
+            # Clean up downloaded file
+            if uid in paths:
+                try:
+                    os.unlink(paths[uid])
+                except Exception:
+                    pass
 
-    # Build results
-    for i, data in enumerate(render_data):
-        if i < len(embeddings) and embeddings[i]:
-            results.append({
-                "uid": data["uid"],
-                "name": data["name"],
-                "caption": captions[i] if i < len(captions) else "",
-                "embedding": embeddings[i],
-                "preview": data["image_b64"]
-            })
+        if not render_data:
+            print(f"  No successful renders in batch {batch_num}")
+            continue
 
-    return results
+        # Caption batch
+        print(f"  Captioning {len(render_data)} images...")
+        images = [d["image"] for d in render_data if d["image"]]
+        captions = caption_images_batch(images)
+
+        # Embed batch
+        print(f"  Embedding {len(captions)} captions...")
+        embeddings = embed_texts_batch(captions)
+
+        # Build batch results
+        batch_results = []
+        for i, data in enumerate(render_data):
+            if i < len(embeddings) and embeddings[i]:
+                batch_results.append({
+                    "uid": data["uid"],
+                    "name": data["name"],
+                    "caption": captions[i] if i < len(captions) else "",
+                    "embedding": embeddings[i],
+                    "preview": data["image_b64"]
+                })
+
+        all_results.extend(batch_results)
+        print(f"  Batch {batch_num} complete: {len(batch_results)} models processed")
+
+    print(f"\n[handler] Total: {len(all_results)}/{total} models processed successfully")
+    return all_results
 
 
 def handler(event):
