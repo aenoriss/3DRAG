@@ -62,7 +62,7 @@ def startup():
 startup()
 
 
-INTERNAL_BATCH_SIZE = 500  # Balance: disk space vs. overhead
+INTERNAL_BATCH_SIZE = 250  # Smaller batches to prevent disk full
 
 
 def process_models(uids: list[str]) -> list[dict]:
@@ -180,6 +180,26 @@ def process_models(uids: list[str]) -> list[dict]:
 
         all_results.extend(batch_results)
         print(f"  Batch {batch_num} complete: {len(batch_results)} models processed")
+
+        # Aggressive cleanup after each batch
+        import gc
+        del render_results, render_data, captions, embeddings, batch_results
+        gc.collect()
+
+        # Clean disk: temp files + objaverse cache
+        for ext in ["*.glb", "*.obj", "*.stl", "*.gltf", "*.png", "*.jpg"]:
+            for tmp in glob.glob(os.path.join(tempfile.gettempdir(), ext)):
+                try:
+                    os.unlink(tmp)
+                except Exception:
+                    pass
+        objaverse_cache = os.path.expanduser("~/.objaverse")
+        if os.path.exists(objaverse_cache):
+            try:
+                shutil.rmtree(objaverse_cache)
+                print(f"  Cleaned objaverse cache", flush=True)
+            except Exception:
+                pass
 
     print(f"\n[handler] Total: {len(all_results)}/{total} models processed successfully")
     return all_results
