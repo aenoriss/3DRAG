@@ -18,20 +18,26 @@ def download_florence():
     """Download Florence-2 weights (CPU only, no GPU needed)."""
     from transformers import AutoProcessor, AutoModelForCausalLM
 
-    print("Downloading Florence-2-base...")
+    print("[download_models] Starting Florence-2-base download...")
     with patch("transformers.dynamic_module_utils.get_imports", _fixed_get_imports):
+        print("[download_models] Downloading processor...")
         AutoProcessor.from_pretrained("microsoft/Florence-2-base", trust_remote_code=True)
-        AutoModelForCausalLM.from_pretrained("microsoft/Florence-2-base", trust_remote_code=True)
-    print("Florence-2 downloaded!")
+        print("[download_models] Downloading model weights...")
+        AutoModelForCausalLM.from_pretrained(
+            "microsoft/Florence-2-base",
+            trust_remote_code=True,
+            attn_implementation="eager"  # Avoid SDPA check
+        )
+    print("[download_models] Florence-2 downloaded!")
 
 
 def download_sentence_transformer():
     """Download sentence-transformers model."""
     from sentence_transformers import SentenceTransformer
 
-    print("Downloading all-mpnet-base-v2...")
+    print("[download_models] Downloading all-mpnet-base-v2...")
     SentenceTransformer("all-mpnet-base-v2")
-    print("Sentence transformer downloaded!")
+    print("[download_models] Sentence transformer downloaded!")
 
 
 if __name__ == "__main__":

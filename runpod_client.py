@@ -18,6 +18,8 @@ RUNPOD_ENDPOINT_ID = os.getenv("RUNPOD_ENDPOINT_ID")
 
 BASE_URL = f"https://api.runpod.ai/v2/{RUNPOD_ENDPOINT_ID}"
 
+print(f"[RunPod Client] Endpoint: {RUNPOD_ENDPOINT_ID}")
+
 # Timeout for processing (rendering + captioning can take time)
 PROCESS_TIMEOUT = 300.0  # 5 minutes for batch processing
 DEFAULT_TIMEOUT = 60.0
@@ -69,6 +71,7 @@ async def process_uids(uids: List[str]) -> dict:
         - embedding: 768-dim embedding vector
         - preview: Base64-encoded preview image
     """
+    print(f"[RunPod] Sending {len(uids)} UIDs to {BASE_URL}/runsync...")
     async with httpx.AsyncClient(timeout=PROCESS_TIMEOUT) as client:
         response = await client.post(
             f"{BASE_URL}/runsync",
@@ -77,6 +80,7 @@ async def process_uids(uids: List[str]) -> dict:
         )
         response.raise_for_status()
         result = response.json()
+        print(f"[RunPod] Response status: {result.get('status')}")
 
         status = result.get("status")
         if status == "COMPLETED":

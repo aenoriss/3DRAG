@@ -132,9 +132,11 @@ def handler(event):
     """RunPod serverless handler."""
     try:
         input_data = event.get("input", {})
+        print(f"[handler] Received request with keys: {list(input_data.keys())}")
 
         # Stats endpoint
         if input_data.get("stats"):
+            print("[handler] Processing stats request")
             uptime = time.time() - STATS["started_at"]
             avg_time = STATS["total_time_sec"] / STATS["total_requests"] if STATS["total_requests"] > 0 else 0
             estimated_cost = STATS["total_time_sec"] * GPU_COST_PER_SEC
@@ -159,8 +161,10 @@ def handler(event):
         if "uids" in input_data:
             start = time.time()
             uids = input_data["uids"]
+            print(f"[handler] Processing {len(uids)} UIDs...")
 
             results = process_models(uids)
+            print(f"[handler] Processed {len(results)} models successfully")
 
             elapsed = time.time() - start
             STATS["total_requests"] += 1
@@ -177,9 +181,11 @@ def handler(event):
 
         # Text query embedding
         if "text" in input_data:
+            print(f"[handler] Embedding text query: {input_data['text'][:50]}...")
             start = time.time()
             from modules.embedder import embed_text
             embedding = embed_text(input_data["text"])
+            print(f"[handler] Text embedded, dim={len(embedding)}")
             elapsed = time.time() - start
 
             STATS["total_requests"] += 1
