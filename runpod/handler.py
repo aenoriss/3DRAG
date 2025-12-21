@@ -13,9 +13,12 @@ Input formats:
 - {"stats": true}                -> Return system stats
 """
 
+# MUST be set before importing pyrender/pyglet
+import os
+os.environ["PYOPENGL_PLATFORM"] = "egl"
+
 import runpod
 import time
-import os
 
 # Stats tracking
 STATS = {
