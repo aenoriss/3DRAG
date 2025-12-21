@@ -13,14 +13,9 @@ Input formats:
 - {"stats": true}                -> Return system stats
 """
 
-# Configure headless rendering before any imports
+# Configure EGL for headless GPU rendering (must be before pyrender import)
 import os
-os.environ["PYOPENGL_PLATFORM"] = "osmesa"  # Software rendering, no X11
-
-# Patch pyrender to skip Viewer import (requires pyglet/X11)
-import sys
-from unittest.mock import MagicMock
-sys.modules['pyglet'] = MagicMock()  # Mock pyglet so pyrender doesn't crash
+os.environ["PYOPENGL_PLATFORM"] = "egl"
 
 import runpod
 import time
