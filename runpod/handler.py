@@ -157,6 +157,11 @@ def process_models(uids: list[str]) -> list[dict]:
         images = [d["image"] for d in render_data if d["image"]]
         captions = caption_images_batch(images)
 
+        # Free PIL images from memory (keep only base64 for response)
+        del images
+        for d in render_data:
+            d["image"] = None
+
         # Embed batch
         print(f"  Embedding {len(captions)} captions...")
         embeddings = embed_texts_batch(captions)

@@ -147,9 +147,9 @@ def render_model(
             if return_pil:
                 images.append(img)
 
-            # Encode as base64
+            # Encode as base64 JPEG (3-4x smaller than PNG for transfer)
             buffer = io.BytesIO()
-            img.save(buffer, format="PNG")
+            img.convert("RGB").save(buffer, format="JPEG", quality=85)
             images_b64.append(base64.b64encode(buffer.getvalue()).decode())
     finally:
         renderer.delete()
