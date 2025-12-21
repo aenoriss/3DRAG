@@ -32,17 +32,22 @@ RUN pip install --no-cache-dir \
     timm \
     sentence-transformers
 
-# Pre-download Florence-2 model (faster cold starts)
-RUN python -c "from transformers import AutoModelForCausalLM, AutoProcessor; \
+# Copy application code first (needed for pre-download with patches)
+COPY runpod/modules /app/modules
+COPY runpod/handler.py /app/handler.py
+
+# Pre-download Florence-2 model weights (with flash_attn patch, CPU only during build)
+RUN python -c "\
+from unittest.mock import patch; \
+from transformers.dynamic_module_utils import get_imports; \
+def fix(f): i=get_imports(f); 'flash_attn' in i and i.remove('flash_attn'); return i; \
+with patch('transformers.dynamic_module_utils.get_imports', lambda f: fix(f) if 'florence2' in f else get_imports(f)): \
+    from transformers import AutoProcessor, AutoModelForCausalLM; \
     AutoProcessor.from_pretrained('microsoft/Florence-2-base', trust_remote_code=True); \
     AutoModelForCausalLM.from_pretrained('microsoft/Florence-2-base', trust_remote_code=True)"
 
 # Pre-download sentence-transformers model
 RUN python -c "from sentence_transformers import SentenceTransformer; \
     SentenceTransformer('all-mpnet-base-v2')"
-
-# Copy application code (paths relative to project root - deploy.sh uses . as context)
-COPY runpod/modules /app/modules
-COPY runpod/handler.py /app/handler.py
 
 CMD ["python", "-u", "handler.py"]
