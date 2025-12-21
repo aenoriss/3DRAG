@@ -13,18 +13,14 @@ Input formats:
 - {"stats": true}                -> Return system stats
 """
 
-# Start virtual X server for pyglet (before any imports)
+# Configure headless rendering before any imports
 import os
-import subprocess
+os.environ["PYOPENGL_PLATFORM"] = "osmesa"  # Software rendering, no X11
 
-# Start Xvfb (virtual framebuffer) for pyglet
-xvfb_proc = subprocess.Popen(
-    ["Xvfb", ":99", "-screen", "0", "1024x768x24"],
-    stdout=subprocess.DEVNULL,
-    stderr=subprocess.DEVNULL
-)
-os.environ["DISPLAY"] = ":99"
-os.environ["PYOPENGL_PLATFORM"] = "egl"  # GPU-accelerated rendering
+# Patch pyrender to skip Viewer import (requires pyglet/X11)
+import sys
+from unittest.mock import MagicMock
+sys.modules['pyglet'] = MagicMock()  # Mock pyglet so pyrender doesn't crash
 
 import runpod
 import time
