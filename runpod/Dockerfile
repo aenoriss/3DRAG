@@ -13,14 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libosmesa6 \
     libosmesa6-dev \
     freeglut3-dev \
-    curl \
     && rm -rf /var/lib/apt/lists/*
-
-# Install Ollama
-RUN curl -fsSL https://ollama.com/install.sh | sh
-
-# Set Ollama models directory to persist across container restarts
-ENV OLLAMA_MODELS=/app/ollama_models
 
 # Install Python dependencies
 RUN pip install --no-cache-dir \
@@ -36,15 +29,17 @@ RUN pip install --no-cache-dir \
     objaverse \
     requests \
     einops \
-    timm
+    timm \
+    sentence-transformers
 
 # Pre-download Florence-2 model (faster cold starts)
 RUN python -c "from transformers import AutoModelForCausalLM, AutoProcessor; \
     AutoProcessor.from_pretrained('microsoft/Florence-2-base', trust_remote_code=True); \
     AutoModelForCausalLM.from_pretrained('microsoft/Florence-2-base', trust_remote_code=True)"
 
-# Pre-pull Ollama embedding model
-RUN ollama serve & sleep 5 && ollama pull embeddinggemma && pkill ollama
+# Pre-download sentence-transformers model
+RUN python -c "from sentence_transformers import SentenceTransformer; \
+    SentenceTransformer('all-mpnet-base-v2')"
 
 # Copy application code
 COPY runpod/modules /app/modules

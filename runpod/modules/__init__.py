@@ -3,7 +3,7 @@
 from .downloader import download_models, get_annotations
 from .renderer import render_model, render_models_batch, MAX_RENDER_WORKERS
 from .captioner import caption_image, caption_images_batch, load_florence
-from .embedder import embed_text, embed_texts_batch, wait_for_ollama, ensure_model_loaded
+from .embedder import embed_text, embed_texts_batch, load_model
 
 __all__ = [
     "download_models",
@@ -16,6 +16,5 @@ __all__ = [
     "load_florence",
     "embed_text",
     "embed_texts_batch",
-    "wait_for_ollama",
-    "ensure_model_loaded",
+    "load_model",
 ]

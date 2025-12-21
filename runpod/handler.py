@@ -14,7 +14,6 @@ Input formats:
 """
 
 import runpod
-import subprocess
 import time
 import os
 
@@ -34,17 +33,11 @@ def startup():
     """Initialize all models and services."""
     print("=== Starting RunPod Worker ===")
 
-    # Start Ollama
-    print("Starting Ollama server...")
-    subprocess.Popen(["ollama", "serve"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    # Load embedding model (GPU)
+    from modules.embedder import load_model
+    load_model()
 
-    from modules.embedder import wait_for_ollama, ensure_model_loaded
-    if not wait_for_ollama(60):
-        raise RuntimeError("Ollama failed to start")
-    ensure_model_loaded()
-    print("Ollama ready!")
-
-    # Load Florence-2
+    # Load Florence-2 (GPU)
     from modules.captioner import load_florence
     load_florence()
 

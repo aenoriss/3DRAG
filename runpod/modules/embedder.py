@@ -1,47 +1,28 @@
 """
-Text embedding module using Ollama.
+Text embedding module using sentence-transformers.
 
-Uses EmbeddingGemma for 768-dimensional embeddings.
+Uses all-mpnet-base-v2 for 768-dimensional embeddings.
+GPU-accelerated on RunPod.
 """
 
-import time
-import requests
+from sentence_transformers import SentenceTransformer
 
-OLLAMA_URL = "http://localhost:11434"
-EMBEDDING_MODEL = "embeddinggemma"
+# Model: 768-dim, high quality, same dim as EmbeddingGemma
+MODEL_NAME = "all-mpnet-base-v2"
+EMBEDDING_DIM = 768
 
-
-def wait_for_ollama(timeout: int = 60) -> bool:
-    """
-    Wait for Ollama server to be ready.
-
-    Args:
-        timeout: Maximum seconds to wait
-
-    Returns:
-        True if ready, False if timeout
-    """
-    start = time.time()
-    while time.time() - start < timeout:
-        try:
-            resp = requests.get(f"{OLLAMA_URL}/api/tags", timeout=5)
-            if resp.status_code == 200:
-                return True
-        except Exception:
-            pass
-        time.sleep(1)
-    return False
+# Global model instance (loaded once)
+_model = None
 
 
-def ensure_model_loaded():
-    """Ensure embedding model is available."""
-    resp = requests.get(f"{OLLAMA_URL}/api/tags")
-    models = [m["name"] for m in resp.json().get("models", [])]
-
-    if not any(EMBEDDING_MODEL in m for m in models):
-        import subprocess
-        print(f"Pulling {EMBEDDING_MODEL}...")
-        subprocess.run(["ollama", "pull", EMBEDDING_MODEL], check=True)
+def load_model():
+    """Load the embedding model (GPU if available)."""
+    global _model
+    if _model is None:
+        print(f"Loading {MODEL_NAME} on GPU...")
+        _model = SentenceTransformer(MODEL_NAME, device="cuda")
+        print("Embedding model ready!")
+    return _model
 
 
 def embed_text(text: str) -> list[float]:
@@ -54,20 +35,14 @@ def embed_text(text: str) -> list[float]:
     Returns:
         768-dimensional embedding vector
     """
-    resp = requests.post(
-        f"{OLLAMA_URL}/api/embed",
-        json={"model": EMBEDDING_MODEL, "input": text},
-        timeout=30
-    )
-    resp.raise_for_status()
-    result = resp.json()
-    embeddings = result.get("embeddings", [])
-    return embeddings[0] if embeddings else []
+    model = load_model()
+    embedding = model.encode(text, convert_to_numpy=True)
+    return embedding.tolist()
 
 
 def embed_texts_batch(texts: list[str]) -> list[list[float]]:
     """
-    Batch embed multiple texts.
+    Batch embed multiple texts (GPU-accelerated).
 
     Args:
         texts: List of texts to embed
@@ -78,11 +53,17 @@ def embed_texts_batch(texts: list[str]) -> list[list[float]]:
     if not texts:
         return []
 
-    resp = requests.post(
-        f"{OLLAMA_URL}/api/embed",
-        json={"model": EMBEDDING_MODEL, "input": texts},
-        timeout=120
-    )
-    resp.raise_for_status()
-    result = resp.json()
-    return result.get("embeddings", [])
+    model = load_model()
+    embeddings = model.encode(texts, batch_size=32, convert_to_numpy=True)
+    return embeddings.tolist()
+
+
+# Legacy functions for compatibility (no longer needed)
+def wait_for_ollama(timeout: int = 60) -> bool:
+    """Legacy stub - no longer uses Ollama."""
+    return True
+
+
+def ensure_model_loaded():
+    """Legacy stub - loads sentence-transformers model."""
+    load_model()

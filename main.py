@@ -26,11 +26,34 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Import RunPod client and FAISS
-from runpod_client import embed_text, get_stats as get_runpod_stats, health_check
+from runpod_client import get_stats as get_runpod_stats, health_check
 from faiss_index import get_index, FAISSIndex, EMBEDDING_DIM_GEMMA
+from sentence_transformers import SentenceTransformer
 
-EMBEDDING_DIM = EMBEDDING_DIM_GEMMA
-print(f"Running in RunPod mode (Florence-2 + EmbeddingGemma, {EMBEDDING_DIM}-dim)")
+EMBEDDING_DIM = EMBEDDING_DIM_GEMMA  # 768, same as all-mpnet-base-v2
+
+# Local embedding model for search queries (CPU, fast)
+EMBEDDING_MODEL = "all-mpnet-base-v2"
+_embed_model = None
+
+print(f"Running with sentence-transformers for search ({EMBEDDING_DIM}-dim)")
+
+
+def get_embed_model():
+    """Load embedding model (lazy, singleton)."""
+    global _embed_model
+    if _embed_model is None:
+        print(f"Loading {EMBEDDING_MODEL}...")
+        _embed_model = SentenceTransformer(EMBEDDING_MODEL)
+        print("Embedding model ready!")
+    return _embed_model
+
+
+def embed_text_local(text: str) -> list[float]:
+    """Embed text using local sentence-transformers (fast, CPU)."""
+    model = get_embed_model()
+    embedding = model.encode(text, convert_to_numpy=True)
+    return embedding.tolist()
 
 
 # WebSocket connection manager
@@ -196,17 +219,16 @@ async def search(
     """
     Search for 3D models using natural language.
 
-    Embeds the query via RunPod and uses HNSW for fast similarity search.
+    Embeds query locally via Ollama and uses HNSW for fast similarity search.
     """
     index: FAISSIndex = app.state.index
 
     if index.total == 0:
         return SearchResponse(query=q, results=[], total_indexed=0)
 
-    # Get text embedding from RunPod
+    # Get text embedding from local sentence-transformers (fast, CPU)
     try:
-        result = await embed_text(q)
-        embedding = result["embedding"]
+        embedding = embed_text_local(q)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Embedding error: {str(e)}")
 
