@@ -139,6 +139,9 @@ def process_models(uids: list[str]) -> list[dict]:
         # Process render results
         render_data = []
         failed_count = 0
+        error_types = {}
+        sample_errors = []
+
         for result in render_results:
             uid = result["uid"]
             if result["success"]:
@@ -151,6 +154,11 @@ def process_models(uids: list[str]) -> list[dict]:
                 })
             else:
                 failed_count += 1
+                error_type = result.get("error_type", "unknown")
+                error_types[error_type] = error_types.get(error_type, 0) + 1
+                # Keep first 3 sample errors for debugging
+                if len(sample_errors) < 3:
+                    sample_errors.append(f"{uid[:12]}: {result.get('error', 'unknown')[:50]}")
 
             # Clean up downloaded file
             if uid in paths:
@@ -158,6 +166,12 @@ def process_models(uids: list[str]) -> list[dict]:
                     os.unlink(paths[uid])
                 except Exception:
                     pass
+
+        # Log error summary
+        if error_types:
+            print(f"  Render errors by type: {error_types}", flush=True)
+            for err in sample_errors:
+                print(f"    Sample: {err}", flush=True)
 
         if not render_data:
             print(f"  No successful renders in batch {batch_num}")

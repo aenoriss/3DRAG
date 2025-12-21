@@ -240,9 +240,25 @@ def _render_single(args: Tuple[str, str, int]) -> Dict[str, Any]:
             "success": True
         }
     except Exception as e:
+        error_msg = str(e)
+        # Categorize error for analysis
+        if "no faces" in error_msg.lower() or "no vertices" in error_msg.lower():
+            error_type = "empty_mesh"
+        elif "nan" in error_msg.lower():
+            error_type = "invalid_geometry"
+        elif "zero-size" in error_msg.lower():
+            error_type = "zero_size"
+        elif "not found" in error_msg.lower():
+            error_type = "file_not_found"
+        elif "no geometry" in error_msg.lower():
+            error_type = "no_geometry"
+        else:
+            error_type = "other"
+
         return {
             "uid": uid,
-            "error": str(e),
+            "error": error_msg,
+            "error_type": error_type,
             "success": False
         }
 
