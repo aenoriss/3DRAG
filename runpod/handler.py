@@ -114,20 +114,31 @@ def process_models(uids: list[str]) -> list[dict]:
             except Exception:
                 pass
 
+        # Timing tracker
+        timings = {}
+        batch_start_time = time.time()
+
         # Download batch
-        print(f"  Downloading {len(batch_uids)} models...")
+        t0 = time.time()
+        print(f"  Downloading {len(batch_uids)} models...", flush=True)
         paths = download_models(batch_uids, download_processes=4)
+        timings["download"] = time.time() - t0
 
         # Load annotations
+        t0 = time.time()
         annotations = get_annotations(batch_uids)
+        timings["annotations"] = time.time() - t0
 
         # Render batch
-        print(f"  Rendering {len(paths)} models ({MAX_RENDER_WORKERS} workers)...")
+        t0 = time.time()
+        print(f"  Rendering {len(paths)} models ({MAX_RENDER_WORKERS} workers)...", flush=True)
         models_to_render = [(uid, path) for uid, path in paths.items()]
         render_results = render_models_batch(models_to_render, num_views=1, max_workers=MAX_RENDER_WORKERS)
+        timings["render"] = time.time() - t0
 
         # Process render results
         render_data = []
+        failed_count = 0
         for result in render_results:
             uid = result["uid"]
             if result["success"]:
@@ -139,7 +150,7 @@ def process_models(uids: list[str]) -> list[dict]:
                     "image_b64": result["images_b64"][0] if result["images_b64"] else None
                 })
             else:
-                print(f"    Render failed: {uid[:20]}...")
+                failed_count += 1
 
             # Clean up downloaded file
             if uid in paths:
@@ -153,9 +164,11 @@ def process_models(uids: list[str]) -> list[dict]:
             continue
 
         # Caption batch
-        print(f"  Captioning {len(render_data)} images...")
+        t0 = time.time()
+        print(f"  Captioning {len(render_data)} images...", flush=True)
         images = [d["image"] for d in render_data if d["image"]]
         captions = caption_images_batch(images)
+        timings["caption"] = time.time() - t0
 
         # Free PIL images from memory (keep only base64 for response)
         del images
@@ -163,8 +176,10 @@ def process_models(uids: list[str]) -> list[dict]:
             d["image"] = None
 
         # Embed batch
-        print(f"  Embedding {len(captions)} captions...")
+        t0 = time.time()
+        print(f"  Embedding {len(captions)} captions...", flush=True)
         embeddings = embed_texts_batch(captions)
+        timings["embed"] = time.time() - t0
 
         # Build batch results
         batch_results = []
@@ -179,7 +194,16 @@ def process_models(uids: list[str]) -> list[dict]:
                 })
 
         all_results.extend(batch_results)
-        print(f"  Batch {batch_num} complete: {len(batch_results)} models processed")
+
+        # Print timing summary
+        batch_total = time.time() - batch_start_time
+        print(f"\n  === Batch {batch_num} Timing ===", flush=True)
+        print(f"  Download:    {timings['download']:6.1f}s", flush=True)
+        print(f"  Annotations: {timings['annotations']:6.1f}s", flush=True)
+        print(f"  Render:      {timings['render']:6.1f}s ({len(render_data)} ok, {failed_count} failed)", flush=True)
+        print(f"  Caption:     {timings['caption']:6.1f}s", flush=True)
+        print(f"  Embed:       {timings['embed']:6.1f}s", flush=True)
+        print(f"  TOTAL:       {batch_total:6.1f}s ({len(batch_results)} models)", flush=True)
 
         # Aggressive cleanup after each batch
         import gc
