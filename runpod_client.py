@@ -139,6 +139,47 @@ async def get_stats() -> dict:
             raise Exception(f"RunPod error: {result}")
 
 
+async def process_model_bytes(model_bytes: bytes, file_extension: str, name: str) -> dict:
+    """
+    Process a single model from bytes on RunPod.
+
+    Args:
+        model_bytes: Raw bytes of the 3D model file
+        file_extension: File format (glb, obj, fbx, etc.)
+        name: Display name for the model
+
+    Returns:
+        dict with 'name', 'caption', 'embedding', 'preview'
+    """
+    import base64
+    model_b64 = base64.b64encode(model_bytes).decode()
+
+    print(f"[RunPod] Sending model '{name}' ({len(model_bytes)} bytes) for processing...")
+    async with httpx.AsyncClient(timeout=PROCESS_TIMEOUT) as client:
+        response = await client.post(
+            f"{BASE_URL}/runsync",
+            headers={"Authorization": f"Bearer {RUNPOD_API_KEY}"},
+            json={
+                "input": {
+                    "model_bytes": model_b64,
+                    "file_extension": file_extension,
+                    "name": name
+                }
+            }
+        )
+        response.raise_for_status()
+        result = response.json()
+
+        status = result.get("status")
+        if status == "COMPLETED":
+            return result["output"]
+        elif status in ("IN_QUEUE", "IN_PROGRESS"):
+            job_id = result.get("id")
+            return await _poll_for_completion(job_id, PROCESS_TIMEOUT)
+        else:
+            raise Exception(f"RunPod error: {result}")
+
+
 async def health_check() -> dict:
     """Check RunPod endpoint health."""
     async with httpx.AsyncClient(timeout=10.0) as client:

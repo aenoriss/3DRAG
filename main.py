@@ -11,7 +11,7 @@ All heavy processing (download, render, caption, embed) happens on RunPod.
 """
 from __future__ import annotations
 
-from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -267,6 +267,90 @@ async def get_model(model_id: str):
     if not model:
         raise HTTPException(404, f"Model '{model_id}' not found")
     return model
+
+
+@app.post("/models")
+async def upload_model(
+    file: UploadFile = File(...),
+    model_id: str = Form(...),
+    name: str = Form(...),
+    include_stats: bool = Form(False)
+):
+    """
+    Upload and process a 3D model file.
+
+    Sends the file to RunPod for rendering, captioning, and embedding.
+    Then adds the result to the local FAISS index.
+    """
+    from runpod_client import process_model_bytes
+    from pathlib import Path
+    import base64
+
+    # Validate file extension
+    supported = ['.glb', '.gltf', '.obj', '.stl', '.ply', '.fbx', '.dae', '.3ds']
+    file_ext = Path(file.filename).suffix.lower() if file.filename else '.glb'
+    if file_ext not in supported:
+        raise HTTPException(400, f"Unsupported format: {file_ext}. Supported: {supported}")
+
+    try:
+        # Read file bytes
+        model_bytes = await file.read()
+        print(f"[upload] Processing {name} ({len(model_bytes)} bytes)")
+
+        # Send to RunPod for processing
+        result = await process_model_bytes(
+            model_bytes=model_bytes,
+            file_extension=file_ext.lstrip('.'),
+            name=name
+        )
+
+        if "error" in result:
+            raise HTTPException(500, result["error"])
+
+        # Add to index
+        index: FAISSIndex = app.state.index
+        index.add(
+            embedding=result["embedding"],
+            model_id=model_id,
+            name=result.get("name", name),
+            category=None,
+            file_path=None,
+            caption=result.get("caption", ""),
+            save=True
+        )
+
+        # Save preview image
+        preview_b64 = result.get("preview")
+        if preview_b64:
+            from dataset_generator import DATASET_DIR
+            previews_dir = DATASET_DIR / "previews"
+            previews_dir.mkdir(parents=True, exist_ok=True)
+
+            preview_bytes = base64.b64decode(preview_b64)
+            preview_path = previews_dir / f"{model_id}.jpg"
+            preview_path.write_bytes(preview_bytes)
+
+        # Broadcast update
+        await ws_manager.broadcast({
+            "type": "model_added",
+            "model_id": model_id,
+            "name": name,
+            "caption": result.get("caption", "")
+        })
+
+        return {
+            "model_id": model_id,
+            "name": name,
+            "caption": result.get("caption", ""),
+            "time_sec": result.get("time_sec", 0),
+            "indexed": True
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[upload] Error: {e}")
+        raise HTTPException(500, f"Processing failed: {str(e)}")
 
 
 @app.delete("/models/{model_id}")

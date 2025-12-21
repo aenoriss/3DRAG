@@ -313,7 +313,58 @@ def handler(event):
                 "time_sec": round(elapsed, 3)
             }
 
-        return {"error": "No valid input. Use 'uids', 'text', or 'stats'."}
+        # Process single model from bytes (for file uploads)
+        if "model_bytes" in input_data:
+            import base64
+            start = time.time()
+
+            model_b64 = input_data["model_bytes"]
+            file_ext = input_data.get("file_extension", "glb")
+            model_name = input_data.get("name", "uploaded_model")
+
+            print(f"[handler] Processing uploaded model: {model_name}.{file_ext}")
+
+            try:
+                # Decode base64
+                model_bytes = base64.b64decode(model_b64)
+
+                # Render
+                from modules.renderer import render_model_bytes
+                images, images_b64 = render_model_bytes(model_bytes, file_ext, num_views=1)
+
+                if not images:
+                    return {"error": "Render failed - no images produced"}
+
+                # Caption
+                from modules.captioner import caption_images_batch
+                captions = caption_images_batch(images)
+                caption = captions[0] if captions else ""
+
+                # Embed
+                from modules.embedder import embed_texts_batch
+                embeddings = embed_texts_batch([caption])
+                embedding = embeddings[0] if embeddings else None
+
+                if not embedding:
+                    return {"error": "Embedding failed"}
+
+                elapsed = time.time() - start
+                STATS["total_requests"] += 1
+                STATS["total_models"] += 1
+                STATS["total_time_sec"] += elapsed
+
+                return {
+                    "name": model_name,
+                    "caption": caption,
+                    "embedding": embedding,
+                    "preview": images_b64[0] if images_b64 else None,
+                    "time_sec": round(elapsed, 3)
+                }
+
+            except Exception as e:
+                return {"error": f"Processing failed: {str(e)}"}
+
+        return {"error": "No valid input. Use 'uids', 'text', 'model_bytes', or 'stats'."}
 
     except Exception as e:
         import traceback
