@@ -3,26 +3,10 @@ GPU-accelerated 3D model renderer.
 
 Uses EGL for headless GPU rendering on RunPod.
 Supports parallel rendering with ThreadPoolExecutor.
+Requires Xvfb to be running (started by handler.py).
 """
 
 import os
-import sys
-
-# Configure EGL for headless GPU rendering
-os.environ["PYOPENGL_PLATFORM"] = "egl"
-
-# Mock pyglet to prevent X11 initialization (pyrender imports it for Viewer)
-if 'pyglet' not in sys.modules:
-    from unittest.mock import MagicMock
-    pyglet_mock = MagicMock()
-    pyglet_mock.window.Window = type('Window', (), {})
-    for submodule in [
-        'pyglet', 'pyglet.window', 'pyglet.graphics', 'pyglet.graphics.shader',
-        'pyglet.gl', 'pyglet.gl.gl', 'pyglet.gl.xlib', 'pyglet.libs',
-        'pyglet.libs.x11', 'pyglet.libs.x11.xrender', 'pyglet.graphics.vertexdomain'
-    ]:
-        sys.modules[submodule] = pyglet_mock
-
 import numpy as np
 import trimesh
 import io

@@ -13,26 +13,20 @@ Input formats:
 - {"stats": true}                -> Return system stats
 """
 
-# Configure EGL for headless GPU rendering (must be before pyrender import)
+# Start Xvfb for pyglet before any imports
 import os
-os.environ["PYOPENGL_PLATFORM"] = "egl"
+import subprocess
+import time as time_module
 
-# Mock pyglet entirely to prevent X11 initialization
-# Must mock ALL submodules that pyrender/pyglet tries to import
-import sys
-from unittest.mock import MagicMock
-
-# Create comprehensive pyglet mock
-pyglet_mock = MagicMock()
-pyglet_mock.window.Window = type('Window', (), {})  # Empty class for inheritance
-
-# Pre-populate all pyglet submodules
-for submodule in [
-    'pyglet', 'pyglet.window', 'pyglet.graphics', 'pyglet.graphics.shader',
-    'pyglet.gl', 'pyglet.gl.gl', 'pyglet.gl.xlib', 'pyglet.libs',
-    'pyglet.libs.x11', 'pyglet.libs.x11.xrender', 'pyglet.graphics.vertexdomain'
-]:
-    sys.modules[submodule] = pyglet_mock
+# Start virtual X server
+xvfb_process = subprocess.Popen(
+    ["Xvfb", ":99", "-screen", "0", "1024x768x24", "-ac"],
+    stdout=subprocess.DEVNULL,
+    stderr=subprocess.DEVNULL
+)
+time_module.sleep(1)  # Wait for Xvfb to start
+os.environ["DISPLAY"] = ":99"
+os.environ["PYOPENGL_PLATFORM"] = "egl"  # Use EGL for GPU rendering
 
 import runpod
 import time
