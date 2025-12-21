@@ -45,9 +45,10 @@ except Exception as e:
 RENDER_SIZE = 384
 BACKGROUND_COLOR = [0.5, 0.5, 0.5, 1.0]
 
-# Parallel rendering settings - aggressive for 80GB+ GPU
-# Each EGL context uses ~200-500MB, so 80GB can handle 32+ workers easily
-MAX_RENDER_WORKERS = int(os.getenv("RENDER_WORKERS", "32"))
+# Parallel rendering settings
+# Bottleneck is CPU (mesh loading/processing), not GPU
+# Match physical core count for optimal throughput
+MAX_RENDER_WORKERS = int(os.getenv("RENDER_WORKERS", "16"))
 
 
 def create_camera_pose(elevation_deg: float, azimuth_deg: float, distance: float) -> np.ndarray:
