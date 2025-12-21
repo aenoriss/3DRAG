@@ -17,22 +17,22 @@ Input formats:
 import os
 os.environ["PYOPENGL_PLATFORM"] = "egl"
 
-# Prevent pyrender from importing pyglet Viewer (requires X11)
+# Mock pyglet entirely to prevent X11 initialization
+# Must mock ALL submodules that pyrender/pyglet tries to import
 import sys
+from unittest.mock import MagicMock
 
+# Create comprehensive pyglet mock
+pyglet_mock = MagicMock()
+pyglet_mock.window.Window = type('Window', (), {})  # Empty class for inheritance
 
-class FakePyglet:
-    """Mock pyglet module to prevent X11 initialization."""
-    class window:
-        class Window:
-            pass
-
-    def __getattr__(self, name):
-        return FakePyglet()
-
-
-sys.modules['pyglet'] = FakePyglet()
-sys.modules['pyglet.window'] = FakePyglet.window
+# Pre-populate all pyglet submodules
+for submodule in [
+    'pyglet', 'pyglet.window', 'pyglet.graphics', 'pyglet.graphics.shader',
+    'pyglet.gl', 'pyglet.gl.gl', 'pyglet.gl.xlib', 'pyglet.libs',
+    'pyglet.libs.x11', 'pyglet.libs.x11.xrender', 'pyglet.graphics.vertexdomain'
+]:
+    sys.modules[submodule] = pyglet_mock
 
 import runpod
 import time
