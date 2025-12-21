@@ -5,7 +5,7 @@ Handles the complete pipeline on GPU:
 1. Download models from Objaverse
 2. Render views with GPU (EGL)
 3. Caption with Florence-2
-4. Embed with EmbeddingGemma
+4. Embed with sentence-transformers (all-mpnet-base-v2)
 
 Input formats:
 - {"uids": ["uid1", "uid2", ...]} -> Process specific models
