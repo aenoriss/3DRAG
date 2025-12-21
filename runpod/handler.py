@@ -17,6 +17,23 @@ Input formats:
 import os
 os.environ["PYOPENGL_PLATFORM"] = "egl"
 
+# Prevent pyrender from importing pyglet Viewer (requires X11)
+import sys
+
+
+class FakePyglet:
+    """Mock pyglet module to prevent X11 initialization."""
+    class window:
+        class Window:
+            pass
+
+    def __getattr__(self, name):
+        return FakePyglet()
+
+
+sys.modules['pyglet'] = FakePyglet()
+sys.modules['pyglet.window'] = FakePyglet.window
+
 import runpod
 import time
 
