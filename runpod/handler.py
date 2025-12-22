@@ -641,5 +641,6 @@ def handler(event):
         return {"error": str(e), "traceback": traceback.format_exc()}
 
 
-# Start worker
-runpod.serverless.start({"handler": handler})
+# Start worker (only in main process)
+if multiprocessing.current_process().name == "MainProcess":
+    runpod.serverless.start({"handler": handler})
