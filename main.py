@@ -244,6 +244,190 @@ async def search(
 
 
 
+# ============================================================================
+# Storage / Bucket Endpoints
+# ============================================================================
+
+from storage import get_bucket_info, list_files_detailed, list_prefixes
+
+
+@app.get("/storage/bucket")
+async def get_bucket():
+    """Get configured bucket info."""
+    return get_bucket_info()
+
+
+@app.get("/storage/folders")
+async def list_folders(prefix: str = Query("", description="Folder prefix to list")):
+    """List folders in bucket."""
+    folders = list_prefixes(prefix + "/" if prefix and not prefix.endswith("/") else prefix)
+    return {"prefix": prefix, "folders": folders}
+
+
+@app.get("/storage/files")
+async def list_bucket_files(
+    prefix: str = Query("", description="Folder prefix"),
+    limit: int = Query(1000, ge=1, le=10000)
+):
+    """List 3D model files in bucket (without downloading)."""
+    supported = ['.glb', '.gltf', '.obj', '.stl', '.ply', '.fbx', '.dae', '.3ds']
+
+    all_files = list_files_detailed(prefix, limit)
+
+    # Filter to 3D files only
+    model_files = []
+    for f in all_files:
+        ext = '.' + f['key'].split('.')[-1].lower() if '.' in f['key'] else ''
+        if ext in supported:
+            model_files.append({
+                **f,
+                'name': f['key'].split('/')[-1].rsplit('.', 1)[0],
+                'extension': ext.lstrip('.')
+            })
+
+    return {
+        "prefix": prefix,
+        "total": len(model_files),
+        "files": model_files
+    }
+
+
+@app.post("/storage/process")
+async def process_bucket_files(
+    prefix: str = Query("", description="Folder prefix containing models"),
+    limit: int = Query(0, description="Max files to process (0 = all)"),
+    clear: bool = Query(True, description="Clear index before processing"),
+    batch_size: int = Query(100, ge=1, le=500, description="Models per batch")
+):
+    """
+    Process 3D models directly from bucket.
+
+    Scans bucket folder, sends URLs to RunPod in batches of 100.
+    RunPod downloads and processes each file.
+    """
+    from runpod_client import process_models_urls
+    from dataset_generator import DATASET_DIR
+    import base64
+    import shutil
+    import time
+
+    supported = ['.glb', '.gltf', '.obj', '.stl', '.ply', '.fbx', '.dae', '.3ds']
+
+    # 1. List files in bucket
+    all_files = list_files_detailed(prefix, limit if limit > 0 else 10000)
+    model_files = []
+    for f in all_files:
+        ext = '.' + f['key'].split('.')[-1].lower() if '.' in f['key'] else ''
+        if ext in supported:
+            model_files.append({
+                'model_id': f['key'].replace('/', '_').rsplit('.', 1)[0],
+                'name': f['key'].split('/')[-1].rsplit('.', 1)[0],
+                'url': f['url'],
+                'extension': ext.lstrip('.')
+            })
+
+    if limit > 0:
+        model_files = model_files[:limit]
+
+    if not model_files:
+        raise HTTPException(400, "No 3D model files found in bucket")
+
+    total = len(model_files)
+    print(f"[storage] Found {total} models in bucket prefix '{prefix}'")
+
+    # 2. Clear index if requested
+    index: FAISSIndex = app.state.index
+    if clear:
+        index.clear()
+        previews_dir = DATASET_DIR / "previews"
+        if previews_dir.exists():
+            shutil.rmtree(previews_dir)
+        previews_dir.mkdir(parents=True, exist_ok=True)
+
+    # 3. Broadcast start
+    await ws_manager.broadcast({
+        "type": "bucket_process_start",
+        "total": total,
+        "batch_size": batch_size
+    })
+
+    # 4. Process in batches
+    start_time = time.time()
+    total_added = 0
+    total_failed = 0
+    previews_dir = DATASET_DIR / "previews"
+    previews_dir.mkdir(parents=True, exist_ok=True)
+
+    for batch_idx in range(0, total, batch_size):
+        batch = model_files[batch_idx:batch_idx + batch_size]
+        batch_num = batch_idx // batch_size + 1
+        total_batches = (total + batch_size - 1) // batch_size
+
+        print(f"[storage] Processing batch {batch_num}/{total_batches} ({len(batch)} models)...")
+
+        await ws_manager.broadcast({
+            "type": "bucket_process_progress",
+            "batch": batch_num,
+            "total_batches": total_batches,
+            "processed": total_added,
+            "failed": total_failed,
+            "total": total
+        })
+
+        try:
+            result = await process_models_urls(batch)
+
+            for r in result.get("results", []):
+                if "error" in r:
+                    total_failed += 1
+                    continue
+
+                try:
+                    index.add(
+                        embedding=r["embedding"],
+                        model_id=r["model_id"],
+                        name=r.get("name", ""),
+                        category=None,
+                        file_path=None,
+                        caption=r.get("caption", ""),
+                        save=False
+                    )
+                    if r.get("preview"):
+                        preview_bytes = base64.b64decode(r["preview"])
+                        preview_path = previews_dir / f"{r['model_id']}.jpg"
+                        preview_path.write_bytes(preview_bytes)
+                    total_added += 1
+                except Exception as e:
+                    print(f"[storage] Index error: {e}")
+                    total_failed += 1
+
+        except Exception as e:
+            print(f"[storage] Batch {batch_num} failed: {e}")
+            total_failed += len(batch)
+
+    # 5. Save index
+    index.save()
+    elapsed = time.time() - start_time
+
+    await ws_manager.broadcast({
+        "type": "bucket_process_complete",
+        "added": total_added,
+        "failed": total_failed,
+        "total": total,
+        "time_sec": round(elapsed, 2)
+    })
+
+    print(f"[storage] Complete: {total_added}/{total} in {elapsed:.1f}s")
+
+    return {
+        "status": "complete",
+        "added": total_added,
+        "failed": total_failed,
+        "total": total,
+        "time_sec": round(elapsed, 2)
+    }
+
+
 @app.get("/models")
 async def list_models(
     skip: int = Query(0, ge=0),

@@ -1,34 +1,32 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000/ws'
 
-interface Model {
-  id: string
+interface BucketInfo {
   name: string
-  category?: string
-  file_path?: string
-  indexed_at?: string
+  region: string
+  endpoint: string
+  url: string
 }
 
-interface ProcessingModel {
-  id: string
+interface BucketFile {
+  key: string
   name: string
-  status: 'processing' | 'done' | 'error'
-  images?: string[]
-  error?: string
+  size: number
+  extension: string
+  url: string
+  last_modified: string
 }
 
-interface DatasetStatus {
-  is_generating: boolean
-  total: number
-  downloaded: number
-  indexed: number
+interface ProcessingState {
+  isProcessing: boolean
+  batch: number
+  totalBatches: number
+  processed: number
   failed: number
-  current_model?: string
-  step?: string
-  message?: string
-  current_images?: string[]
+  total: number
+  startTime?: number
 }
 
 interface SearchResult {
@@ -37,53 +35,52 @@ interface SearchResult {
   score: number
   distance: number
   category?: string
-  file_path?: string
+  caption?: string
 }
 
-interface CumulativeStats {
-  total_requests: number
-  total_embeddings: number
-  total_text_queries: number
-  total_time_sec: number
-  total_vision_tokens: number
-  avg_time_sec: number
-  uptime_sec: number
-  estimated_cost_usd: number
-  cost_per_model_usd: number
-  gpu_cost_per_sec: number
-}
-
-interface OllamaStats {
-  status: string
-  mode: string
-  endpoint?: string
-  models?: string[]
-  vision_model?: string
-  embedding_model?: string
-  embedding_dim?: number
-  cumulative?: CumulativeStats
+interface Model {
+  id: string
+  name: string
+  category?: string
+  caption?: string
 }
 
 function App() {
-  const [models, setModels] = useState<Model[]>([])
-  const [processingModels, setProcessingModels] = useState<ProcessingModel[]>([])
-  const [isDragging, setIsDragging] = useState(false)
-  const [wsConnected, setWsConnected] = useState(false)
-  const [mode, setMode] = useState<string>('unknown')
-  const [error, setError] = useState<string | null>(null)
-  const [datasetStatus, setDatasetStatus] = useState<DatasetStatus | null>(null)
-  const [datasetCount, setDatasetCount] = useState(100)
+  // Bucket state
+  const [bucket, setBucket] = useState<BucketInfo | null>(null)
+  const [folders, setFolders] = useState<string[]>([])
+  const [currentPrefix, setCurrentPrefix] = useState('')
+  const [files, setFiles] = useState<BucketFile[]>([])
+  const [isLoadingFiles, setIsLoadingFiles] = useState(false)
+
+  // Processing state
+  const [processing, setProcessing] = useState<ProcessingState>({
+    isProcessing: false,
+    batch: 0,
+    totalBatches: 0,
+    processed: 0,
+    failed: 0,
+    total: 0
+  })
+  const [batchSize, setBatchSize] = useState(100)
+  const [clearIndex, setClearIndex] = useState(true)
+
+  // Search state
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
-  const [ollamaStats, setOllamaStats] = useState<OllamaStats | null>(null)
-  const [isLoadingStats, setIsLoadingStats] = useState(false)
-  const [showStats, setShowStats] = useState(false)
-  const wsRef = useRef<WebSocket | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Fetch models on mount
+  // Index state
+  const [models, setModels] = useState<Model[]>([])
+  const [wsConnected, setWsConnected] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [completionStats, setCompletionStats] = useState<{added: number, failed: number, time: number} | null>(null)
+
+  const wsRef = useRef<WebSocket | null>(null)
+
+  // Fetch bucket info on mount
   useEffect(() => {
+    fetchBucket()
     fetchModels()
   }, [])
 
@@ -104,135 +101,89 @@ function App() {
 
       ws.onclose = () => {
         setWsConnected(false)
-        console.log('WebSocket disconnected, reconnecting...')
         setTimeout(connectWS, 3000)
       }
 
-      ws.onerror = (err) => {
-        console.error('WebSocket error:', err)
-      }
-
+      ws.onerror = (err) => console.error('WebSocket error:', err)
       wsRef.current = ws
     }
 
     connectWS()
-
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.close()
-      }
-    }
+    return () => wsRef.current?.close()
   }, [])
 
   const handleWSMessage = (data: any) => {
-    console.log('WS message:', data)
+    console.log('WS:', data)
 
     switch (data.type) {
-      case 'connected':
-        setMode(data.mode)
+      case 'bucket_process_start':
+        setProcessing({
+          isProcessing: true,
+          batch: 0,
+          totalBatches: Math.ceil(data.total / (data.batch_size || 100)),
+          processed: 0,
+          failed: 0,
+          total: data.total,
+          startTime: Date.now()
+        })
+        setCompletionStats(null)
         break
 
-      case 'model_processing':
-        setProcessingModels(prev => [
+      case 'bucket_process_progress':
+        setProcessing(prev => ({
           ...prev,
-          { id: data.model_id, name: data.name, status: 'processing' }
-        ])
-        break
-
-      case 'model_added':
-        setProcessingModels(prev =>
-          prev.map(m =>
-            m.id === data.model_id
-              ? { ...m, status: 'done', images: data.images_b64 }
-              : m
-          )
-        )
-        // Refresh models list
-        fetchModels()
-        break
-
-      case 'model_error':
-        setProcessingModels(prev =>
-          prev.map(m =>
-            m.id === data.model_id
-              ? { ...m, status: 'error', error: data.error }
-              : m
-          )
-        )
-        break
-
-      case 'dataset_status':
-        setDatasetStatus(prev => ({
-          ...prev,
-          is_generating: true,
-          total: data.total || prev?.total || 0,
-          downloaded: data.downloaded || prev?.downloaded || 0,
-          indexed: data.indexed || prev?.indexed || 0,
-          failed: data.failed || prev?.failed || 0,
-          step: data.status || prev?.step,
-          message: data.message || prev?.message
+          batch: data.batch,
+          totalBatches: data.total_batches,
+          processed: data.processed,
+          failed: data.failed,
+          total: data.total
         }))
         break
 
-      case 'dataset_progress':
-        setDatasetStatus(prev => ({
-          ...prev,
-          is_generating: true,
-          total: data.total ?? prev?.total ?? 0,
-          downloaded: data.downloaded ?? prev?.downloaded ?? 0,
-          indexed: data.indexed ?? prev?.indexed ?? 0,
-          failed: data.failed ?? prev?.failed ?? 0,
-          current_model: data.current || data.current_model,
-          step: data.step || prev?.step,
-          message: data.message || prev?.message,
-          current_images: data.images || prev?.current_images
-        }))
-        break
-
-      case 'dataset_complete':
-        setDatasetStatus(null)
+      case 'bucket_process_complete':
+        setProcessing(prev => ({ ...prev, isProcessing: false }))
+        setCompletionStats({
+          added: data.added,
+          failed: data.failed,
+          time: data.time_sec
+        })
         fetchModels()
         break
+    }
+  }
 
-      case 'dataset_error':
-        setDatasetStatus(null)
-        setError(`Dataset error: ${data.error}`)
-        break
+  const fetchBucket = async () => {
+    try {
+      const res = await fetch(`${API_URL}/storage/bucket`)
+      const data = await res.json()
+      setBucket(data)
+      fetchFolders('')
+    } catch (err) {
+      console.error('Failed to fetch bucket:', err)
+    }
+  }
 
-      case 'dataset_cleared':
-        fetchModels()
-        break
+  const fetchFolders = async (prefix: string) => {
+    try {
+      const res = await fetch(`${API_URL}/storage/folders?prefix=${encodeURIComponent(prefix)}`)
+      const data = await res.json()
+      setFolders(data.folders || [])
+    } catch (err) {
+      console.error('Failed to fetch folders:', err)
+    }
+  }
 
-      case 'dataset_cancelled':
-        setDatasetStatus(null)
-        break
-
-      case 'batch_start':
-        setProcessingModels([{
-          id: 'batch',
-          name: `Processing ${data.total} models...`,
-          status: 'processing'
-        }])
-        break
-
-      case 'batch_complete':
-        setProcessingModels([{
-          id: 'batch',
-          name: `Processed ${data.added}/${data.total} models in ${data.time_sec?.toFixed(1)}s`,
-          status: data.failed > 0 ? 'error' : 'done',
-          error: data.failed > 0 ? `${data.failed} failed` : undefined
-        }])
-        fetchModels()
-        break
-
-      case 'batch_error':
-        setProcessingModels([{
-          id: 'batch',
-          name: 'Batch processing failed',
-          status: 'error',
-          error: data.error
-        }])
-        break
+  const fetchFiles = async (prefix: string) => {
+    setIsLoadingFiles(true)
+    try {
+      const res = await fetch(`${API_URL}/storage/files?prefix=${encodeURIComponent(prefix)}&limit=5000`)
+      const data = await res.json()
+      setFiles(data.files || [])
+    } catch (err) {
+      console.error('Failed to fetch files:', err)
+      setFiles([])
+    } finally {
+      setIsLoadingFiles(false)
     }
   }
 
@@ -246,27 +197,42 @@ function App() {
     }
   }
 
-  const fetchStats = async () => {
-    setIsLoadingStats(true)
-    try {
-      const res = await fetch(`${API_URL}/stats?include_backend=true`)
-      const data = await res.json()
-      if (data.ollama) {
-        setOllamaStats(data.ollama)
-      }
-    } catch (err) {
-      console.error('Failed to fetch stats:', err)
-    } finally {
-      setIsLoadingStats(false)
+  const selectFolder = (folder: string) => {
+    const newPrefix = currentPrefix ? `${currentPrefix}/${folder}` : folder
+    setCurrentPrefix(newPrefix)
+    fetchFolders(newPrefix)
+    fetchFiles(newPrefix)
+  }
+
+  const goBack = () => {
+    const parts = currentPrefix.split('/').filter(Boolean)
+    parts.pop()
+    const newPrefix = parts.join('/')
+    setCurrentPrefix(newPrefix)
+    fetchFolders(newPrefix)
+    if (newPrefix) {
+      fetchFiles(newPrefix)
+    } else {
+      setFiles([])
     }
   }
 
-  const resetStats = async () => {
+  const processFiles = async () => {
+    if (files.length === 0) return
+
+    setError(null)
     try {
-      await fetch(`${API_URL}/stats/reset`, { method: 'POST' })
-      await fetchStats()
+      const res = await fetch(
+        `${API_URL}/storage/process?prefix=${encodeURIComponent(currentPrefix)}&clear=${clearIndex}&batch_size=${batchSize}`,
+        { method: 'POST' }
+      )
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.detail || 'Processing failed')
+      }
     } catch (err: any) {
-      setError(`Failed to reset stats: ${err.message}`)
+      setError(err.message)
+      setProcessing(prev => ({ ...prev, isProcessing: false }))
     }
   }
 
@@ -277,759 +243,404 @@ function App() {
     setIsSearching(true)
     setError(null)
     try {
-      const res = await fetch(`${API_URL}/search?q=${encodeURIComponent(searchQuery)}&k=10`)
+      const res = await fetch(`${API_URL}/search?q=${encodeURIComponent(searchQuery)}&k=12`)
       const data = await res.json()
       setSearchResults(data.results || [])
     } catch (err: any) {
       setError(`Search failed: ${err.message}`)
-      setSearchResults([])
     } finally {
       setIsSearching(false)
     }
   }
 
-  const clearSearch = () => {
-    setSearchQuery('')
-    setSearchResults([])
+  const formatBytes = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(true)
-  }, [])
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-  }, [])
-
-  const handleDrop = useCallback(async (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-
-    // Check if items contain directories
-    const items = Array.from(e.dataTransfer.items)
-    const files: File[] = []
-
-    // Helper to recursively get files from directory
-    const getFilesFromEntry = async (entry: FileSystemEntry): Promise<File[]> => {
-      if (entry.isFile) {
-        return new Promise((resolve) => {
-          (entry as FileSystemFileEntry).file((file) => resolve([file]))
-        })
-      } else if (entry.isDirectory) {
-        const dirReader = (entry as FileSystemDirectoryEntry).createReader()
-        return new Promise((resolve) => {
-          const allFiles: File[] = []
-          const readEntries = () => {
-            dirReader.readEntries(async (entries) => {
-              if (entries.length === 0) {
-                resolve(allFiles)
-              } else {
-                for (const entry of entries) {
-                  const entryFiles = await getFilesFromEntry(entry)
-                  allFiles.push(...entryFiles)
-                }
-                readEntries() // Continue reading (directories can have >100 entries)
-              }
-            })
-          }
-          readEntries()
-        })
-      }
-      return []
-    }
-
-    // Process each dropped item
-    for (const item of items) {
-      const entry = item.webkitGetAsEntry?.()
-      if (entry) {
-        const entryFiles = await getFilesFromEntry(entry)
-        files.push(...entryFiles)
-      } else if (item.kind === 'file') {
-        const file = item.getAsFile()
-        if (file) files.push(file)
-      }
-    }
-
-    if (files.length > 0) {
-      console.log(`Processing ${files.length} files from drop`)
-      await uploadFiles(files)
-    }
-  }, [])
-
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
-    await uploadFiles(files)
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
+  const formatTime = (seconds: number) => {
+    if (seconds < 60) return `${seconds.toFixed(1)}s`
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}m ${secs.toFixed(0)}s`
   }
 
-  const uploadFiles = async (files: File[]) => {
-    const supportedExtensions = ['.glb', '.gltf', '.obj', '.stl', '.ply', '.fbx', '.dae', '.3ds', '.off']
+  const progressPercent = processing.total > 0
+    ? ((processing.processed + processing.failed) / processing.total) * 100
+    : 0
 
-    // Filter valid files
-    const validFiles = files.filter(file => {
-      const ext = '.' + file.name.split('.').pop()?.toLowerCase()
-      return supportedExtensions.includes(ext)
-    })
+  const elapsed = processing.startTime
+    ? (Date.now() - processing.startTime) / 1000
+    : 0
 
-    if (validFiles.length === 0) {
-      setError(`No valid 3D files found. Supported: ${supportedExtensions.join(', ')}`)
-      return
-    }
-
-    // Use batch upload for multiple files (>1)
-    if (validFiles.length > 1) {
-      await uploadBatch(validFiles)
-      return
-    }
-
-    // Single file upload (original logic)
-    const file = validFiles[0]
-    const modelId = `model_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    const modelName = file.name.replace(/\.[^/.]+$/, '')
-
-    setProcessingModels(prev => [
-      ...prev,
-      { id: modelId, name: modelName, status: 'processing' }
-    ])
-
-    try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('model_id', modelId)
-      formData.append('name', modelName)
-      formData.append('include_stats', 'true')
-
-      const res = await fetch(`${API_URL}/models`, {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.detail || 'Upload failed')
-      }
-    } catch (err: any) {
-      setProcessingModels(prev =>
-        prev.map(m =>
-          m.id === modelId
-            ? { ...m, status: 'error', error: err.message }
-            : m
-        )
-      )
-    }
-  }
-
-  const uploadBatch = async (files: File[]) => {
-    const CHUNK_SIZE = 10  // Upload 10 files at a time (RunPod has 20MB limit)
-    const total = files.length
-
-    // Show upload progress
-    setProcessingModels([{
-      id: 'batch',
-      name: `Uploading 0/${total}...`,
-      status: 'processing'
-    }])
-
-    try {
-      // 1. Start batch session
-      console.log(`[batch] Starting session for ${total} files...`)
-      const startRes = await fetch(`${API_URL}/models/batch/start?total=${total}&clear=true`, {
-        method: 'POST'
-      })
-      if (!startRes.ok) throw new Error('Failed to start batch session')
-      const { session_id } = await startRes.json()
-      console.log(`[batch] Session: ${session_id}`)
-
-      // 2. Upload in chunks - each chunk is processed immediately on RunPod
-      let totalProcessed = 0
-      for (let i = 0; i < files.length; i += CHUNK_SIZE) {
-        const chunk = files.slice(i, i + CHUNK_SIZE)
-        const chunkNum = Math.floor(i / CHUNK_SIZE) + 1
-        const totalChunks = Math.ceil(files.length / CHUNK_SIZE)
-
-        setProcessingModels([{
-          id: 'batch',
-          name: `Processing chunk ${chunkNum}/${totalChunks} (${totalProcessed}/${total} done)`,
-          status: 'processing'
-        }])
-
-        const formData = new FormData()
-        chunk.forEach(file => formData.append('files', file))
-
-        console.log(`[batch] Sending chunk ${chunkNum}/${totalChunks}...`)
-        const uploadRes = await fetch(`${API_URL}/models/batch/upload/${session_id}`, {
-          method: 'POST',
-          body: formData
-        })
-
-        if (!uploadRes.ok) {
-          const err = await uploadRes.json()
-          throw new Error(err.detail || 'Upload failed')
-        }
-
-        const { processed } = await uploadRes.json()
-        totalProcessed = processed
-
-        console.log(`[batch] Chunk ${chunkNum} done, total processed: ${totalProcessed}`)
-      }
-
-      setProcessingModels([{
-        id: 'batch',
-        name: `Done: ${totalProcessed}/${total} models processed`,
-        status: totalProcessed < total ? 'error' : 'done',
-        error: totalProcessed < total ? `${total - totalProcessed} failed` : undefined
-      }])
-
-      // Refresh models list
-      fetchModels()
-
-    } catch (err: any) {
-      console.error('[batch] Error:', err)
-      setProcessingModels([{
-        id: 'batch',
-        name: 'Batch upload failed',
-        status: 'error',
-        error: err.message
-      }])
-    }
-  }
-
-  const clearProcessed = () => {
-    setProcessingModels(prev => prev.filter(m => m.status === 'processing'))
-  }
-
-  const generateDataset = async () => {
-    try {
-      const res = await fetch(`${API_URL}/dataset/generate?count=${datasetCount}`, {
-        method: 'POST'
-      })
-      if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.detail || 'Failed to start generation')
-      }
-      setDatasetStatus({
-        is_generating: true,
-        total: datasetCount,
-        downloaded: 0,
-        indexed: 0,
-        failed: 0
-      })
-    } catch (err: any) {
-      setError(err.message)
-    }
-  }
-
-  const deleteDataset = async () => {
-    if (!confirm('Delete all indexed models?')) return
-    try {
-      const res = await fetch(`${API_URL}/dataset`, { method: 'DELETE' })
-      if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.detail || 'Failed to delete')
-      }
-      setModels([])
-    } catch (err: any) {
-      setError(err.message)
-    }
-  }
-
-  const cancelGeneration = async () => {
-    try {
-      await fetch(`${API_URL}/dataset/cancel`, { method: 'POST' })
-      setDatasetStatus(null)
-    } catch (err: any) {
-      setError(err.message)
-    }
-  }
-
-  const indexExisting = async () => {
-    try {
-      const res = await fetch(`${API_URL}/dataset/index-existing?limit=${datasetCount}`, {
-        method: 'POST'
-      })
-      if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.detail || 'Failed to index')
-      }
-      setDatasetStatus({
-        is_generating: true,
-        total: datasetCount,
-        downloaded: datasetCount,
-        indexed: 0,
-        failed: 0,
-        step: 'indexing',
-        message: 'Indexing cached models...'
-      })
-    } catch (err: any) {
-      setError(err.message)
-    }
-  }
+  const eta = processing.processed > 0 && elapsed > 0
+    ? (elapsed / processing.processed) * (processing.total - processing.processed - processing.failed)
+    : 0
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-8">
+    <div className="min-h-screen bg-gray-900 text-white">
       {/* Header */}
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+      <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">3D Model Search</h1>
-            <p className="text-gray-400 mt-1">Drag & drop 3D models to index them</p>
+            <h1 className="text-2xl font-bold">3D Model Search</h1>
+            <p className="text-gray-400 text-sm">Production Pipeline</p>
           </div>
           <div className="flex items-center gap-4">
-            <span className={`px-3 py-1 rounded-full text-sm ${
+            <span className="text-sm text-gray-400">
+              {models.length} models indexed
+            </span>
+            <span className={`px-3 py-1 rounded-full text-xs ${
               wsConnected ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
             }`}>
-              {wsConnected ? '● Connected' : '○ Disconnected'}
-            </span>
-            <span className="px-3 py-1 rounded-full text-sm bg-blue-500/20 text-blue-400">
-              Mode: {mode}
+              {wsConnected ? 'Connected' : 'Disconnected'}
             </span>
           </div>
         </div>
+      </header>
 
+      <div className="max-w-7xl mx-auto p-6 space-y-6">
         {/* Error Banner */}
         {error && (
-          <div className="mb-6 p-4 bg-red-500/20 border border-red-500 rounded-lg flex justify-between items-center">
+          <div className="p-4 bg-red-500/20 border border-red-500/50 rounded-lg flex justify-between items-center">
             <span className="text-red-400">{error}</span>
-            <button onClick={() => setError(null)} className="text-red-400 hover:text-red-300">✕</button>
+            <button onClick={() => setError(null)} className="text-red-400 hover:text-red-300">×</button>
           </div>
         )}
 
-        {/* Search */}
-        <div className="mb-8 p-6 bg-gray-800 rounded-xl border border-gray-700">
+        {/* Search Section */}
+        <section className="bg-gray-800 rounded-xl border border-gray-700 p-6">
           <h2 className="text-lg font-semibold mb-4">Semantic Search</h2>
           <form onSubmit={handleSearch} className="flex gap-3">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search for 3D models... (e.g., 'wooden chair', 'red car')"
-              className="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500"
+              placeholder="Search 3D models... (e.g., 'wooden chair', 'red sports car')"
+              className="flex-1 px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-lg"
             />
             <button
               type="submit"
               disabled={isSearching || !searchQuery.trim()}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
+              className="px-8 py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
             >
               {isSearching ? 'Searching...' : 'Search'}
             </button>
-            {searchResults.length > 0 && (
-              <button
-                type="button"
-                onClick={clearSearch}
-                className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg transition-colors"
-              >
-                Clear
-              </button>
-            )}
           </form>
-
-          {/* Stats Toggle */}
-          <div className="mt-4 flex justify-end">
-            <button
-              onClick={() => {
-                setShowStats(!showStats)
-                if (!showStats && !ollamaStats) fetchStats()
-              }}
-              className="text-sm text-gray-400 hover:text-white flex items-center gap-1"
-            >
-              {showStats ? '▼' : '▶'} RunPod Metrics
-            </button>
-          </div>
-
-          {/* Stats Panel */}
-          {showStats && (
-            <div className="mt-4 p-4 bg-gray-700/50 rounded-lg border border-gray-600">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-200">Embedding Pipeline Stats</h3>
-                <div className="flex gap-2">
-                  <button
-                    onClick={fetchStats}
-                    disabled={isLoadingStats}
-                    className="px-3 py-1 text-xs bg-gray-600 hover:bg-gray-500 rounded transition-colors disabled:opacity-50"
-                  >
-                    {isLoadingStats ? 'Loading...' : 'Refresh'}
-                  </button>
-                  <button
-                    onClick={resetStats}
-                    className="px-3 py-1 text-xs bg-red-600/30 hover:bg-red-600/50 text-red-400 rounded transition-colors"
-                  >
-                    Reset
-                  </button>
-                </div>
-              </div>
-
-              {ollamaStats ? (
-                <div className="space-y-4">
-                  {/* Status Row */}
-                  <div className="flex items-center gap-4 text-sm">
-                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                      ollamaStats.status === 'ok' || ollamaStats.status === 'ready'
-                        ? 'bg-green-500/20 text-green-400'
-                        : 'bg-red-500/20 text-red-400'
-                    }`}>
-                      {ollamaStats.status === 'ok' || ollamaStats.status === 'ready' ? '● Online' : '○ Offline'}
-                    </span>
-                    <span className="text-gray-400">
-                      {ollamaStats.vision_model} + {ollamaStats.embedding_model}
-                    </span>
-                    <span className="text-gray-500 text-xs">
-                      {ollamaStats.embedding_dim}-dim
-                    </span>
-                  </div>
-
-                  {/* Metrics Grid */}
-                  {ollamaStats.cumulative && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      {/* Total Embeddings */}
-                      <div className="p-3 bg-gray-800 rounded-lg">
-                        <div className="text-2xl font-bold text-blue-400">
-                          {ollamaStats.cumulative.total_embeddings}
-                        </div>
-                        <div className="text-xs text-gray-400">Models Indexed</div>
-                      </div>
-
-                      {/* Avg Time */}
-                      <div className="p-3 bg-gray-800 rounded-lg">
-                        <div className="text-2xl font-bold text-green-400">
-                          {ollamaStats.cumulative.avg_time_sec.toFixed(2)}s
-                        </div>
-                        <div className="text-xs text-gray-400">Avg Time/Model</div>
-                      </div>
-
-                      {/* Total Cost */}
-                      <div className="p-3 bg-gray-800 rounded-lg">
-                        <div className="text-2xl font-bold text-yellow-400">
-                          ${ollamaStats.cumulative.estimated_cost_usd.toFixed(4)}
-                        </div>
-                        <div className="text-xs text-gray-400">Total GPU Cost</div>
-                      </div>
-
-                      {/* Cost per Model */}
-                      <div className="p-3 bg-gray-800 rounded-lg">
-                        <div className="text-2xl font-bold text-purple-400">
-                          ${ollamaStats.cumulative.cost_per_model_usd.toFixed(5)}
-                        </div>
-                        <div className="text-xs text-gray-400">Cost/Model</div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Secondary Stats */}
-                  {ollamaStats.cumulative && (
-                    <div className="flex flex-wrap gap-4 text-xs text-gray-400 pt-2 border-t border-gray-600">
-                      <span>Total Time: {ollamaStats.cumulative.total_time_sec.toFixed(1)}s</span>
-                      <span>Vision Tokens: {ollamaStats.cumulative.total_vision_tokens.toLocaleString()}</span>
-                      <span>Text Queries: {ollamaStats.cumulative.total_text_queries}</span>
-                      <span>Uptime: {Math.floor(ollamaStats.cumulative.uptime_sec / 60)}m</span>
-                      <span>GPU Rate: ${ollamaStats.cumulative.gpu_cost_per_sec}/sec</span>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center text-gray-400 py-4">
-                  {isLoadingStats ? 'Loading stats...' : 'Click Refresh to load stats'}
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Search Results */}
           {searchResults.length > 0 && (
-            <div className="mt-4">
-              <p className="text-sm text-gray-400 mb-3">Found {searchResults.length} results for "{searchQuery}"</p>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div className="mt-6">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-gray-400">Found {searchResults.length} results</p>
+                <button
+                  onClick={() => setSearchResults([])}
+                  className="text-sm text-gray-400 hover:text-white"
+                >
+                  Clear
+                </button>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {searchResults.map((result, i) => (
-                  <div
-                    key={result.id}
-                    className="p-3 bg-gray-700/50 rounded-lg border border-gray-600"
-                  >
-                    <div className="relative mb-2">
+                  <div key={result.id} className="bg-gray-700/50 rounded-lg overflow-hidden border border-gray-600">
+                    <div className="relative aspect-square">
                       <img
                         src={`${API_URL}/previews/${result.id}.jpg`}
                         alt={result.name}
-                        className="w-full aspect-square rounded bg-gray-600 object-cover"
+                        className="w-full h-full object-cover"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%23444" width="100" height="100"/><text x="50" y="55" text-anchor="middle" fill="%23666" font-size="12">No preview</text></svg>'
+                          (e.target as HTMLImageElement).style.display = 'none'
                         }}
                       />
-                      <span className="absolute top-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">
+                      <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
                         #{i + 1}
-                      </span>
-                      <span className="absolute top-1 right-1 bg-blue-600/80 text-white text-xs px-1.5 py-0.5 rounded">
+                      </div>
+                      <div className="absolute top-2 right-2 bg-blue-600/90 text-white text-xs px-2 py-1 rounded font-medium">
                         {(result.score * 100).toFixed(0)}%
-                      </span>
+                      </div>
                     </div>
-                    <h4 className="font-medium text-sm truncate" title={result.name}>{result.name}</h4>
-                    {result.category && (
-                      <span className="text-xs text-gray-400">{result.category}</span>
-                    )}
+                    <div className="p-3">
+                      <h4 className="font-medium text-sm truncate" title={result.name}>{result.name}</h4>
+                      {result.caption && (
+                        <p className="text-xs text-gray-400 mt-1 line-clamp-2">{result.caption}</p>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
           )}
-        </div>
+        </section>
 
-        {/* Dataset Generation */}
-        <div className="mb-8 p-6 bg-gray-800 rounded-xl border border-gray-700">
-          <h2 className="text-lg font-semibold mb-4">Objaverse Dataset</h2>
+        {/* Bucket Browser Section */}
+        <section className="bg-gray-800 rounded-xl border border-gray-700 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold">Bucket Storage</h2>
+              {bucket && (
+                <p className="text-gray-400 text-sm">{bucket.name} ({bucket.region})</p>
+              )}
+            </div>
+          </div>
 
-          {datasetStatus?.is_generating ? (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" />
-                  <span className="text-yellow-400 font-medium">
-                    {datasetStatus.step === 'downloading' ? 'Downloading' :
-                     datasetStatus.step === 'indexing' ? 'Indexing' :
-                     datasetStatus.step === 'clearing' ? 'Clearing' :
-                     'Generating'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
+          {/* Breadcrumb / Path */}
+          <div className="flex items-center gap-2 mb-4 text-sm">
+            <button
+              onClick={() => { setCurrentPrefix(''); fetchFolders(''); setFiles([]) }}
+              className="text-blue-400 hover:text-blue-300"
+            >
+              {bucket?.name || 'root'}
+            </button>
+            {currentPrefix.split('/').filter(Boolean).map((part, i, arr) => (
+              <span key={i} className="flex items-center gap-2">
+                <span className="text-gray-500">/</span>
+                <button
+                  onClick={() => {
+                    const newPrefix = arr.slice(0, i + 1).join('/')
+                    setCurrentPrefix(newPrefix)
+                    fetchFolders(newPrefix)
+                    fetchFiles(newPrefix)
+                  }}
+                  className="text-blue-400 hover:text-blue-300"
+                >
+                  {part}
+                </button>
+              </span>
+            ))}
+          </div>
+
+          {/* Folders */}
+          {folders.length > 0 && (
+            <div className="mb-4">
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Folders</p>
+              <div className="flex flex-wrap gap-2">
+                {currentPrefix && (
                   <button
-                    onClick={cancelGeneration}
-                    className="px-3 py-1 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded text-sm transition-colors"
+                    onClick={goBack}
+                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm flex items-center gap-2 transition-colors"
                   >
-                    Cancel
+                    <span>←</span> Back
+                  </button>
+                )}
+                {folders.map(folder => (
+                  <button
+                    key={folder}
+                    onClick={() => selectFolder(folder)}
+                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm flex items-center gap-2 transition-colors"
+                  >
+                    <span className="text-yellow-400">📁</span> {folder}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Files Summary */}
+          {isLoadingFiles ? (
+            <div className="py-8 text-center text-gray-400">
+              Loading files...
+            </div>
+          ) : files.length > 0 ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400">
+                    <span className="text-white font-medium">{files.length}</span> 3D models found
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Total size: {formatBytes(files.reduce((acc, f) => acc + f.size, 0))}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  {/* Batch size selector */}
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm text-gray-400">Batch:</label>
+                    <select
+                      value={batchSize}
+                      onChange={(e) => setBatchSize(Number(e.target.value))}
+                      className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-sm"
+                      disabled={processing.isProcessing}
+                    >
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                      <option value={200}>200</option>
+                    </select>
+                  </div>
+
+                  {/* Clear index checkbox */}
+                  <label className="flex items-center gap-2 text-sm text-gray-400 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={clearIndex}
+                      onChange={(e) => setClearIndex(e.target.checked)}
+                      disabled={processing.isProcessing}
+                      className="rounded bg-gray-700 border-gray-600"
+                    />
+                    Clear existing
+                  </label>
+
+                  {/* Process button */}
+                  <button
+                    onClick={processFiles}
+                    disabled={processing.isProcessing || files.length === 0}
+                    className="px-6 py-2 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-medium transition-colors flex items-center gap-2"
+                  >
+                    {processing.isProcessing ? (
+                      <>
+                        <span className="animate-spin">⚙️</span>
+                        Processing...
+                      </>
+                    ) : (
+                      <>Process All</>
+                    )}
                   </button>
                 </div>
               </div>
 
-              {/* Step indicators */}
-              <div className="flex items-center gap-2 text-xs">
-                <div className={`flex items-center gap-1 ${datasetStatus.step === 'clearing' ? 'text-yellow-400' : datasetStatus.downloaded > 0 ? 'text-green-400' : 'text-gray-500'}`}>
-                  <span>{datasetStatus.downloaded > 0 ? '✓' : '○'}</span>
-                  <span>Clear</span>
-                </div>
-                <span className="text-gray-600">→</span>
-                <div className={`flex items-center gap-1 ${datasetStatus.step === 'downloading' ? 'text-yellow-400' : datasetStatus.downloaded > 0 && datasetStatus.step === 'indexing' ? 'text-green-400' : 'text-gray-500'}`}>
-                  <span>{datasetStatus.step === 'downloading' ? '◉' : datasetStatus.downloaded > 0 && datasetStatus.step === 'indexing' ? '✓' : '○'}</span>
-                  <span>Download ({datasetStatus.downloaded}/{datasetStatus.total})</span>
-                </div>
-                <span className="text-gray-600">→</span>
-                <div className={`flex items-center gap-1 ${datasetStatus.step === 'indexing' ? 'text-yellow-400' : 'text-gray-500'}`}>
-                  <span>{datasetStatus.step === 'indexing' ? '◉' : '○'}</span>
-                  <span>Index ({datasetStatus.indexed}/{datasetStatus.downloaded || datasetStatus.total})</span>
-                </div>
-              </div>
-
-              {/* Progress bar */}
-              <div className="w-full bg-gray-700 rounded-full h-2">
-                <div
-                  className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                  style={{
-                    width: `${datasetStatus.step === 'indexing'
-                      ? ((datasetStatus.indexed / (datasetStatus.downloaded || datasetStatus.total || 1)) * 100)
-                      : datasetStatus.step === 'downloading'
-                      ? ((datasetStatus.downloaded / (datasetStatus.total || 1)) * 100)
-                      : 0}%`
-                  }}
-                />
-              </div>
-
-              {/* Current status message */}
-              {datasetStatus.message && (
-                <p className="text-xs text-gray-400">
-                  {datasetStatus.message}
-                </p>
-              )}
-              {datasetStatus.current_model && (
-                <p className="text-xs text-gray-500 truncate">
-                  Current: {datasetStatus.current_model}
-                </p>
-              )}
-              {datasetStatus.failed > 0 && (
-                <p className="text-xs text-red-400">
-                  Failed: {datasetStatus.failed}
-                </p>
-              )}
-
-              {/* Rendered Images Preview (4 thumbnail views) */}
-              {datasetStatus.current_images && datasetStatus.current_images.length > 0 && (
-                <div className="mt-4">
-                  <p className="text-xs text-gray-400 mb-2">Rendered Views:</p>
-                  <div className="flex gap-2">
-                    {datasetStatus.current_images.map((img, i) => (
-                      <img
-                        key={i}
-                        src={`data:image/jpeg;base64,${img}`}
-                        alt={`View ${i + 1}`}
-                        className="w-16 h-16 rounded bg-gray-700 object-cover"
-                      />
+              {/* File list preview */}
+              <div className="max-h-48 overflow-y-auto bg-gray-700/50 rounded-lg border border-gray-600">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-700 sticky top-0">
+                    <tr>
+                      <th className="text-left px-4 py-2 text-gray-400 font-medium">Name</th>
+                      <th className="text-left px-4 py-2 text-gray-400 font-medium">Format</th>
+                      <th className="text-right px-4 py-2 text-gray-400 font-medium">Size</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {files.slice(0, 100).map(file => (
+                      <tr key={file.key} className="border-t border-gray-600/50">
+                        <td className="px-4 py-2 truncate max-w-xs">{file.name}</td>
+                        <td className="px-4 py-2 text-gray-400">.{file.extension}</td>
+                        <td className="px-4 py-2 text-right text-gray-400">{formatBytes(file.size)}</td>
+                      </tr>
                     ))}
+                  </tbody>
+                </table>
+                {files.length > 100 && (
+                  <div className="px-4 py-2 text-center text-gray-500 text-sm border-t border-gray-600/50">
+                    ... and {files.length - 100} more files
                   </div>
-                </div>
-              )}
+                )}
+              </div>
+            </div>
+          ) : currentPrefix ? (
+            <div className="py-8 text-center text-gray-500">
+              No 3D model files in this folder
             </div>
           ) : (
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-400">Count:</label>
-                <input
-                  type="number"
-                  min={10}
-                  max={1000}
-                  value={datasetCount}
-                  onChange={(e) => setDatasetCount(Number(e.target.value))}
-                  className="w-20 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-sm"
-                />
-              </div>
-              <button
-                onClick={generateDataset}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-medium transition-colors"
-              >
-                Download & Index
-              </button>
-              <button
-                onClick={indexExisting}
-                className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg text-sm font-medium transition-colors"
-              >
-                Index Cached
-              </button>
-              {models.length > 0 && (
-                <button
-                  onClick={deleteDataset}
-                  className="px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg text-sm font-medium transition-colors"
-                >
-                  Delete
-                </button>
-              )}
+            <div className="py-8 text-center text-gray-500">
+              Select a folder to browse models
             </div>
           )}
-        </div>
+        </section>
 
-        {/* Drop Zone */}
-        <div
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
-          className={`
-            mb-8 p-12 border-2 border-dashed rounded-xl cursor-pointer
-            transition-all duration-200 text-center
-            ${isDragging
-              ? 'border-blue-400 bg-blue-500/10'
-              : 'border-gray-600 hover:border-gray-500 hover:bg-gray-800/50'
-            }
-          `}
-        >
-          <div className="text-5xl mb-4">📦</div>
-          <p className="text-lg font-medium">
-            {isDragging ? 'Drop your 3D models here' : 'Drag & drop 3D models or folders'}
-          </p>
-          <p className="text-gray-500 mt-2">
-            GLB, GLTF, OBJ, STL, PLY, FBX, DAE • Supports folder drops
-          </p>
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept=".glb,.gltf,.obj,.stl,.ply,.fbx,.dae,.3ds,.off"
-            onChange={handleFileSelect}
-            className="hidden"
-            {...{ webkitdirectory: "", directory: "" } as any}
-          />
-        </div>
+        {/* Processing Progress */}
+        {(processing.isProcessing || completionStats) && (
+          <section className="bg-gray-800 rounded-xl border border-gray-700 p-6">
+            <h2 className="text-lg font-semibold mb-4">
+              {processing.isProcessing ? 'Processing' : 'Complete'}
+            </h2>
 
-        {/* Processing Models */}
-        {processingModels.length > 0 && (
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Processing</h2>
-              <button
-                onClick={clearProcessed}
-                className="text-sm text-gray-400 hover:text-white"
-              >
-                Clear completed
-              </button>
-            </div>
-            <div className="space-y-4">
-              {processingModels.map(model => (
-                <div
-                  key={model.id}
-                  className={`p-4 rounded-lg ${
-                    model.status === 'error'
-                      ? 'bg-red-500/10 border border-red-500/50'
-                      : model.status === 'done'
-                      ? 'bg-green-500/10 border border-green-500/50'
-                      : 'bg-gray-800 border border-gray-700'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">{model.name}</span>
-                    <span className={`text-sm ${
-                      model.status === 'error' ? 'text-red-400' :
-                      model.status === 'done' ? 'text-green-400' :
-                      'text-yellow-400'
-                    }`}>
-                      {model.status === 'processing' && '⏳ Processing...'}
-                      {model.status === 'done' && '✓ Done'}
-                      {model.status === 'error' && `✕ ${model.error}`}
-                    </span>
+            {processing.isProcessing ? (
+              <div className="space-y-4">
+                {/* Progress bar */}
+                <div className="relative">
+                  <div className="h-4 bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-blue-600 to-blue-400 transition-all duration-300"
+                      style={{ width: `${progressPercent}%` }}
+                    />
                   </div>
-
-                  {/* Rendered Images Grid */}
-                  {model.images && model.images.length > 0 && (
-                    <div className="grid grid-cols-6 gap-2 mt-3">
-                      {model.images.map((img, i) => (
-                        <img
-                          key={i}
-                          src={`data:image/png;base64,${img}`}
-                          alt={`View ${i + 1}`}
-                          className="w-full aspect-square rounded bg-gray-700 object-cover"
-                        />
-                      ))}
-                    </div>
-                  )}
+                  <div className="absolute inset-0 flex items-center justify-center text-xs font-medium">
+                    {progressPercent.toFixed(1)}%
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
+
+                {/* Stats grid */}
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                  <div className="bg-gray-700/50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-blue-400">{processing.batch}/{processing.totalBatches}</div>
+                    <div className="text-xs text-gray-400">Batches</div>
+                  </div>
+                  <div className="bg-gray-700/50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-green-400">{processing.processed}</div>
+                    <div className="text-xs text-gray-400">Processed</div>
+                  </div>
+                  <div className="bg-gray-700/50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-red-400">{processing.failed}</div>
+                    <div className="text-xs text-gray-400">Failed</div>
+                  </div>
+                  <div className="bg-gray-700/50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-yellow-400">{formatTime(elapsed)}</div>
+                    <div className="text-xs text-gray-400">Elapsed</div>
+                  </div>
+                  <div className="bg-gray-700/50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-purple-400">{formatTime(eta)}</div>
+                    <div className="text-xs text-gray-400">ETA</div>
+                  </div>
+                </div>
+
+                {/* Current batch info */}
+                <p className="text-sm text-gray-400 text-center">
+                  Processing batch {processing.batch} of {processing.totalBatches}
+                  ({processing.processed + processing.failed}/{processing.total} models)
+                </p>
+              </div>
+            ) : completionStats && (
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 text-center">
+                  <div className="text-3xl font-bold text-green-400">{completionStats.added}</div>
+                  <div className="text-sm text-gray-400">Models Added</div>
+                </div>
+                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-center">
+                  <div className="text-3xl font-bold text-red-400">{completionStats.failed}</div>
+                  <div className="text-sm text-gray-400">Failed</div>
+                </div>
+                <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 text-center">
+                  <div className="text-3xl font-bold text-blue-400">{formatTime(completionStats.time)}</div>
+                  <div className="text-sm text-gray-400">Total Time</div>
+                </div>
+              </div>
+            )}
+          </section>
         )}
 
         {/* Indexed Models */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">
-            Indexed Models ({models.length})
-          </h2>
-          {models.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              <p>No models indexed yet</p>
-              <p className="text-sm mt-1">Drop some 3D models above to get started</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {models.map(model => (
-                <div
-                  key={model.id}
-                  className="p-4 bg-gray-800 rounded-lg border border-gray-700"
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-medium">{model.name}</h3>
-                      {model.category && (
-                        <span className="text-sm text-gray-400">{model.category}</span>
-                      )}
-                    </div>
-                    <span className="text-xs text-gray-500 font-mono">
-                      {model.id.slice(0, 12)}...
-                    </span>
+        {models.length > 0 && searchResults.length === 0 && (
+          <section className="bg-gray-800 rounded-xl border border-gray-700 p-6">
+            <h2 className="text-lg font-semibold mb-4">
+              Indexed Models ({models.length})
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {models.slice(0, 24).map(model => (
+                <div key={model.id} className="bg-gray-700/50 rounded-lg overflow-hidden border border-gray-600">
+                  <div className="aspect-square">
+                    <img
+                      src={`${API_URL}/previews/${model.id}.jpg`}
+                      alt={model.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none'
+                      }}
+                    />
                   </div>
-                  {model.file_path && (
-                    <p className="text-xs text-gray-500 mt-2 truncate">
-                      {model.file_path}
-                    </p>
-                  )}
+                  <div className="p-2">
+                    <h4 className="text-sm truncate" title={model.name}>{model.name}</h4>
+                  </div>
                 </div>
               ))}
             </div>
-          )}
-        </div>
+            {models.length > 24 && (
+              <p className="text-center text-gray-500 text-sm mt-4">
+                ... and {models.length - 24} more models
+              </p>
+            )}
+          </section>
+        )}
       </div>
     </div>
   )

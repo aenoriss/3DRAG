@@ -73,3 +73,65 @@ def list_files(prefix: str = "") -> list:
     client = get_client()
     response = client.list_objects_v2(Bucket=SPACES_BUCKET, Prefix=prefix)
     return [obj['Key'] for obj in response.get('Contents', [])]
+
+
+def list_files_detailed(prefix: str = "", limit: int = 1000) -> list:
+    """List files with metadata (size, last modified)."""
+    client = get_client()
+
+    files = []
+    continuation_token = None
+
+    while len(files) < limit:
+        params = {
+            'Bucket': SPACES_BUCKET,
+            'Prefix': prefix,
+            'MaxKeys': min(1000, limit - len(files))
+        }
+        if continuation_token:
+            params['ContinuationToken'] = continuation_token
+
+        response = client.list_objects_v2(**params)
+
+        for obj in response.get('Contents', []):
+            files.append({
+                'key': obj['Key'],
+                'size': obj['Size'],
+                'last_modified': obj['LastModified'].isoformat(),
+                'url': f"https://{SPACES_BUCKET}.{SPACES_REGION}.digitaloceanspaces.com/{obj['Key']}"
+            })
+
+        if not response.get('IsTruncated'):
+            break
+        continuation_token = response.get('NextContinuationToken')
+
+    return files
+
+
+def get_bucket_info() -> dict:
+    """Get info about the configured bucket."""
+    return {
+        'name': SPACES_BUCKET,
+        'region': SPACES_REGION,
+        'endpoint': SPACES_ENDPOINT,
+        'url': f"https://{SPACES_BUCKET}.{SPACES_REGION}.digitaloceanspaces.com"
+    }
+
+
+def list_prefixes(prefix: str = "", delimiter: str = "/") -> list:
+    """List 'folders' (common prefixes) in bucket."""
+    client = get_client()
+    response = client.list_objects_v2(
+        Bucket=SPACES_BUCKET,
+        Prefix=prefix,
+        Delimiter=delimiter
+    )
+
+    prefixes = []
+    for p in response.get('CommonPrefixes', []):
+        folder = p['Prefix'].rstrip('/')
+        if '/' in prefix:
+            folder = folder.split('/')[-1]
+        prefixes.append(folder)
+
+    return prefixes
