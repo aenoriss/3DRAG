@@ -29,8 +29,10 @@ load_dotenv()
 from runpod_client import get_stats as get_runpod_stats, health_check
 from faiss_index import get_index, FAISSIndex, EMBEDDING_DIM_GEMMA
 from sentence_transformers import SentenceTransformer
+from pathlib import Path
 
 EMBEDDING_DIM = EMBEDDING_DIM_GEMMA  # 768, same as all-mpnet-base-v2
+DATASET_DIR = Path("dataset")  # Local dataset directory
 
 # Local embedding model for search queries (CPU, fast)
 EMBEDDING_MODEL = "all-mpnet-base-v2"
@@ -307,7 +309,6 @@ async def process_bucket_files(
     RunPod downloads and processes each file.
     """
     from runpod_client import process_models_urls
-    from dataset_generator import DATASET_DIR
     import base64
     import shutil
     import time
@@ -619,7 +620,6 @@ async def upload_model(
         # Save preview image
         preview_b64 = result.get("preview")
         if preview_b64:
-            from dataset_generator import DATASET_DIR
             previews_dir = DATASET_DIR / "previews"
             previews_dir.mkdir(parents=True, exist_ok=True)
 
@@ -662,7 +662,6 @@ async def batch_start(
     """Start a batch upload session."""
     import uuid
     import shutil
-    from dataset_generator import DATASET_DIR
 
     session_id = str(uuid.uuid4())[:8]
     batch_staging[session_id] = {"total_received": 0, "total_processed": 0}
@@ -696,9 +695,7 @@ async def batch_upload(
 ):
     """Upload files to bucket, then process on RunPod via URLs."""
     import base64
-    from pathlib import Path
     from runpod_client import process_models_urls
-    from dataset_generator import DATASET_DIR
     from storage import upload_file
 
     if session_id not in batch_staging:
@@ -784,7 +781,6 @@ async def batch_upload(
 async def batch_process(session_id: str):
     """Process all uploaded files in a batch session."""
     from runpod_client import process_models_batch
-    from dataset_generator import DATASET_DIR
     import base64
 
     if session_id not in batch_staging:
@@ -863,8 +859,6 @@ async def upload_models_batch(
     For large batches, use /models/batch/start + /upload + /process instead.
     """
     from runpod_client import process_models_batch
-    from pathlib import Path
-    from dataset_generator import DATASET_DIR
     import base64
     import shutil
 
@@ -1067,17 +1061,23 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 # ============================================================================
-# Dataset Generation Endpoints
+# Dataset Generation Endpoints (optional - requires objaverse)
 # ============================================================================
 
-from dataset_generator import (
-    generate_dataset,
-    get_status as get_dataset_status,
-    DatasetStatus,
-    clear_dataset,
-    cancel_generation,
-    DATASET_SIZE
-)
+# Try to import dataset_generator (only needed for Objaverse workflow)
+try:
+    from dataset_generator import (
+        generate_dataset,
+        get_status as get_dataset_status,
+        DatasetStatus,
+        clear_dataset,
+        cancel_generation,
+        DATASET_SIZE
+    )
+    DATASET_GENERATOR_AVAILABLE = True
+except ImportError:
+    DATASET_GENERATOR_AVAILABLE = False
+    print("Note: dataset_generator not available (objaverse not installed)")
 
 # Background task for dataset generation
 _generation_task: Optional[asyncio.Task] = None
@@ -1085,7 +1085,7 @@ _generation_task: Optional[asyncio.Task] = None
 
 @app.post("/dataset/generate")
 async def start_dataset_generation(
-    count: int = Query(DATASET_SIZE, ge=10, le=1000, description="Number of models to download")
+    count: int = Query(100, ge=10, le=1000, description="Number of models to download")
 ):
     """
     Start generating a new dataset from Objaverse-XL.
@@ -1098,6 +1098,9 @@ async def start_dataset_generation(
 
     Progress updates are sent via WebSocket (streaming per-model).
     """
+    if not DATASET_GENERATOR_AVAILABLE:
+        raise HTTPException(501, "Dataset generation not available (objaverse not installed)")
+
     global _generation_task
 
     status = get_dataset_status()
@@ -1137,6 +1140,8 @@ async def start_dataset_generation(
 @app.get("/dataset/status")
 async def dataset_generation_status():
     """Get current dataset generation status."""
+    if not DATASET_GENERATOR_AVAILABLE:
+        return {"is_generating": False, "error": "objaverse not installed"}
     status = get_dataset_status()
     return {
         "is_generating": status.is_generating,
@@ -1153,6 +1158,8 @@ async def dataset_generation_status():
 @app.delete("/dataset")
 async def delete_dataset():
     """Delete the current dataset and clear the FAISS index."""
+    if not DATASET_GENERATOR_AVAILABLE:
+        raise HTTPException(501, "Dataset management not available (objaverse not installed)")
     status = get_dataset_status()
     if status.is_generating:
         raise HTTPException(409, "Cannot delete while generation is in progress")
@@ -1174,6 +1181,9 @@ async def delete_dataset():
 @app.post("/dataset/cancel")
 async def cancel_dataset_generation_endpoint():
     """Cancel ongoing dataset generation."""
+    if not DATASET_GENERATOR_AVAILABLE:
+        raise HTTPException(501, "Dataset management not available (objaverse not installed)")
+
     global _generation_task
 
     status = get_dataset_status()
@@ -1191,8 +1201,9 @@ async def cancel_dataset_generation_endpoint():
         _generation_task = None
 
     # Reset the status
-    from dataset_generator import reset_status
-    reset_status()
+    if DATASET_GENERATOR_AVAILABLE:
+        from dataset_generator import reset_status
+        reset_status()
 
     await ws_manager.broadcast({
         "type": "dataset_cancelled",
