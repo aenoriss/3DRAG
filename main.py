@@ -297,7 +297,8 @@ async def process_bucket_files(
     prefix: str = Query("", description="Folder prefix containing models"),
     limit: int = Query(0, description="Max files to process (0 = all)"),
     clear: bool = Query(True, description="Clear index before processing"),
-    batch_size: int = Query(100, ge=1, le=500, description="Models per batch")
+    batch_size: int = Query(100, ge=1, le=500, description="Models per batch"),
+    skip_indexed: bool = Query(False, description="Skip already indexed models (for resume)")
 ):
     """
     Process 3D models directly from bucket.
@@ -332,12 +333,26 @@ async def process_bucket_files(
     if not model_files:
         raise HTTPException(400, "No 3D model files found in bucket")
 
+    # Get index reference
+    index: FAISSIndex = app.state.index
+
+    # Skip already indexed if requested (for resume after failure)
+    if skip_indexed:
+        existing = index.list_all(0, 10000)
+        indexed_urls = {m.get("file_path") for m in existing if m.get("file_path")}
+        original_count = len(model_files)
+        model_files = [m for m in model_files if m["url"] not in indexed_urls]
+        skipped = original_count - len(model_files)
+        print(f"[storage] Skipping {skipped} already indexed models")
+
+        if not model_files:
+            return {"status": "complete", "message": "All models already indexed", "skipped": skipped}
+
     total = len(model_files)
     print(f"[storage] Found {total} models in bucket prefix '{prefix}'")
 
-    # 2. Clear index if requested
-    index: FAISSIndex = app.state.index
-    if clear:
+    # 2. Clear index if requested (but not when resuming)
+    if clear and not skip_indexed:
         index.clear()
         previews_dir = DATASET_DIR / "previews"
         if previews_dir.exists():
@@ -405,6 +420,9 @@ async def process_bucket_files(
     total_added = 0
     total_failed = 0
 
+    # Build URL lookup from original batch data
+    url_lookup = {m["model_id"]: m["url"] for m in model_files}
+
     for batch_num, result in enumerate(results, 1):
         for r in result.get("results", []):
             if "error" in r:
@@ -417,7 +435,7 @@ async def process_bucket_files(
                     model_id=r["model_id"],
                     name=r.get("name", ""),
                     category=None,
-                    file_path=None,
+                    file_path=url_lookup.get(r["model_id"]),  # Store bucket URL
                     caption=r.get("caption", ""),
                     save=False
                 )
@@ -459,6 +477,21 @@ async def process_bucket_files(
         "failed": total_failed,
         "total": total,
         "time_sec": round(elapsed, 2)
+    }
+
+
+@app.get("/storage/indexed")
+async def get_indexed_urls():
+    """Get list of already indexed bucket URLs."""
+    index: FAISSIndex = app.state.index
+    all_models = index.list_all(0, 10000)
+    indexed_urls = set()
+    for m in all_models:
+        if m.get("file_path"):
+            indexed_urls.add(m["file_path"])
+    return {
+        "count": len(indexed_urls),
+        "urls": list(indexed_urls)
     }
 
 
