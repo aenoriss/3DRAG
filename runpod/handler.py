@@ -368,54 +368,97 @@ def handler(event):
         if "models_urls" in input_data:
             import gc
             import requests
+            from concurrent.futures import ThreadPoolExecutor, as_completed
             start = time.time()
 
             models = input_data["models_urls"]
             print(f"[handler] Processing {len(models)} models from URLs...")
 
-            from modules.renderer import render_model_bytes
+            from modules.renderer import render_models_bytes_batch, MAX_RENDER_WORKERS
             from modules.captioner import caption_images_batch
             from modules.embedder import embed_texts_batch
 
             all_results = []
 
-            # Download and render each model
-            render_data = []
-            for model in models:
+            # Parallel download function
+            def download_model(model):
                 model_id = model.get("model_id", "unknown")
                 model_name = model.get("name", "uploaded")
                 url = model.get("url")
                 file_ext = model.get("extension", "glb")
-
                 try:
-                    # Download from URL
-                    print(f"  Downloading {model_id}...", flush=True)
-                    resp = requests.get(url, timeout=30)
+                    resp = requests.get(url, timeout=60)
                     resp.raise_for_status()
-                    model_bytes = resp.content
-
-                    # Render
-                    images, images_b64 = render_model_bytes(model_bytes, file_ext, num_views=1)
-
-                    if images:
-                        render_data.append({
-                            "model_id": model_id,
-                            "name": model_name,
-                            "image": images[0],
-                            "image_b64": images_b64[0] if images_b64 else None
-                        })
-                    else:
-                        all_results.append({
-                            "model_id": model_id,
-                            "name": model_name,
-                            "error": "Render failed"
-                        })
-                except Exception as e:
-                    print(f"  Error {model_id}: {e}", flush=True)
-                    all_results.append({
+                    return {
                         "model_id": model_id,
                         "name": model_name,
-                        "error": str(e)
+                        "bytes": resp.content,
+                        "extension": file_ext,
+                        "success": True
+                    }
+                except Exception as e:
+                    return {
+                        "model_id": model_id,
+                        "name": model_name,
+                        "error": str(e),
+                        "success": False
+                    }
+
+            # Download all models in parallel
+            t0 = time.time()
+            print(f"  Downloading {len(models)} models in parallel...", flush=True)
+            downloaded = []
+            with ThreadPoolExecutor(max_workers=16) as executor:
+                futures = {executor.submit(download_model, m): m for m in models}
+                for future in as_completed(futures):
+                    result = future.result()
+                    if result["success"]:
+                        downloaded.append(result)
+                    else:
+                        all_results.append({
+                            "model_id": result["model_id"],
+                            "name": result["name"],
+                            "error": result["error"]
+                        })
+            print(f"  Downloaded {len(downloaded)}/{len(models)} in {time.time() - t0:.1f}s", flush=True)
+
+            if not downloaded:
+                return {
+                    "results": all_results,
+                    "processed": 0,
+                    "requested": len(models),
+                    "time_sec": round(time.time() - start, 3)
+                }
+
+            # Prepare for batch rendering
+            render_input = [{
+                "model_id": d["model_id"],
+                "bytes": d["bytes"],
+                "extension": d["extension"]
+            } for d in downloaded]
+            model_names = {d["model_id"]: d["name"] for d in downloaded}
+
+            # Parallel render
+            t0 = time.time()
+            render_results = render_models_bytes_batch(render_input, num_views=1, max_workers=MAX_RENDER_WORKERS)
+            print(f"  Rendered {len(render_results)} models in {time.time() - t0:.1f}s", flush=True)
+
+            # Collect successful renders
+            render_data = []
+            for result in render_results:
+                model_id = result["model_id"]
+                if result.get("success") and result.get("images"):
+                    render_data.append({
+                        "model_id": model_id,
+                        "name": model_names.get(model_id, "uploaded"),
+                        "image": result["images"][0],
+                        "image_b64": result["images_b64"][0] if result.get("images_b64") else None
+                    })
+                else:
+                    all_results.append({
+                        "model_id": model_id,
+                        "name": model_names.get(model_id, "uploaded"),
+                        "error": result.get("error", "Render failed")
                     })
 
             if render_data:
