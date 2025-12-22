@@ -297,7 +297,7 @@ async def process_bucket_files(
     prefix: str = Query("", description="Folder prefix containing models"),
     limit: int = Query(0, description="Max files to process (0 = all)"),
     clear: bool = Query(False, description="Clear index before processing"),
-    batch_size: int = Query(100, ge=1, le=500, description="Models per batch"),
+    batch_size: int = Query(25, ge=1, le=500, description="Models per batch"),
     skip_indexed: bool = Query(True, description="Skip already indexed models")
 ):
     """
