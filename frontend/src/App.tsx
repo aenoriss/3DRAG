@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import ModelViewer from './ModelViewer'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000/ws'
@@ -78,6 +79,7 @@ function App() {
   const [wsConnected, setWsConnected] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [completionStats, setCompletionStats] = useState<{added: number, failed: number, time: number} | null>(null)
+  const [viewingModel, setViewingModel] = useState<{id: string, name: string} | null>(null)
 
   const wsRef = useRef<WebSocket | null>(null)
 
@@ -413,7 +415,11 @@ function App() {
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {searchResults.map((result, i) => (
-                  <div key={result.id} className="bg-gray-700/50 rounded-lg overflow-hidden border border-gray-600">
+                  <div
+                    key={result.id}
+                    onClick={() => setViewingModel({ id: result.id, name: result.name })}
+                    className="bg-gray-700/50 rounded-lg overflow-hidden border border-gray-600 cursor-pointer hover:border-blue-500 hover:bg-gray-700 transition-all"
+                  >
                     <div className="relative aspect-square">
                       <img
                         src={`${API_URL}/previews/${result.id}.jpg`}
@@ -428,6 +434,9 @@ function App() {
                       </div>
                       <div className="absolute top-2 right-2 bg-blue-600/90 text-white text-xs px-2 py-1 rounded font-medium">
                         {(result.score * 100).toFixed(0)}%
+                      </div>
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-black/50 transition-opacity">
+                        <span className="text-white text-sm font-medium">View 3D</span>
                       </div>
                     </div>
                     <div className="p-3">
@@ -720,8 +729,12 @@ function App() {
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {models.slice(0, 24).map(model => (
-                <div key={model.id} className="bg-gray-700/50 rounded-lg overflow-hidden border border-gray-600">
-                  <div className="aspect-square">
+                <div
+                  key={model.id}
+                  onClick={() => setViewingModel({ id: model.id, name: model.name })}
+                  className="bg-gray-700/50 rounded-lg overflow-hidden border border-gray-600 cursor-pointer hover:border-blue-500 hover:bg-gray-700 transition-all"
+                >
+                  <div className="aspect-square relative">
                     <img
                       src={`${API_URL}/previews/${model.id}.jpg`}
                       alt={model.name}
@@ -730,6 +743,9 @@ function App() {
                         (e.target as HTMLImageElement).style.display = 'none'
                       }}
                     />
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-black/50 transition-opacity">
+                      <span className="text-white text-sm font-medium">View 3D</span>
+                    </div>
                   </div>
                   <div className="p-2">
                     <h4 className="text-sm truncate" title={model.name}>{model.name}</h4>
@@ -745,6 +761,16 @@ function App() {
           </section>
         )}
       </div>
+
+      {/* 3D Model Viewer Modal */}
+      {viewingModel && (
+        <ModelViewer
+          modelId={viewingModel.id}
+          modelName={viewingModel.name}
+          apiUrl={API_URL}
+          onClose={() => setViewingModel(null)}
+        />
+      )}
     </div>
   )
 }

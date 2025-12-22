@@ -480,6 +480,52 @@ async def process_bucket_files(
     }
 
 
+@app.get("/storage/model/{model_id}")
+async def get_model_file(model_id: str):
+    """Download model file from bucket by model_id."""
+    from fastapi.responses import Response
+    from storage import download_file, SPACES_BUCKET, SPACES_REGION
+
+    # Get model metadata to find bucket URL
+    index: FAISSIndex = app.state.index
+    model = index.get_by_id(model_id)
+    if not model:
+        raise HTTPException(404, f"Model '{model_id}' not found")
+
+    file_path = model.get("file_path")
+    if not file_path:
+        raise HTTPException(404, "Model has no associated file")
+
+    # Extract key from URL
+    # URL format: https://3dbucket.nyc3.digitaloceanspaces.com/eval/airplane_056cfd8c.glb
+    bucket_prefix = f"https://{SPACES_BUCKET}.{SPACES_REGION}.digitaloceanspaces.com/"
+    if not file_path.startswith(bucket_prefix):
+        raise HTTPException(400, "Invalid file path")
+
+    key = file_path[len(bucket_prefix):]
+
+    try:
+        file_bytes = download_file(key)
+        # Determine content type
+        ext = key.split('.')[-1].lower()
+        content_types = {
+            'glb': 'model/gltf-binary',
+            'gltf': 'model/gltf+json',
+            'obj': 'text/plain',
+            'stl': 'application/sla',
+            'fbx': 'application/octet-stream',
+        }
+        content_type = content_types.get(ext, 'application/octet-stream')
+
+        return Response(
+            content=file_bytes,
+            media_type=content_type,
+            headers={"Content-Disposition": f"inline; filename={key.split('/')[-1]}"}
+        )
+    except Exception as e:
+        raise HTTPException(500, f"Failed to download: {str(e)}")
+
+
 @app.get("/storage/indexed")
 async def get_indexed_urls():
     """Get list of already indexed bucket URLs."""
