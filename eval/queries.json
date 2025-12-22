@@ -1,0 +1,305 @@
+{
+  "description": "Test queries for 3DRAG retrieval evaluation",
+  "queries": [
+    {
+      "id": "q01",
+      "text": "red sports car",
+      "category": "race_car",
+      "type": "direct"
+    },
+    {
+      "id": "q02",
+      "text": "military helicopter",
+      "category": "helicopter",
+      "type": "direct"
+    },
+    {
+      "id": "q03",
+      "text": "commercial airplane",
+      "category": "airplane",
+      "type": "direct"
+    },
+    {
+      "id": "q04",
+      "text": "mountain bike",
+      "category": "bicycle",
+      "type": "direct"
+    },
+    {
+      "id": "q05",
+      "text": "pickup truck for farm",
+      "category": "pickup_truck",
+      "type": "use_case"
+    },
+    {
+      "id": "q06",
+      "text": "african lion",
+      "category": "lion",
+      "type": "direct"
+    },
+    {
+      "id": "q07",
+      "text": "cute bunny",
+      "category": "rabbit",
+      "type": "descriptive"
+    },
+    {
+      "id": "q08",
+      "text": "elephant with tusks",
+      "category": "elephant",
+      "type": "descriptive"
+    },
+    {
+      "id": "q09",
+      "text": "owl bird",
+      "category": "owl",
+      "type": "direct"
+    },
+    {
+      "id": "q10",
+      "text": "stuffed teddy bear toy",
+      "category": "teddy_bear",
+      "type": "direct"
+    },
+    {
+      "id": "q11",
+      "text": "ocean shark",
+      "category": "shark",
+      "type": "direct"
+    },
+    {
+      "id": "q12",
+      "text": "wild wolf",
+      "category": "wolf",
+      "type": "direct"
+    },
+    {
+      "id": "q13",
+      "text": "green frog",
+      "category": "frog",
+      "type": "descriptive"
+    },
+    {
+      "id": "q14",
+      "text": "penguin from antarctica",
+      "category": "penguin",
+      "type": "descriptive"
+    },
+    {
+      "id": "q15",
+      "text": "colorful butterfly",
+      "category": "butterfly",
+      "type": "descriptive"
+    },
+    {
+      "id": "q16",
+      "text": "wooden dining chair",
+      "category": "chair",
+      "type": "direct"
+    },
+    {
+      "id": "q17",
+      "text": "comfortable armchair for living room",
+      "category": "armchair",
+      "type": "use_case"
+    },
+    {
+      "id": "q18",
+      "text": "office desk table",
+      "category": "table",
+      "type": "direct"
+    },
+    {
+      "id": "q19",
+      "text": "bookshelf for library",
+      "category": "bookcase",
+      "type": "use_case"
+    },
+    {
+      "id": "q20",
+      "text": "crystal chandelier lighting",
+      "category": "chandelier",
+      "type": "direct"
+    },
+    {
+      "id": "q21",
+      "text": "yellow banana fruit",
+      "category": "banana",
+      "type": "direct"
+    },
+    {
+      "id": "q22",
+      "text": "red apple",
+      "category": "apple",
+      "type": "direct"
+    },
+    {
+      "id": "q23",
+      "text": "donut with frosting",
+      "category": "doughnut",
+      "type": "descriptive"
+    },
+    {
+      "id": "q24",
+      "text": "forest mushroom",
+      "category": "mushroom",
+      "type": "direct"
+    },
+    {
+      "id": "q25",
+      "text": "halloween pumpkin",
+      "category": "pumpkin",
+      "type": "descriptive"
+    },
+    {
+      "id": "q26",
+      "text": "vintage telephone",
+      "category": "telephone",
+      "type": "descriptive"
+    },
+    {
+      "id": "q27",
+      "text": "flat screen TV",
+      "category": "television_set",
+      "type": "direct"
+    },
+    {
+      "id": "q28",
+      "text": "computer keyboard",
+      "category": "computer_keyboard",
+      "type": "direct"
+    },
+    {
+      "id": "q29",
+      "text": "desktop monitor screen",
+      "category": "monitor_(computer_equipment) computer_monitor",
+      "type": "direct"
+    },
+    {
+      "id": "q30",
+      "text": "medieval sword weapon",
+      "category": "sword",
+      "type": "direct"
+    },
+    {
+      "id": "q31",
+      "text": "pistol handgun",
+      "category": "gun",
+      "type": "direct"
+    },
+    {
+      "id": "q32",
+      "text": "sniper rifle",
+      "category": "rifle",
+      "type": "direct"
+    },
+    {
+      "id": "q33",
+      "text": "knight shield",
+      "category": "shield",
+      "type": "direct"
+    },
+    {
+      "id": "q34",
+      "text": "medieval armor suit",
+      "category": "armor",
+      "type": "direct"
+    },
+    {
+      "id": "q35",
+      "text": "football soccer ball",
+      "category": "soccer_ball",
+      "type": "direct"
+    },
+    {
+      "id": "q36",
+      "text": "skateboard for tricks",
+      "category": "skateboard",
+      "type": "use_case"
+    },
+    {
+      "id": "q37",
+      "text": "acoustic guitar instrument",
+      "category": "guitar",
+      "type": "direct"
+    },
+    {
+      "id": "q38",
+      "text": "grand piano",
+      "category": "piano",
+      "type": "direct"
+    },
+    {
+      "id": "q39",
+      "text": "sneaker shoe",
+      "category": "shoe",
+      "type": "direct"
+    },
+    {
+      "id": "q40",
+      "text": "cool sunglasses",
+      "category": "sunglasses",
+      "type": "descriptive"
+    },
+    {
+      "id": "q41",
+      "text": "gold necklace jewelry",
+      "category": "necklace",
+      "type": "direct"
+    },
+    {
+      "id": "q42",
+      "text": "diamond ring",
+      "category": "ring",
+      "type": "direct"
+    },
+    {
+      "id": "q43",
+      "text": "ceramic flower vase",
+      "category": "vase",
+      "type": "direct"
+    },
+    {
+      "id": "q44",
+      "text": "marble sculpture statue",
+      "category": "sculpture",
+      "type": "direct"
+    },
+    {
+      "id": "q45",
+      "text": "decorative figurine",
+      "category": "figurine",
+      "type": "direct"
+    },
+    {
+      "id": "q46",
+      "text": "halloween mask",
+      "category": "mask",
+      "type": "descriptive"
+    },
+    {
+      "id": "q47",
+      "text": "world globe map",
+      "category": "globe",
+      "type": "direct"
+    },
+    {
+      "id": "q48",
+      "text": "windmill turbine",
+      "category": "windmill",
+      "type": "direct"
+    },
+    {
+      "id": "q49",
+      "text": "fire hydrant",
+      "category": "fireplug",
+      "type": "direct"
+    },
+    {
+      "id": "q50",
+      "text": "street lamp post",
+      "category": "lamppost",
+      "type": "direct"
+    }
+  ]
+}

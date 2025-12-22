@@ -182,34 +182,77 @@ async def process_model_bytes(model_bytes: bytes, file_extension: str, name: str
 
 async def _send_batch_chunk(chunk: List[dict], chunk_id: int) -> dict:
     """Send a single chunk to RunPod and wait for completion."""
-    print(f"[RunPod] Chunk {chunk_id}: Sending {len(chunk)} models...")
+    # Calculate payload size
+    import json as json_module
+    payload = {"input": {"models_batch": chunk}}
+    payload_size = len(json_module.dumps(payload)) / (1024 * 1024)  # MB
+    print(f"[RunPod] Chunk {chunk_id}: Sending {len(chunk)} models ({payload_size:.1f} MB)...")
+
+    try:
+        async with httpx.AsyncClient(timeout=PROCESS_TIMEOUT) as client:
+            response = await client.post(
+                f"{BASE_URL}/runsync",
+                headers={"Authorization": f"Bearer {RUNPOD_API_KEY}"},
+                json=payload
+            )
+            response.raise_for_status()
+            result = response.json()
+
+            status = result.get("status")
+            if status == "COMPLETED":
+                print(f"[RunPod] Chunk {chunk_id}: Completed immediately")
+                return result["output"]
+            elif status in ("IN_QUEUE", "IN_PROGRESS"):
+                job_id = result.get("id")
+                print(f"[RunPod] Chunk {chunk_id}: Job {job_id} in progress, polling...")
+                return await _poll_for_completion(job_id, PROCESS_TIMEOUT)
+            else:
+                raise Exception(f"RunPod error: {result}")
+    except httpx.HTTPStatusError as e:
+        raise Exception(f"HTTP {e.response.status_code}: {e.response.text[:200]}")
+    except httpx.TimeoutException:
+        raise Exception(f"Timeout after {PROCESS_TIMEOUT}s")
+    except Exception as e:
+        raise Exception(f"{type(e).__name__}: {str(e)}")
+
+
+async def process_models_urls(models: List[dict]) -> dict:
+    """
+    Process models via URLs (downloaded by RunPod worker).
+
+    Args:
+        models: List of dicts with keys:
+            - model_id: Unique identifier
+            - name: Display name
+            - url: Public URL to download model
+            - extension: File format (glb, obj, etc.)
+
+    Returns:
+        dict with 'results' list
+    """
+    print(f"[RunPod] Sending {len(models)} model URLs for processing...")
 
     async with httpx.AsyncClient(timeout=PROCESS_TIMEOUT) as client:
         response = await client.post(
             f"{BASE_URL}/runsync",
             headers={"Authorization": f"Bearer {RUNPOD_API_KEY}"},
-            json={
-                "input": {
-                    "models_batch": chunk
-                }
-            }
+            json={"input": {"models_urls": models}}
         )
         response.raise_for_status()
         result = response.json()
 
         status = result.get("status")
         if status == "COMPLETED":
-            print(f"[RunPod] Chunk {chunk_id}: Completed immediately")
             return result["output"]
         elif status in ("IN_QUEUE", "IN_PROGRESS"):
             job_id = result.get("id")
-            print(f"[RunPod] Chunk {chunk_id}: Job {job_id} in progress, polling...")
+            print(f"[RunPod] Job {job_id} in progress, polling...")
             return await _poll_for_completion(job_id, PROCESS_TIMEOUT)
         else:
             raise Exception(f"RunPod error: {result}")
 
 
-async def process_models_batch(models: List[dict], max_per_worker: int = 250) -> dict:
+async def process_models_batch(models: List[dict], max_per_worker: int = 10) -> dict:
     """
     Process multiple models from bytes on RunPod using multiple workers.
 

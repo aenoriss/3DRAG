@@ -1,0 +1,3060 @@
+{
+  "total": 500,
+  "num_categories": 50,
+  "models_per_category": 10,
+  "categories": [
+    "race_car",
+    "helicopter",
+    "airplane",
+    "bicycle",
+    "pickup_truck",
+    "lion",
+    "rabbit",
+    "elephant",
+    "owl",
+    "teddy_bear",
+    "shark",
+    "wolf",
+    "frog",
+    "penguin",
+    "butterfly",
+    "chair",
+    "armchair",
+    "table",
+    "bookcase",
+    "chandelier",
+    "banana",
+    "apple",
+    "doughnut",
+    "mushroom",
+    "pumpkin",
+    "telephone",
+    "television_set",
+    "computer_keyboard",
+    "monitor_(computer_equipment) computer_monitor",
+    "sword",
+    "gun",
+    "rifle",
+    "shield",
+    "armor",
+    "soccer_ball",
+    "skateboard",
+    "guitar",
+    "piano",
+    "shoe",
+    "sunglasses",
+    "necklace",
+    "ring",
+    "vase",
+    "sculpture",
+    "figurine",
+    "mask",
+    "globe",
+    "windmill",
+    "fireplug",
+    "lamppost"
+  ],
+  "models": [
+    {
+      "uid": "09a425963fe84282a7e498ee9bc534e8",
+      "category": "race_car",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-140/09a425963fe84282a7e498ee9bc534e8.glb",
+      "flat_path": "eval/models/race_car_09a42596.glb"
+    },
+    {
+      "uid": "8dd45092d0d34a398d1c0d8b1591a0f2",
+      "category": "race_car",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-158/8dd45092d0d34a398d1c0d8b1591a0f2.glb",
+      "flat_path": "eval/models/race_car_8dd45092.glb"
+    },
+    {
+      "uid": "c5890a678d754ae1b7645f94381c94b6",
+      "category": "race_car",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-156/c5890a678d754ae1b7645f94381c94b6.glb",
+      "flat_path": "eval/models/race_car_c5890a67.glb"
+    },
+    {
+      "uid": "5773656a849f4af2a965bfe2c9bc2539",
+      "category": "race_car",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-145/5773656a849f4af2a965bfe2c9bc2539.glb",
+      "flat_path": "eval/models/race_car_5773656a.glb"
+    },
+    {
+      "uid": "9c0fe3afda4a4bbeb66e482f79c1e070",
+      "category": "race_car",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-135/9c0fe3afda4a4bbeb66e482f79c1e070.glb",
+      "flat_path": "eval/models/race_car_9c0fe3af.glb"
+    },
+    {
+      "uid": "97629bcffa3442e08e094e93093d3676",
+      "category": "race_car",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-152/97629bcffa3442e08e094e93093d3676.glb",
+      "flat_path": "eval/models/race_car_97629bcf.glb"
+    },
+    {
+      "uid": "98cf1e3ff1dc4064b7f5535aeb540f20",
+      "category": "race_car",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-078/98cf1e3ff1dc4064b7f5535aeb540f20.glb",
+      "flat_path": "eval/models/race_car_98cf1e3f.glb"
+    },
+    {
+      "uid": "7bcf8626eaca40e592ffd0aed08aa30b",
+      "category": "race_car",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-104/7bcf8626eaca40e592ffd0aed08aa30b.glb",
+      "flat_path": "eval/models/race_car_7bcf8626.glb"
+    },
+    {
+      "uid": "e0544293ddf14ce28147160be6b22d30",
+      "category": "race_car",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-073/e0544293ddf14ce28147160be6b22d30.glb",
+      "flat_path": "eval/models/race_car_e0544293.glb"
+    },
+    {
+      "uid": "70b8a7f8ae4b45f5ab0580fbcb179823",
+      "category": "race_car",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-153/70b8a7f8ae4b45f5ab0580fbcb179823.glb",
+      "flat_path": "eval/models/race_car_70b8a7f8.glb"
+    },
+    {
+      "uid": "f92215936dcf4618a9d5d5ce86b7e2f4",
+      "category": "helicopter",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-060/f92215936dcf4618a9d5d5ce86b7e2f4.glb",
+      "flat_path": "eval/models/helicopter_f9221593.glb"
+    },
+    {
+      "uid": "92efc88e3d9a462da757bd78e82dfe21",
+      "category": "helicopter",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-138/92efc88e3d9a462da757bd78e82dfe21.glb",
+      "flat_path": "eval/models/helicopter_92efc88e.glb"
+    },
+    {
+      "uid": "f9fdd7c631b246eb83c81b50febd78ef",
+      "category": "helicopter",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-060/f9fdd7c631b246eb83c81b50febd78ef.glb",
+      "flat_path": "eval/models/helicopter_f9fdd7c6.glb"
+    },
+    {
+      "uid": "80270b80e9d84d53b22aa6d300c5e4b2",
+      "category": "helicopter",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-074/80270b80e9d84d53b22aa6d300c5e4b2.glb",
+      "flat_path": "eval/models/helicopter_80270b80.glb"
+    },
+    {
+      "uid": "9273c66886cd4792a983263d2082da82",
+      "category": "helicopter",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-064/9273c66886cd4792a983263d2082da82.glb",
+      "flat_path": "eval/models/helicopter_9273c668.glb"
+    },
+    {
+      "uid": "d1334f0020d7412b9635314752b594e4",
+      "category": "helicopter",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-083/d1334f0020d7412b9635314752b594e4.glb",
+      "flat_path": "eval/models/helicopter_d1334f00.glb"
+    },
+    {
+      "uid": "9f44038502214a38a2e2e1dee33eaac6",
+      "category": "helicopter",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-156/9f44038502214a38a2e2e1dee33eaac6.glb",
+      "flat_path": "eval/models/helicopter_9f440385.glb"
+    },
+    {
+      "uid": "85e85f3581a24e7a96ad46de2c2fed64",
+      "category": "helicopter",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-130/85e85f3581a24e7a96ad46de2c2fed64.glb",
+      "flat_path": "eval/models/helicopter_85e85f35.glb"
+    },
+    {
+      "uid": "8b611680277044e1918e7880098f75e9",
+      "category": "helicopter",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-015/8b611680277044e1918e7880098f75e9.glb",
+      "flat_path": "eval/models/helicopter_8b611680.glb"
+    },
+    {
+      "uid": "742d79bd765146339a8178d79051913d",
+      "category": "helicopter",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-110/742d79bd765146339a8178d79051913d.glb",
+      "flat_path": "eval/models/helicopter_742d79bd.glb"
+    },
+    {
+      "uid": "3ca2f507a0a749799e16a4eee12e456c",
+      "category": "airplane",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-078/3ca2f507a0a749799e16a4eee12e456c.glb",
+      "flat_path": "eval/models/airplane_3ca2f507.glb"
+    },
+    {
+      "uid": "2ae974bf45a3436c9d2a6d5e4bdca385",
+      "category": "airplane",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-001/2ae974bf45a3436c9d2a6d5e4bdca385.glb",
+      "flat_path": "eval/models/airplane_2ae974bf.glb"
+    },
+    {
+      "uid": "c6c08606ed24421f82c465eda33bb6ee",
+      "category": "airplane",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-122/c6c08606ed24421f82c465eda33bb6ee.glb",
+      "flat_path": "eval/models/airplane_c6c08606.glb"
+    },
+    {
+      "uid": "8c5a7920831e4242aca0f96e80b99492",
+      "category": "airplane",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-034/8c5a7920831e4242aca0f96e80b99492.glb",
+      "flat_path": "eval/models/airplane_8c5a7920.glb"
+    },
+    {
+      "uid": "0c0da2cc1b4c441dadc2510212c25fb7",
+      "category": "airplane",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-025/0c0da2cc1b4c441dadc2510212c25fb7.glb",
+      "flat_path": "eval/models/airplane_0c0da2cc.glb"
+    },
+    {
+      "uid": "37b041d8521c4179b3c8679e2ff8dd17",
+      "category": "airplane",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-156/37b041d8521c4179b3c8679e2ff8dd17.glb",
+      "flat_path": "eval/models/airplane_37b041d8.glb"
+    },
+    {
+      "uid": "ff77cb8deb8647fca89fca4707ba1cfc",
+      "category": "airplane",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-062/ff77cb8deb8647fca89fca4707ba1cfc.glb",
+      "flat_path": "eval/models/airplane_ff77cb8d.glb"
+    },
+    {
+      "uid": "056cfd8c9b984719b1f96fd7829c981d",
+      "category": "airplane",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-000/056cfd8c9b984719b1f96fd7829c981d.glb",
+      "flat_path": "eval/models/airplane_056cfd8c.glb"
+    },
+    {
+      "uid": "4a40780198964bdeb6e9b6950a3c69fb",
+      "category": "airplane",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-015/4a40780198964bdeb6e9b6950a3c69fb.glb",
+      "flat_path": "eval/models/airplane_4a407801.glb"
+    },
+    {
+      "uid": "4e88a88d9c17457fa75e09a404dc4e71",
+      "category": "airplane",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-092/4e88a88d9c17457fa75e09a404dc4e71.glb",
+      "flat_path": "eval/models/airplane_4e88a88d.glb"
+    },
+    {
+      "uid": "1367930e409e4347a5a3adbfe29a56c3",
+      "category": "bicycle",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-094/1367930e409e4347a5a3adbfe29a56c3.glb",
+      "flat_path": "eval/models/bicycle_1367930e.glb"
+    },
+    {
+      "uid": "692d4d1536f647acb6c7f652a99ecca7",
+      "category": "bicycle",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-069/692d4d1536f647acb6c7f652a99ecca7.glb",
+      "flat_path": "eval/models/bicycle_692d4d15.glb"
+    },
+    {
+      "uid": "3269b8399110482cbf6bab889e70da25",
+      "category": "bicycle",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-153/3269b8399110482cbf6bab889e70da25.glb",
+      "flat_path": "eval/models/bicycle_3269b839.glb"
+    },
+    {
+      "uid": "3fb4b128ec7646c08ebb5623aee58d86",
+      "category": "bicycle",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-000/3fb4b128ec7646c08ebb5623aee58d86.glb",
+      "flat_path": "eval/models/bicycle_3fb4b128.glb"
+    },
+    {
+      "uid": "3629a475d0294b8791ddabd881b5467f",
+      "category": "bicycle",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-058/3629a475d0294b8791ddabd881b5467f.glb",
+      "flat_path": "eval/models/bicycle_3629a475.glb"
+    },
+    {
+      "uid": "fb01aad69315400daff108fdea76f361",
+      "category": "bicycle",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-007/fb01aad69315400daff108fdea76f361.glb",
+      "flat_path": "eval/models/bicycle_fb01aad6.glb"
+    },
+    {
+      "uid": "6822503876f04df79de2c3ab2277f6e6",
+      "category": "bicycle",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-157/6822503876f04df79de2c3ab2277f6e6.glb",
+      "flat_path": "eval/models/bicycle_68225038.glb"
+    },
+    {
+      "uid": "3c22d7f115a0446c8111e7bb8d45dfb3",
+      "category": "bicycle",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-052/3c22d7f115a0446c8111e7bb8d45dfb3.glb",
+      "flat_path": "eval/models/bicycle_3c22d7f1.glb"
+    },
+    {
+      "uid": "43860f8a9f174cb9b9cc15a3f6786fbf",
+      "category": "bicycle",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-068/43860f8a9f174cb9b9cc15a3f6786fbf.glb",
+      "flat_path": "eval/models/bicycle_43860f8a.glb"
+    },
+    {
+      "uid": "69cd0639a33945ec824b33ef3bf401ae",
+      "category": "bicycle",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-040/69cd0639a33945ec824b33ef3bf401ae.glb",
+      "flat_path": "eval/models/bicycle_69cd0639.glb"
+    },
+    {
+      "uid": "df3578dca7f844ab8b7205a1fbea5ed5",
+      "category": "pickup_truck",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-066/df3578dca7f844ab8b7205a1fbea5ed5.glb",
+      "flat_path": "eval/models/pickup_truck_df3578dc.glb"
+    },
+    {
+      "uid": "a4c46087374a4a3e979092512f92c057",
+      "category": "pickup_truck",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-044/a4c46087374a4a3e979092512f92c057.glb",
+      "flat_path": "eval/models/pickup_truck_a4c46087.glb"
+    },
+    {
+      "uid": "75d95d639f9d41e3adef6f74a6f45305",
+      "category": "pickup_truck",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-118/75d95d639f9d41e3adef6f74a6f45305.glb",
+      "flat_path": "eval/models/pickup_truck_75d95d63.glb"
+    },
+    {
+      "uid": "5e77a057585d47309d2605934197669f",
+      "category": "pickup_truck",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-021/5e77a057585d47309d2605934197669f.glb",
+      "flat_path": "eval/models/pickup_truck_5e77a057.glb"
+    },
+    {
+      "uid": "76c69108ab894ea3a344b209c8f95db6",
+      "category": "pickup_truck",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-110/76c69108ab894ea3a344b209c8f95db6.glb",
+      "flat_path": "eval/models/pickup_truck_76c69108.glb"
+    },
+    {
+      "uid": "31d59bae140c4667af5162d44aa0fb56",
+      "category": "pickup_truck",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-135/31d59bae140c4667af5162d44aa0fb56.glb",
+      "flat_path": "eval/models/pickup_truck_31d59bae.glb"
+    },
+    {
+      "uid": "6e90e98c65d04877b2dfbcc80956de04",
+      "category": "pickup_truck",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-155/6e90e98c65d04877b2dfbcc80956de04.glb",
+      "flat_path": "eval/models/pickup_truck_6e90e98c.glb"
+    },
+    {
+      "uid": "b1d3d3a8edda4d52ae9019d2150e7bb8",
+      "category": "pickup_truck",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-100/b1d3d3a8edda4d52ae9019d2150e7bb8.glb",
+      "flat_path": "eval/models/pickup_truck_b1d3d3a8.glb"
+    },
+    {
+      "uid": "b19f9ed0639641f7875c391e66da2e2e",
+      "category": "pickup_truck",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-148/b19f9ed0639641f7875c391e66da2e2e.glb",
+      "flat_path": "eval/models/pickup_truck_b19f9ed0.glb"
+    },
+    {
+      "uid": "6671c5021ecf43ee8090646df1db9935",
+      "category": "pickup_truck",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-043/6671c5021ecf43ee8090646df1db9935.glb",
+      "flat_path": "eval/models/pickup_truck_6671c502.glb"
+    },
+    {
+      "uid": "544b946d7002421f9d3bcb6df73ced43",
+      "category": "lion",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-153/544b946d7002421f9d3bcb6df73ced43.glb",
+      "flat_path": "eval/models/lion_544b946d.glb"
+    },
+    {
+      "uid": "f73eb160bf3f4689a9ecd504c3994f4c",
+      "category": "lion",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-053/f73eb160bf3f4689a9ecd504c3994f4c.glb",
+      "flat_path": "eval/models/lion_f73eb160.glb"
+    },
+    {
+      "uid": "914d1dfc0d2b44c49103da81f230bfc5",
+      "category": "lion",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-078/914d1dfc0d2b44c49103da81f230bfc5.glb",
+      "flat_path": "eval/models/lion_914d1dfc.glb"
+    },
+    {
+      "uid": "bee98906fe6c44c68b7eb0cfcbae8949",
+      "category": "lion",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-119/bee98906fe6c44c68b7eb0cfcbae8949.glb",
+      "flat_path": "eval/models/lion_bee98906.glb"
+    },
+    {
+      "uid": "36d3c4f4b9454f4d9aaf5aab892586ca",
+      "category": "lion",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-151/36d3c4f4b9454f4d9aaf5aab892586ca.glb",
+      "flat_path": "eval/models/lion_36d3c4f4.glb"
+    },
+    {
+      "uid": "fee3686d85c44a69b778f2fac7c1a289",
+      "category": "lion",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-027/fee3686d85c44a69b778f2fac7c1a289.glb",
+      "flat_path": "eval/models/lion_fee3686d.glb"
+    },
+    {
+      "uid": "d944bfa696014fd0b1301e83a31226e0",
+      "category": "lion",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-109/d944bfa696014fd0b1301e83a31226e0.glb",
+      "flat_path": "eval/models/lion_d944bfa6.glb"
+    },
+    {
+      "uid": "c37d22acc31a41c5aa353f28a8494c1d",
+      "category": "lion",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-000/c37d22acc31a41c5aa353f28a8494c1d.glb",
+      "flat_path": "eval/models/lion_c37d22ac.glb"
+    },
+    {
+      "uid": "f5ae790cf947477aa7f38830591bcb15",
+      "category": "lion",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-096/f5ae790cf947477aa7f38830591bcb15.glb",
+      "flat_path": "eval/models/lion_f5ae790c.glb"
+    },
+    {
+      "uid": "7e944c6208f9447aa0bc38d329d9ef76",
+      "category": "lion",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-086/7e944c6208f9447aa0bc38d329d9ef76.glb",
+      "flat_path": "eval/models/lion_7e944c62.glb"
+    },
+    {
+      "uid": "619f8da783b34797871a5b1b2f1f697d",
+      "category": "rabbit",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-050/619f8da783b34797871a5b1b2f1f697d.glb",
+      "flat_path": "eval/models/rabbit_619f8da7.glb"
+    },
+    {
+      "uid": "e8de5d936d824862af0469eae3b2925f",
+      "category": "rabbit",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-034/e8de5d936d824862af0469eae3b2925f.glb",
+      "flat_path": "eval/models/rabbit_e8de5d93.glb"
+    },
+    {
+      "uid": "4bb02868441d447187e27a60acfbc896",
+      "category": "rabbit",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-055/4bb02868441d447187e27a60acfbc896.glb",
+      "flat_path": "eval/models/rabbit_4bb02868.glb"
+    },
+    {
+      "uid": "22a06a32275947e380363093faf3086b",
+      "category": "rabbit",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-074/22a06a32275947e380363093faf3086b.glb",
+      "flat_path": "eval/models/rabbit_22a06a32.glb"
+    },
+    {
+      "uid": "11b6ceb756a749c187b4dedc213a2ccc",
+      "category": "rabbit",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-119/11b6ceb756a749c187b4dedc213a2ccc.glb",
+      "flat_path": "eval/models/rabbit_11b6ceb7.glb"
+    },
+    {
+      "uid": "d1eb7e74019f43f2bb35b9aa44f34915",
+      "category": "rabbit",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-062/d1eb7e74019f43f2bb35b9aa44f34915.glb",
+      "flat_path": "eval/models/rabbit_d1eb7e74.glb"
+    },
+    {
+      "uid": "5d1ea0ec43a14ec9a38e3a1572b1626c",
+      "category": "rabbit",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-052/5d1ea0ec43a14ec9a38e3a1572b1626c.glb",
+      "flat_path": "eval/models/rabbit_5d1ea0ec.glb"
+    },
+    {
+      "uid": "8ddd8d6309244f629b5ee3eed72d94a4",
+      "category": "rabbit",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-100/8ddd8d6309244f629b5ee3eed72d94a4.glb",
+      "flat_path": "eval/models/rabbit_8ddd8d63.glb"
+    },
+    {
+      "uid": "df325cfe1fa24108bdfef58ba7e88b3a",
+      "category": "rabbit",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-026/df325cfe1fa24108bdfef58ba7e88b3a.glb",
+      "flat_path": "eval/models/rabbit_df325cfe.glb"
+    },
+    {
+      "uid": "b978575bf7694f9185fcd906847bfd9c",
+      "category": "rabbit",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-127/b978575bf7694f9185fcd906847bfd9c.glb",
+      "flat_path": "eval/models/rabbit_b978575b.glb"
+    },
+    {
+      "uid": "6eb0b6ef28e94f5bad9e4ac795c1d85d",
+      "category": "elephant",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-118/6eb0b6ef28e94f5bad9e4ac795c1d85d.glb",
+      "flat_path": "eval/models/elephant_6eb0b6ef.glb"
+    },
+    {
+      "uid": "d9a1361bb7324e678ca21169533093d1",
+      "category": "elephant",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-047/d9a1361bb7324e678ca21169533093d1.glb",
+      "flat_path": "eval/models/elephant_d9a1361b.glb"
+    },
+    {
+      "uid": "76beb95d0b5b41a3aae0d07c3eae99fa",
+      "category": "elephant",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-096/76beb95d0b5b41a3aae0d07c3eae99fa.glb",
+      "flat_path": "eval/models/elephant_76beb95d.glb"
+    },
+    {
+      "uid": "74091fb35399431ea179b3dc13e74c5b",
+      "category": "elephant",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-152/74091fb35399431ea179b3dc13e74c5b.glb",
+      "flat_path": "eval/models/elephant_74091fb3.glb"
+    },
+    {
+      "uid": "3c2e193d2cfc4af7bffb11292792dba0",
+      "category": "elephant",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-031/3c2e193d2cfc4af7bffb11292792dba0.glb",
+      "flat_path": "eval/models/elephant_3c2e193d.glb"
+    },
+    {
+      "uid": "8e3c1c49387c4b799f422637449a060e",
+      "category": "elephant",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-084/8e3c1c49387c4b799f422637449a060e.glb",
+      "flat_path": "eval/models/elephant_8e3c1c49.glb"
+    },
+    {
+      "uid": "a977eac533564fd5bf83dd0ee16eb1c5",
+      "category": "elephant",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-139/a977eac533564fd5bf83dd0ee16eb1c5.glb",
+      "flat_path": "eval/models/elephant_a977eac5.glb"
+    },
+    {
+      "uid": "4f6f2f70b0f744019d3ed2ffb837e382",
+      "category": "elephant",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-054/4f6f2f70b0f744019d3ed2ffb837e382.glb",
+      "flat_path": "eval/models/elephant_4f6f2f70.glb"
+    },
+    {
+      "uid": "6f79dc4963a04634be4a05abd26e4994",
+      "category": "elephant",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-043/6f79dc4963a04634be4a05abd26e4994.glb",
+      "flat_path": "eval/models/elephant_6f79dc49.glb"
+    },
+    {
+      "uid": "ce436a509bcb42d597b897b79cc6b02e",
+      "category": "elephant",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-109/ce436a509bcb42d597b897b79cc6b02e.glb",
+      "flat_path": "eval/models/elephant_ce436a50.glb"
+    },
+    {
+      "uid": "6f7d7154ae0442a3b32d8fa694fc7838",
+      "category": "owl",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-123/6f7d7154ae0442a3b32d8fa694fc7838.glb",
+      "flat_path": "eval/models/owl_6f7d7154.glb"
+    },
+    {
+      "uid": "f2dd0ea334df4eac831ca2c457853210",
+      "category": "owl",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-011/f2dd0ea334df4eac831ca2c457853210.glb",
+      "flat_path": "eval/models/owl_f2dd0ea3.glb"
+    },
+    {
+      "uid": "2b271bc246d1405398be1609704a3e14",
+      "category": "owl",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-045/2b271bc246d1405398be1609704a3e14.glb",
+      "flat_path": "eval/models/owl_2b271bc2.glb"
+    },
+    {
+      "uid": "d5dfb1c58f88422bb7c26d15e10b4af7",
+      "category": "owl",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-130/d5dfb1c58f88422bb7c26d15e10b4af7.glb",
+      "flat_path": "eval/models/owl_d5dfb1c5.glb"
+    },
+    {
+      "uid": "73665de25ab24f0b8bb334f2832da6e2",
+      "category": "owl",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-073/73665de25ab24f0b8bb334f2832da6e2.glb",
+      "flat_path": "eval/models/owl_73665de2.glb"
+    },
+    {
+      "uid": "44f8899569284a22a283dde8abc4b6d5",
+      "category": "owl",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-094/44f8899569284a22a283dde8abc4b6d5.glb",
+      "flat_path": "eval/models/owl_44f88995.glb"
+    },
+    {
+      "uid": "939d2bc7260d40a3ac5593d88df1b823",
+      "category": "owl",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-116/939d2bc7260d40a3ac5593d88df1b823.glb",
+      "flat_path": "eval/models/owl_939d2bc7.glb"
+    },
+    {
+      "uid": "20733c897e9149e69254133e0c21230d",
+      "category": "owl",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-004/20733c897e9149e69254133e0c21230d.glb",
+      "flat_path": "eval/models/owl_20733c89.glb"
+    },
+    {
+      "uid": "9de74d0da17b4130b1e97af5073f4996",
+      "category": "owl",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-151/9de74d0da17b4130b1e97af5073f4996.glb",
+      "flat_path": "eval/models/owl_9de74d0d.glb"
+    },
+    {
+      "uid": "99da49bdff244ed5b0aa7c21804a76a0",
+      "category": "owl",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-012/99da49bdff244ed5b0aa7c21804a76a0.glb",
+      "flat_path": "eval/models/owl_99da49bd.glb"
+    },
+    {
+      "uid": "f6a6667cd63240639a4ea9598ca4d8fc",
+      "category": "teddy_bear",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-133/f6a6667cd63240639a4ea9598ca4d8fc.glb",
+      "flat_path": "eval/models/teddy_bear_f6a6667c.glb"
+    },
+    {
+      "uid": "b503335114a14ff0943e7db911227c7d",
+      "category": "teddy_bear",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-142/b503335114a14ff0943e7db911227c7d.glb",
+      "flat_path": "eval/models/teddy_bear_b5033351.glb"
+    },
+    {
+      "uid": "58170dffb40e49c4a4b8217fad76f5ed",
+      "category": "teddy_bear",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-071/58170dffb40e49c4a4b8217fad76f5ed.glb",
+      "flat_path": "eval/models/teddy_bear_58170dff.glb"
+    },
+    {
+      "uid": "4934cddd48a04a3b9c9b1e9667e7470e",
+      "category": "teddy_bear",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-098/4934cddd48a04a3b9c9b1e9667e7470e.glb",
+      "flat_path": "eval/models/teddy_bear_4934cddd.glb"
+    },
+    {
+      "uid": "c752c932af1a477a8fd37f6bb0ec5f64",
+      "category": "teddy_bear",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-103/c752c932af1a477a8fd37f6bb0ec5f64.glb",
+      "flat_path": "eval/models/teddy_bear_c752c932.glb"
+    },
+    {
+      "uid": "84ba3a534a4840c4a6e33e288093e042",
+      "category": "teddy_bear",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-078/84ba3a534a4840c4a6e33e288093e042.glb",
+      "flat_path": "eval/models/teddy_bear_84ba3a53.glb"
+    },
+    {
+      "uid": "a8c9b2a2d4604a68961c599c6e04db26",
+      "category": "teddy_bear",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-152/a8c9b2a2d4604a68961c599c6e04db26.glb",
+      "flat_path": "eval/models/teddy_bear_a8c9b2a2.glb"
+    },
+    {
+      "uid": "ad89f59278e5408a8dd8112dc07929e6",
+      "category": "teddy_bear",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-039/ad89f59278e5408a8dd8112dc07929e6.glb",
+      "flat_path": "eval/models/teddy_bear_ad89f592.glb"
+    },
+    {
+      "uid": "ea2a8f4ddbc749a4ae6cfeb70285baa7",
+      "category": "teddy_bear",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-037/ea2a8f4ddbc749a4ae6cfeb70285baa7.glb",
+      "flat_path": "eval/models/teddy_bear_ea2a8f4d.glb"
+    },
+    {
+      "uid": "a1c7dbd554f04417ac93f59f9e6d296b",
+      "category": "teddy_bear",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-149/a1c7dbd554f04417ac93f59f9e6d296b.glb",
+      "flat_path": "eval/models/teddy_bear_a1c7dbd5.glb"
+    },
+    {
+      "uid": "19c928e69d3748ea941e6c5537c7502b",
+      "category": "shark",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-134/19c928e69d3748ea941e6c5537c7502b.glb",
+      "flat_path": "eval/models/shark_19c928e6.glb"
+    },
+    {
+      "uid": "9fc13419b7df453d8dadd1437381d390",
+      "category": "shark",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-024/9fc13419b7df453d8dadd1437381d390.glb",
+      "flat_path": "eval/models/shark_9fc13419.glb"
+    },
+    {
+      "uid": "8c404f3b7675490cb1655f0ac56d9b5a",
+      "category": "shark",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-107/8c404f3b7675490cb1655f0ac56d9b5a.glb",
+      "flat_path": "eval/models/shark_8c404f3b.glb"
+    },
+    {
+      "uid": "aeb86b5a9233452a841dcf1882f22547",
+      "category": "shark",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-121/aeb86b5a9233452a841dcf1882f22547.glb",
+      "flat_path": "eval/models/shark_aeb86b5a.glb"
+    },
+    {
+      "uid": "e98fef78c3654b148c1bb6033a6465c9",
+      "category": "shark",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-136/e98fef78c3654b148c1bb6033a6465c9.glb",
+      "flat_path": "eval/models/shark_e98fef78.glb"
+    },
+    {
+      "uid": "806607b62e6a474fa3d72495a6e1f6ea",
+      "category": "shark",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-041/806607b62e6a474fa3d72495a6e1f6ea.glb",
+      "flat_path": "eval/models/shark_806607b6.glb"
+    },
+    {
+      "uid": "890d3c240253446ca9fb63e0d70cbe18",
+      "category": "shark",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-055/890d3c240253446ca9fb63e0d70cbe18.glb",
+      "flat_path": "eval/models/shark_890d3c24.glb"
+    },
+    {
+      "uid": "f1a6275d011c409586bea27362d83866",
+      "category": "shark",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-057/f1a6275d011c409586bea27362d83866.glb",
+      "flat_path": "eval/models/shark_f1a6275d.glb"
+    },
+    {
+      "uid": "d54f8a1c5aac457c878d4a5cb3bfcd48",
+      "category": "shark",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-079/d54f8a1c5aac457c878d4a5cb3bfcd48.glb",
+      "flat_path": "eval/models/shark_d54f8a1c.glb"
+    },
+    {
+      "uid": "1ab8ec6306904ae7b934bf9b3ac7819f",
+      "category": "shark",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-153/1ab8ec6306904ae7b934bf9b3ac7819f.glb",
+      "flat_path": "eval/models/shark_1ab8ec63.glb"
+    },
+    {
+      "uid": "79bd16a8c36a45c78ccd13b84b7ca99c",
+      "category": "wolf",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-050/79bd16a8c36a45c78ccd13b84b7ca99c.glb",
+      "flat_path": "eval/models/wolf_79bd16a8.glb"
+    },
+    {
+      "uid": "4dce1be40c3845dc98ea4dcf7a726d04",
+      "category": "wolf",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-093/4dce1be40c3845dc98ea4dcf7a726d04.glb",
+      "flat_path": "eval/models/wolf_4dce1be4.glb"
+    },
+    {
+      "uid": "b1bd4a382af347d1bc102bf731296331",
+      "category": "wolf",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-079/b1bd4a382af347d1bc102bf731296331.glb",
+      "flat_path": "eval/models/wolf_b1bd4a38.glb"
+    },
+    {
+      "uid": "4e9a40bb13074339b2b1baea925136a4",
+      "category": "wolf",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-033/4e9a40bb13074339b2b1baea925136a4.glb",
+      "flat_path": "eval/models/wolf_4e9a40bb.glb"
+    },
+    {
+      "uid": "fb7131463f99420e9c3007569c019d7c",
+      "category": "wolf",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-066/fb7131463f99420e9c3007569c019d7c.glb",
+      "flat_path": "eval/models/wolf_fb713146.glb"
+    },
+    {
+      "uid": "12bbcaa59be246f0bf9d94a3f9dc869a",
+      "category": "wolf",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-149/12bbcaa59be246f0bf9d94a3f9dc869a.glb",
+      "flat_path": "eval/models/wolf_12bbcaa5.glb"
+    },
+    {
+      "uid": "5a80787376204bfb8006173bcd0cc448",
+      "category": "wolf",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-100/5a80787376204bfb8006173bcd0cc448.glb",
+      "flat_path": "eval/models/wolf_5a807873.glb"
+    },
+    {
+      "uid": "b25769a93ff642be98ed9eaece731847",
+      "category": "wolf",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-027/b25769a93ff642be98ed9eaece731847.glb",
+      "flat_path": "eval/models/wolf_b25769a9.glb"
+    },
+    {
+      "uid": "7bd76fafb0e04c498fd1a764ae337ee5",
+      "category": "wolf",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-005/7bd76fafb0e04c498fd1a764ae337ee5.glb",
+      "flat_path": "eval/models/wolf_7bd76faf.glb"
+    },
+    {
+      "uid": "ab220f191a88494aac55dc854e51c420",
+      "category": "wolf",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-049/ab220f191a88494aac55dc854e51c420.glb",
+      "flat_path": "eval/models/wolf_ab220f19.glb"
+    },
+    {
+      "uid": "ea19e8b075d44c2a86cd369d85ed77ee",
+      "category": "frog",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-116/ea19e8b075d44c2a86cd369d85ed77ee.glb",
+      "flat_path": "eval/models/frog_ea19e8b0.glb"
+    },
+    {
+      "uid": "b7f382dcc5094561a88ffc765fabe978",
+      "category": "frog",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-132/b7f382dcc5094561a88ffc765fabe978.glb",
+      "flat_path": "eval/models/frog_b7f382dc.glb"
+    },
+    {
+      "uid": "0e6df765d30943bd877970b3da1aa90d",
+      "category": "frog",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-002/0e6df765d30943bd877970b3da1aa90d.glb",
+      "flat_path": "eval/models/frog_0e6df765.glb"
+    },
+    {
+      "uid": "7a9ef6b9032b457b96a264c1b1b84bfd",
+      "category": "frog",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-102/7a9ef6b9032b457b96a264c1b1b84bfd.glb",
+      "flat_path": "eval/models/frog_7a9ef6b9.glb"
+    },
+    {
+      "uid": "472d646ce4a8402695ce79ae5cfff82a",
+      "category": "frog",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-108/472d646ce4a8402695ce79ae5cfff82a.glb",
+      "flat_path": "eval/models/frog_472d646c.glb"
+    },
+    {
+      "uid": "27bb543b71b94d3db39c19fc45fda67f",
+      "category": "frog",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-019/27bb543b71b94d3db39c19fc45fda67f.glb",
+      "flat_path": "eval/models/frog_27bb543b.glb"
+    },
+    {
+      "uid": "5d73c308c7b54ef6a1d1f0647a269c56",
+      "category": "frog",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-155/5d73c308c7b54ef6a1d1f0647a269c56.glb",
+      "flat_path": "eval/models/frog_5d73c308.glb"
+    },
+    {
+      "uid": "15b7221aefcf4b0c8cf87d23996fbf81",
+      "category": "frog",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-019/15b7221aefcf4b0c8cf87d23996fbf81.glb",
+      "flat_path": "eval/models/frog_15b7221a.glb"
+    },
+    {
+      "uid": "42a3686022014ca29adff471cfb548e1",
+      "category": "frog",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-016/42a3686022014ca29adff471cfb548e1.glb",
+      "flat_path": "eval/models/frog_42a36860.glb"
+    },
+    {
+      "uid": "a274837b742f43c9a39efb4e609579a0",
+      "category": "frog",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-098/a274837b742f43c9a39efb4e609579a0.glb",
+      "flat_path": "eval/models/frog_a274837b.glb"
+    },
+    {
+      "uid": "75bf49a757fe44f28a0ec980747d5f97",
+      "category": "penguin",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-034/75bf49a757fe44f28a0ec980747d5f97.glb",
+      "flat_path": "eval/models/penguin_75bf49a7.glb"
+    },
+    {
+      "uid": "738cababdc3a427a84bd50ee441263a3",
+      "category": "penguin",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-053/738cababdc3a427a84bd50ee441263a3.glb",
+      "flat_path": "eval/models/penguin_738cabab.glb"
+    },
+    {
+      "uid": "eac715e9aa034efd9f7ef3a584503041",
+      "category": "penguin",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-060/eac715e9aa034efd9f7ef3a584503041.glb",
+      "flat_path": "eval/models/penguin_eac715e9.glb"
+    },
+    {
+      "uid": "c915ab5d449e4773a9a58ab84636d690",
+      "category": "penguin",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-138/c915ab5d449e4773a9a58ab84636d690.glb",
+      "flat_path": "eval/models/penguin_c915ab5d.glb"
+    },
+    {
+      "uid": "cdeb8f7db547405580944edcbd516f27",
+      "category": "penguin",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-138/cdeb8f7db547405580944edcbd516f27.glb",
+      "flat_path": "eval/models/penguin_cdeb8f7d.glb"
+    },
+    {
+      "uid": "a27a8dc5863c49bb8aa03756fb355890",
+      "category": "penguin",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-015/a27a8dc5863c49bb8aa03756fb355890.glb",
+      "flat_path": "eval/models/penguin_a27a8dc5.glb"
+    },
+    {
+      "uid": "f32584f4df9545f6a0ad740f10de426a",
+      "category": "penguin",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-008/f32584f4df9545f6a0ad740f10de426a.glb",
+      "flat_path": "eval/models/penguin_f32584f4.glb"
+    },
+    {
+      "uid": "35398d85e5914f2f844a08a97b1d37d2",
+      "category": "penguin",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-140/35398d85e5914f2f844a08a97b1d37d2.glb",
+      "flat_path": "eval/models/penguin_35398d85.glb"
+    },
+    {
+      "uid": "d76980fa818240178aa8aa082fc4ce6a",
+      "category": "penguin",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-038/d76980fa818240178aa8aa082fc4ce6a.glb",
+      "flat_path": "eval/models/penguin_d76980fa.glb"
+    },
+    {
+      "uid": "a4d37da48f794ff5b2844d0706c5e4c7",
+      "category": "penguin",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-052/a4d37da48f794ff5b2844d0706c5e4c7.glb",
+      "flat_path": "eval/models/penguin_a4d37da4.glb"
+    },
+    {
+      "uid": "06a4a6b9008c4f95ae4e89d260a19db4",
+      "category": "butterfly",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-110/06a4a6b9008c4f95ae4e89d260a19db4.glb",
+      "flat_path": "eval/models/butterfly_06a4a6b9.glb"
+    },
+    {
+      "uid": "5646fd127cf34cc49313dd3dd49aeb42",
+      "category": "butterfly",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-036/5646fd127cf34cc49313dd3dd49aeb42.glb",
+      "flat_path": "eval/models/butterfly_5646fd12.glb"
+    },
+    {
+      "uid": "e6cf4080c85747689483b78f88c0cd7d",
+      "category": "butterfly",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-091/e6cf4080c85747689483b78f88c0cd7d.glb",
+      "flat_path": "eval/models/butterfly_e6cf4080.glb"
+    },
+    {
+      "uid": "1963121ff81446feac2cb50bf0f4b15e",
+      "category": "butterfly",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-024/1963121ff81446feac2cb50bf0f4b15e.glb",
+      "flat_path": "eval/models/butterfly_1963121f.glb"
+    },
+    {
+      "uid": "97c552b03c3343e783670de61e6d179a",
+      "category": "butterfly",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-097/97c552b03c3343e783670de61e6d179a.glb",
+      "flat_path": "eval/models/butterfly_97c552b0.glb"
+    },
+    {
+      "uid": "6c00c79f40944ef4920613ae7f1b0fe7",
+      "category": "butterfly",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-155/6c00c79f40944ef4920613ae7f1b0fe7.glb",
+      "flat_path": "eval/models/butterfly_6c00c79f.glb"
+    },
+    {
+      "uid": "d77ba8039c2b45298ed851e88bacd9a0",
+      "category": "butterfly",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-041/d77ba8039c2b45298ed851e88bacd9a0.glb",
+      "flat_path": "eval/models/butterfly_d77ba803.glb"
+    },
+    {
+      "uid": "80f8d9a6dadc411e89ca366cb0cfb0d9",
+      "category": "butterfly",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-123/80f8d9a6dadc411e89ca366cb0cfb0d9.glb",
+      "flat_path": "eval/models/butterfly_80f8d9a6.glb"
+    },
+    {
+      "uid": "edb0d24e92834f0eb3dd1e397a7de89b",
+      "category": "butterfly",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-034/edb0d24e92834f0eb3dd1e397a7de89b.glb",
+      "flat_path": "eval/models/butterfly_edb0d24e.glb"
+    },
+    {
+      "uid": "40377ca02ba74e2287f2139e92048c5d",
+      "category": "butterfly",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-056/40377ca02ba74e2287f2139e92048c5d.glb",
+      "flat_path": "eval/models/butterfly_40377ca0.glb"
+    },
+    {
+      "uid": "304253851afd493d958fc8e256c189df",
+      "category": "chair",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-089/304253851afd493d958fc8e256c189df.glb",
+      "flat_path": "eval/models/chair_30425385.glb"
+    },
+    {
+      "uid": "8a4a3a90bc104f11b82cedd9b4e5ab6b",
+      "category": "chair",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-107/8a4a3a90bc104f11b82cedd9b4e5ab6b.glb",
+      "flat_path": "eval/models/chair_8a4a3a90.glb"
+    },
+    {
+      "uid": "fab9443d48e24fbfa309187df78d58e6",
+      "category": "chair",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-040/fab9443d48e24fbfa309187df78d58e6.glb",
+      "flat_path": "eval/models/chair_fab9443d.glb"
+    },
+    {
+      "uid": "ad0b974411d94ec2bd2bd62b701018bc",
+      "category": "chair",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-113/ad0b974411d94ec2bd2bd62b701018bc.glb",
+      "flat_path": "eval/models/chair_ad0b9744.glb"
+    },
+    {
+      "uid": "d9a81a38147440c8a2ac92a26d62d895",
+      "category": "chair",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-013/d9a81a38147440c8a2ac92a26d62d895.glb",
+      "flat_path": "eval/models/chair_d9a81a38.glb"
+    },
+    {
+      "uid": "82822706425d40f89d4bbdc63a8ec821",
+      "category": "chair",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-120/82822706425d40f89d4bbdc63a8ec821.glb",
+      "flat_path": "eval/models/chair_82822706.glb"
+    },
+    {
+      "uid": "3df6e89550b747a79458f197889607ce",
+      "category": "chair",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-004/3df6e89550b747a79458f197889607ce.glb",
+      "flat_path": "eval/models/chair_3df6e895.glb"
+    },
+    {
+      "uid": "99ef536b8f174b9496516bed69368f46",
+      "category": "chair",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-071/99ef536b8f174b9496516bed69368f46.glb",
+      "flat_path": "eval/models/chair_99ef536b.glb"
+    },
+    {
+      "uid": "99fc178ecc0943ae81454a3735e2eb5f",
+      "category": "chair",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-024/99fc178ecc0943ae81454a3735e2eb5f.glb",
+      "flat_path": "eval/models/chair_99fc178e.glb"
+    },
+    {
+      "uid": "9a07e1a9a4bb4d268926a8111bda8c26",
+      "category": "chair",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-037/9a07e1a9a4bb4d268926a8111bda8c26.glb",
+      "flat_path": "eval/models/chair_9a07e1a9.glb"
+    },
+    {
+      "uid": "0e06763d63f44733b99c06ae18dcb13d",
+      "category": "armchair",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-114/0e06763d63f44733b99c06ae18dcb13d.glb",
+      "flat_path": "eval/models/armchair_0e06763d.glb"
+    },
+    {
+      "uid": "6ebab275b9574faeb8dfcc7d523a973e",
+      "category": "armchair",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-057/6ebab275b9574faeb8dfcc7d523a973e.glb",
+      "flat_path": "eval/models/armchair_6ebab275.glb"
+    },
+    {
+      "uid": "d8072e417dbd476cadb270e39ad3d7c8",
+      "category": "armchair",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-151/d8072e417dbd476cadb270e39ad3d7c8.glb",
+      "flat_path": "eval/models/armchair_d8072e41.glb"
+    },
+    {
+      "uid": "8a8ecd1fdb1d41b9aa9d7da1c75f0d95",
+      "category": "armchair",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-005/8a8ecd1fdb1d41b9aa9d7da1c75f0d95.glb",
+      "flat_path": "eval/models/armchair_8a8ecd1f.glb"
+    },
+    {
+      "uid": "f01f4881d58248a7b0ae6d2fbf2fd5b6",
+      "category": "armchair",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-129/f01f4881d58248a7b0ae6d2fbf2fd5b6.glb",
+      "flat_path": "eval/models/armchair_f01f4881.glb"
+    },
+    {
+      "uid": "6e35f6fdf1264db4880049b802f18ea2",
+      "category": "armchair",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-144/6e35f6fdf1264db4880049b802f18ea2.glb",
+      "flat_path": "eval/models/armchair_6e35f6fd.glb"
+    },
+    {
+      "uid": "2723396ce03440ffbf3182139afa0d97",
+      "category": "armchair",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-114/2723396ce03440ffbf3182139afa0d97.glb",
+      "flat_path": "eval/models/armchair_2723396c.glb"
+    },
+    {
+      "uid": "162d252bfe6b4317982ed3436486f02e",
+      "category": "armchair",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-034/162d252bfe6b4317982ed3436486f02e.glb",
+      "flat_path": "eval/models/armchair_162d252b.glb"
+    },
+    {
+      "uid": "155282a31dfb4972b4ae2e3072d281d6",
+      "category": "armchair",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-122/155282a31dfb4972b4ae2e3072d281d6.glb",
+      "flat_path": "eval/models/armchair_155282a3.glb"
+    },
+    {
+      "uid": "f5ca70f46c5549b8a754ee1abf42af68",
+      "category": "armchair",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-091/f5ca70f46c5549b8a754ee1abf42af68.glb",
+      "flat_path": "eval/models/armchair_f5ca70f4.glb"
+    },
+    {
+      "uid": "a0d133b0871e46bbb454d0dd58e3ac7c",
+      "category": "table",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-080/a0d133b0871e46bbb454d0dd58e3ac7c.glb",
+      "flat_path": "eval/models/table_a0d133b0.glb"
+    },
+    {
+      "uid": "77ec465b45574d12bf527a26ece473e8",
+      "category": "table",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-027/77ec465b45574d12bf527a26ece473e8.glb",
+      "flat_path": "eval/models/table_77ec465b.glb"
+    },
+    {
+      "uid": "cee1570d79fb4114a8709fc1d08a05ac",
+      "category": "table",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-131/cee1570d79fb4114a8709fc1d08a05ac.glb",
+      "flat_path": "eval/models/table_cee1570d.glb"
+    },
+    {
+      "uid": "3623d7ff740e4b969539008999eebcf3",
+      "category": "table",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-140/3623d7ff740e4b969539008999eebcf3.glb",
+      "flat_path": "eval/models/table_3623d7ff.glb"
+    },
+    {
+      "uid": "d42f2c22796d45e0aa2ded45b8e89b41",
+      "category": "table",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-050/d42f2c22796d45e0aa2ded45b8e89b41.glb",
+      "flat_path": "eval/models/table_d42f2c22.glb"
+    },
+    {
+      "uid": "a6ca57363110496cae1826dc7f97992f",
+      "category": "table",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-033/a6ca57363110496cae1826dc7f97992f.glb",
+      "flat_path": "eval/models/table_a6ca5736.glb"
+    },
+    {
+      "uid": "4d7f3c58a09c4a899e68ad837edd2b6b",
+      "category": "table",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-030/4d7f3c58a09c4a899e68ad837edd2b6b.glb",
+      "flat_path": "eval/models/table_4d7f3c58.glb"
+    },
+    {
+      "uid": "0061cdbbceef476a98025f10e19f5d13",
+      "category": "table",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-000/0061cdbbceef476a98025f10e19f5d13.glb",
+      "flat_path": "eval/models/table_0061cdbb.glb"
+    },
+    {
+      "uid": "72ea9b9996e147ef8400a213e9346c5d",
+      "category": "table",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-051/72ea9b9996e147ef8400a213e9346c5d.glb",
+      "flat_path": "eval/models/table_72ea9b99.glb"
+    },
+    {
+      "uid": "6d459af223cb46c8a78923a19538c5c0",
+      "category": "table",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-113/6d459af223cb46c8a78923a19538c5c0.glb",
+      "flat_path": "eval/models/table_6d459af2.glb"
+    },
+    {
+      "uid": "a4112060b9aa43a8af876f922f962cce",
+      "category": "bookcase",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-054/a4112060b9aa43a8af876f922f962cce.glb",
+      "flat_path": "eval/models/bookcase_a4112060.glb"
+    },
+    {
+      "uid": "b3a5f407f6aa4aaaabdf1e84380c95da",
+      "category": "bookcase",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-045/b3a5f407f6aa4aaaabdf1e84380c95da.glb",
+      "flat_path": "eval/models/bookcase_b3a5f407.glb"
+    },
+    {
+      "uid": "76cd51452a734f209d52c259ff39d1e4",
+      "category": "bookcase",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-086/76cd51452a734f209d52c259ff39d1e4.glb",
+      "flat_path": "eval/models/bookcase_76cd5145.glb"
+    },
+    {
+      "uid": "22f7121cab3a4d1eba0dd05db5ad9642",
+      "category": "bookcase",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-030/22f7121cab3a4d1eba0dd05db5ad9642.glb",
+      "flat_path": "eval/models/bookcase_22f7121c.glb"
+    },
+    {
+      "uid": "636b75352a134e07b26992c44383014e",
+      "category": "bookcase",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-151/636b75352a134e07b26992c44383014e.glb",
+      "flat_path": "eval/models/bookcase_636b7535.glb"
+    },
+    {
+      "uid": "244a639e6ece4777b1ca836e40ffe3be",
+      "category": "bookcase",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-151/244a639e6ece4777b1ca836e40ffe3be.glb",
+      "flat_path": "eval/models/bookcase_244a639e.glb"
+    },
+    {
+      "uid": "ce421f10e46d415198d5d19c5bd265f2",
+      "category": "bookcase",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-027/ce421f10e46d415198d5d19c5bd265f2.glb",
+      "flat_path": "eval/models/bookcase_ce421f10.glb"
+    },
+    {
+      "uid": "3d42390fa27748f6818a85182595a69c",
+      "category": "bookcase",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-144/3d42390fa27748f6818a85182595a69c.glb",
+      "flat_path": "eval/models/bookcase_3d42390f.glb"
+    },
+    {
+      "uid": "d8dc05000c26495793203d0323bca8cb",
+      "category": "bookcase",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-044/d8dc05000c26495793203d0323bca8cb.glb",
+      "flat_path": "eval/models/bookcase_d8dc0500.glb"
+    },
+    {
+      "uid": "2acda3ed2f9046129897f0f1e36092bd",
+      "category": "bookcase",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-140/2acda3ed2f9046129897f0f1e36092bd.glb",
+      "flat_path": "eval/models/bookcase_2acda3ed.glb"
+    },
+    {
+      "uid": "9c02ef66b6ad41889b324bba06805c93",
+      "category": "chandelier",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-144/9c02ef66b6ad41889b324bba06805c93.glb",
+      "flat_path": "eval/models/chandelier_9c02ef66.glb"
+    },
+    {
+      "uid": "c2c5b668395a4e7b8ff67ad715e13084",
+      "category": "chandelier",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-031/c2c5b668395a4e7b8ff67ad715e13084.glb",
+      "flat_path": "eval/models/chandelier_c2c5b668.glb"
+    },
+    {
+      "uid": "6a3e9d4c8c3a4d8a8b4c672a9c18ed87",
+      "category": "chandelier",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-083/6a3e9d4c8c3a4d8a8b4c672a9c18ed87.glb",
+      "flat_path": "eval/models/chandelier_6a3e9d4c.glb"
+    },
+    {
+      "uid": "ba90f173220944eea071e7839547ee4e",
+      "category": "chandelier",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-084/ba90f173220944eea071e7839547ee4e.glb",
+      "flat_path": "eval/models/chandelier_ba90f173.glb"
+    },
+    {
+      "uid": "19589cfd59f54a63806b00b512768fc6",
+      "category": "chandelier",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-007/19589cfd59f54a63806b00b512768fc6.glb",
+      "flat_path": "eval/models/chandelier_19589cfd.glb"
+    },
+    {
+      "uid": "4009109c83144e82899f8d9bb80960a9",
+      "category": "chandelier",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-067/4009109c83144e82899f8d9bb80960a9.glb",
+      "flat_path": "eval/models/chandelier_4009109c.glb"
+    },
+    {
+      "uid": "544b79fac207496bacd988c07b11e679",
+      "category": "chandelier",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-117/544b79fac207496bacd988c07b11e679.glb",
+      "flat_path": "eval/models/chandelier_544b79fa.glb"
+    },
+    {
+      "uid": "fb1d8d60d3354b7d888741de33090f23",
+      "category": "chandelier",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-111/fb1d8d60d3354b7d888741de33090f23.glb",
+      "flat_path": "eval/models/chandelier_fb1d8d60.glb"
+    },
+    {
+      "uid": "07c6d211698848f695e28afef3e23a75",
+      "category": "chandelier",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-132/07c6d211698848f695e28afef3e23a75.glb",
+      "flat_path": "eval/models/chandelier_07c6d211.glb"
+    },
+    {
+      "uid": "29392dd175444772881f62436af56397",
+      "category": "chandelier",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-065/29392dd175444772881f62436af56397.glb",
+      "flat_path": "eval/models/chandelier_29392dd1.glb"
+    },
+    {
+      "uid": "5d99827c456940bf9055dfe2dbc561e8",
+      "category": "banana",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-011/5d99827c456940bf9055dfe2dbc561e8.glb",
+      "flat_path": "eval/models/banana_5d99827c.glb"
+    },
+    {
+      "uid": "ada7c35a1a5742f1b4c528eb3daee35b",
+      "category": "banana",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-070/ada7c35a1a5742f1b4c528eb3daee35b.glb",
+      "flat_path": "eval/models/banana_ada7c35a.glb"
+    },
+    {
+      "uid": "1787fb8e12f14318899702ae6c502de5",
+      "category": "banana",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-025/1787fb8e12f14318899702ae6c502de5.glb",
+      "flat_path": "eval/models/banana_1787fb8e.glb"
+    },
+    {
+      "uid": "54a13e432b9a488ab35d1c6644d9bc0c",
+      "category": "banana",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-002/54a13e432b9a488ab35d1c6644d9bc0c.glb",
+      "flat_path": "eval/models/banana_54a13e43.glb"
+    },
+    {
+      "uid": "d2f132d527ce445dbd07b335e0aa020a",
+      "category": "banana",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-131/d2f132d527ce445dbd07b335e0aa020a.glb",
+      "flat_path": "eval/models/banana_d2f132d5.glb"
+    },
+    {
+      "uid": "7579a5b6399343a88dd75e59865e3198",
+      "category": "banana",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-045/7579a5b6399343a88dd75e59865e3198.glb",
+      "flat_path": "eval/models/banana_7579a5b6.glb"
+    },
+    {
+      "uid": "8c0d285c1e6b4ba3b5ea777b563c4c80",
+      "category": "banana",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-085/8c0d285c1e6b4ba3b5ea777b563c4c80.glb",
+      "flat_path": "eval/models/banana_8c0d285c.glb"
+    },
+    {
+      "uid": "7e3b35368929485d89df5fe9071afd06",
+      "category": "banana",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-145/7e3b35368929485d89df5fe9071afd06.glb",
+      "flat_path": "eval/models/banana_7e3b3536.glb"
+    },
+    {
+      "uid": "5e68fc39623b4773a53a6d084782a6df",
+      "category": "banana",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-134/5e68fc39623b4773a53a6d084782a6df.glb",
+      "flat_path": "eval/models/banana_5e68fc39.glb"
+    },
+    {
+      "uid": "1e23afcaf076420786d8078b479b0424",
+      "category": "banana",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-143/1e23afcaf076420786d8078b479b0424.glb",
+      "flat_path": "eval/models/banana_1e23afca.glb"
+    },
+    {
+      "uid": "25baea74f1914aafb9ddef58d0106969",
+      "category": "apple",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-028/25baea74f1914aafb9ddef58d0106969.glb",
+      "flat_path": "eval/models/apple_25baea74.glb"
+    },
+    {
+      "uid": "e3173857f9384aa4928daeabff75da44",
+      "category": "apple",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-006/e3173857f9384aa4928daeabff75da44.glb",
+      "flat_path": "eval/models/apple_e3173857.glb"
+    },
+    {
+      "uid": "b496adbf9b924ff99939ad38330eb3cf",
+      "category": "apple",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-134/b496adbf9b924ff99939ad38330eb3cf.glb",
+      "flat_path": "eval/models/apple_b496adbf.glb"
+    },
+    {
+      "uid": "869d04103ba641e79c8530644859bd87",
+      "category": "apple",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-056/869d04103ba641e79c8530644859bd87.glb",
+      "flat_path": "eval/models/apple_869d0410.glb"
+    },
+    {
+      "uid": "dc5a0c0c439942d58d038a10d7064c91",
+      "category": "apple",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-126/dc5a0c0c439942d58d038a10d7064c91.glb",
+      "flat_path": "eval/models/apple_dc5a0c0c.glb"
+    },
+    {
+      "uid": "14bd0d858839450d9bebc359c07779e5",
+      "category": "apple",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-105/14bd0d858839450d9bebc359c07779e5.glb",
+      "flat_path": "eval/models/apple_14bd0d85.glb"
+    },
+    {
+      "uid": "60afac65b571470e841856afbfa4d0a6",
+      "category": "apple",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-137/60afac65b571470e841856afbfa4d0a6.glb",
+      "flat_path": "eval/models/apple_60afac65.glb"
+    },
+    {
+      "uid": "198adfef07ac45c89ec51529b1e01c22",
+      "category": "apple",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-126/198adfef07ac45c89ec51529b1e01c22.glb",
+      "flat_path": "eval/models/apple_198adfef.glb"
+    },
+    {
+      "uid": "e5d2f0d496f8451b87c08c432781eaf3",
+      "category": "apple",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-096/e5d2f0d496f8451b87c08c432781eaf3.glb",
+      "flat_path": "eval/models/apple_e5d2f0d4.glb"
+    },
+    {
+      "uid": "3dba2b6e4098420c86be2a45c14f1ea9",
+      "category": "apple",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-110/3dba2b6e4098420c86be2a45c14f1ea9.glb",
+      "flat_path": "eval/models/apple_3dba2b6e.glb"
+    },
+    {
+      "uid": "1e8d2897bdbc4f8fb2b8ed9ab9fac453",
+      "category": "doughnut",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-080/1e8d2897bdbc4f8fb2b8ed9ab9fac453.glb",
+      "flat_path": "eval/models/doughnut_1e8d2897.glb"
+    },
+    {
+      "uid": "3d16c309fcbb4ec488faecb209e4ce2e",
+      "category": "doughnut",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-041/3d16c309fcbb4ec488faecb209e4ce2e.glb",
+      "flat_path": "eval/models/doughnut_3d16c309.glb"
+    },
+    {
+      "uid": "b4342345041740a7953f194361fe8e39",
+      "category": "doughnut",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-024/b4342345041740a7953f194361fe8e39.glb",
+      "flat_path": "eval/models/doughnut_b4342345.glb"
+    },
+    {
+      "uid": "e5db252dcdc74bdf81cc4d7be5c03160",
+      "category": "doughnut",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-118/e5db252dcdc74bdf81cc4d7be5c03160.glb",
+      "flat_path": "eval/models/doughnut_e5db252d.glb"
+    },
+    {
+      "uid": "4129518d0a5d41e7bdab5b42ffd8faec",
+      "category": "doughnut",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-035/4129518d0a5d41e7bdab5b42ffd8faec.glb",
+      "flat_path": "eval/models/doughnut_4129518d.glb"
+    },
+    {
+      "uid": "6946a0316c4849fc8fc0ab3eacf52f78",
+      "category": "doughnut",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-055/6946a0316c4849fc8fc0ab3eacf52f78.glb",
+      "flat_path": "eval/models/doughnut_6946a031.glb"
+    },
+    {
+      "uid": "8764db73f98f4a699e9f63d7a081fddf",
+      "category": "doughnut",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-065/8764db73f98f4a699e9f63d7a081fddf.glb",
+      "flat_path": "eval/models/doughnut_8764db73.glb"
+    },
+    {
+      "uid": "04a319096cd1428a9c5af4dde414a7d7",
+      "category": "doughnut",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-000/04a319096cd1428a9c5af4dde414a7d7.glb",
+      "flat_path": "eval/models/doughnut_04a31909.glb"
+    },
+    {
+      "uid": "9d8f4acfe1834a2ebdfc4df0fc7df979",
+      "category": "doughnut",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-032/9d8f4acfe1834a2ebdfc4df0fc7df979.glb",
+      "flat_path": "eval/models/doughnut_9d8f4acf.glb"
+    },
+    {
+      "uid": "0bc473ee934f44c6bd124717cdf58c93",
+      "category": "doughnut",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-138/0bc473ee934f44c6bd124717cdf58c93.glb",
+      "flat_path": "eval/models/doughnut_0bc473ee.glb"
+    },
+    {
+      "uid": "0bbf336a2cb2467bb34608e6b38ef3ff",
+      "category": "mushroom",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-115/0bbf336a2cb2467bb34608e6b38ef3ff.glb",
+      "flat_path": "eval/models/mushroom_0bbf336a.glb"
+    },
+    {
+      "uid": "e19bac6adaae49f881193af7181c88af",
+      "category": "mushroom",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-128/e19bac6adaae49f881193af7181c88af.glb",
+      "flat_path": "eval/models/mushroom_e19bac6a.glb"
+    },
+    {
+      "uid": "357416df2f5740a183e26c8b4c74a55c",
+      "category": "mushroom",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-003/357416df2f5740a183e26c8b4c74a55c.glb",
+      "flat_path": "eval/models/mushroom_357416df.glb"
+    },
+    {
+      "uid": "f802f7320e6445648d49a7f48d2cfda1",
+      "category": "mushroom",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-046/f802f7320e6445648d49a7f48d2cfda1.glb",
+      "flat_path": "eval/models/mushroom_f802f732.glb"
+    },
+    {
+      "uid": "b6f0ab9d5e7f495d9f034a4d0cc1071a",
+      "category": "mushroom",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-136/b6f0ab9d5e7f495d9f034a4d0cc1071a.glb",
+      "flat_path": "eval/models/mushroom_b6f0ab9d.glb"
+    },
+    {
+      "uid": "2aa3256dfecf440a8bb26fdd17fa73c3",
+      "category": "mushroom",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-094/2aa3256dfecf440a8bb26fdd17fa73c3.glb",
+      "flat_path": "eval/models/mushroom_2aa3256d.glb"
+    },
+    {
+      "uid": "a9422fc585ca4433a198f5411e157091",
+      "category": "mushroom",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-035/a9422fc585ca4433a198f5411e157091.glb",
+      "flat_path": "eval/models/mushroom_a9422fc5.glb"
+    },
+    {
+      "uid": "767a395d901d40128eb6c18bc64bd202",
+      "category": "mushroom",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-067/767a395d901d40128eb6c18bc64bd202.glb",
+      "flat_path": "eval/models/mushroom_767a395d.glb"
+    },
+    {
+      "uid": "ffda30903e744bd3b5bbe22abbfa453f",
+      "category": "mushroom",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-046/ffda30903e744bd3b5bbe22abbfa453f.glb",
+      "flat_path": "eval/models/mushroom_ffda3090.glb"
+    },
+    {
+      "uid": "238162014a0e48f99b1b278e237d812d",
+      "category": "mushroom",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-105/238162014a0e48f99b1b278e237d812d.glb",
+      "flat_path": "eval/models/mushroom_23816201.glb"
+    },
+    {
+      "uid": "4e4e3474d964471984bf57a21f469479",
+      "category": "pumpkin",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-050/4e4e3474d964471984bf57a21f469479.glb",
+      "flat_path": "eval/models/pumpkin_4e4e3474.glb"
+    },
+    {
+      "uid": "94244ddae2a0411fad12da680912b238",
+      "category": "pumpkin",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-157/94244ddae2a0411fad12da680912b238.glb",
+      "flat_path": "eval/models/pumpkin_94244dda.glb"
+    },
+    {
+      "uid": "658aebe16090468688807be351442a64",
+      "category": "pumpkin",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-111/658aebe16090468688807be351442a64.glb",
+      "flat_path": "eval/models/pumpkin_658aebe1.glb"
+    },
+    {
+      "uid": "d2c7221ac2634362b29ba3b15f72aae1",
+      "category": "pumpkin",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-134/d2c7221ac2634362b29ba3b15f72aae1.glb",
+      "flat_path": "eval/models/pumpkin_d2c7221a.glb"
+    },
+    {
+      "uid": "29061e6e63e54a5c8b376d687689afbb",
+      "category": "pumpkin",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-153/29061e6e63e54a5c8b376d687689afbb.glb",
+      "flat_path": "eval/models/pumpkin_29061e6e.glb"
+    },
+    {
+      "uid": "8d35be41a63c4762b8cb5fe62e50fc52",
+      "category": "pumpkin",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-113/8d35be41a63c4762b8cb5fe62e50fc52.glb",
+      "flat_path": "eval/models/pumpkin_8d35be41.glb"
+    },
+    {
+      "uid": "6ea379ddb2a242b384c2137238f46e04",
+      "category": "pumpkin",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-113/6ea379ddb2a242b384c2137238f46e04.glb",
+      "flat_path": "eval/models/pumpkin_6ea379dd.glb"
+    },
+    {
+      "uid": "4645844855544d749ef6841d3e5d2a8d",
+      "category": "pumpkin",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-093/4645844855544d749ef6841d3e5d2a8d.glb",
+      "flat_path": "eval/models/pumpkin_46458448.glb"
+    },
+    {
+      "uid": "d76c80a319f64b45b24c56954cdcc844",
+      "category": "pumpkin",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-081/d76c80a319f64b45b24c56954cdcc844.glb",
+      "flat_path": "eval/models/pumpkin_d76c80a3.glb"
+    },
+    {
+      "uid": "2189104c64c149d6a6db6ebf1a2903c1",
+      "category": "pumpkin",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-076/2189104c64c149d6a6db6ebf1a2903c1.glb",
+      "flat_path": "eval/models/pumpkin_2189104c.glb"
+    },
+    {
+      "uid": "776462432cff4d6f89ec50d6a3342eee",
+      "category": "telephone",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-098/776462432cff4d6f89ec50d6a3342eee.glb",
+      "flat_path": "eval/models/telephone_77646243.glb"
+    },
+    {
+      "uid": "b812224a5c354de5854c82547e1dc4ca",
+      "category": "telephone",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-077/b812224a5c354de5854c82547e1dc4ca.glb",
+      "flat_path": "eval/models/telephone_b812224a.glb"
+    },
+    {
+      "uid": "bc379c569b8e4c34a1f9e64e626fe66c",
+      "category": "telephone",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-027/bc379c569b8e4c34a1f9e64e626fe66c.glb",
+      "flat_path": "eval/models/telephone_bc379c56.glb"
+    },
+    {
+      "uid": "ca121fb9b7454fc18769d0d7b6e1781e",
+      "category": "telephone",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-131/ca121fb9b7454fc18769d0d7b6e1781e.glb",
+      "flat_path": "eval/models/telephone_ca121fb9.glb"
+    },
+    {
+      "uid": "1b4dc73c97c043e0be33c6beb3ccbbec",
+      "category": "telephone",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-020/1b4dc73c97c043e0be33c6beb3ccbbec.glb",
+      "flat_path": "eval/models/telephone_1b4dc73c.glb"
+    },
+    {
+      "uid": "5feecd536f77452e9f5cfbba97acb975",
+      "category": "telephone",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-140/5feecd536f77452e9f5cfbba97acb975.glb",
+      "flat_path": "eval/models/telephone_5feecd53.glb"
+    },
+    {
+      "uid": "d35cec82ec35416392c9d803d0979ee8",
+      "category": "telephone",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-125/d35cec82ec35416392c9d803d0979ee8.glb",
+      "flat_path": "eval/models/telephone_d35cec82.glb"
+    },
+    {
+      "uid": "0f28ae23b36e45f79bf1ea212b4932cb",
+      "category": "telephone",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-096/0f28ae23b36e45f79bf1ea212b4932cb.glb",
+      "flat_path": "eval/models/telephone_0f28ae23.glb"
+    },
+    {
+      "uid": "b89c9db0a6bb4ae3bb745bc3e7e4fe9a",
+      "category": "telephone",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-025/b89c9db0a6bb4ae3bb745bc3e7e4fe9a.glb",
+      "flat_path": "eval/models/telephone_b89c9db0.glb"
+    },
+    {
+      "uid": "76b5e2b5f6e6420aaf70fae98089015b",
+      "category": "telephone",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-043/76b5e2b5f6e6420aaf70fae98089015b.glb",
+      "flat_path": "eval/models/telephone_76b5e2b5.glb"
+    },
+    {
+      "uid": "d9e6543850844578a93e4b87cef50486",
+      "category": "television_set",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-055/d9e6543850844578a93e4b87cef50486.glb",
+      "flat_path": "eval/models/television_set_d9e65438.glb"
+    },
+    {
+      "uid": "94d6405522de4c2895912c0a45332056",
+      "category": "television_set",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-105/94d6405522de4c2895912c0a45332056.glb",
+      "flat_path": "eval/models/television_set_94d64055.glb"
+    },
+    {
+      "uid": "80a0f58dcb604405869637c8387f5d36",
+      "category": "television_set",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-136/80a0f58dcb604405869637c8387f5d36.glb",
+      "flat_path": "eval/models/television_set_80a0f58d.glb"
+    },
+    {
+      "uid": "6099a956fb4c4a21b2957bc2e4874d55",
+      "category": "television_set",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-062/6099a956fb4c4a21b2957bc2e4874d55.glb",
+      "flat_path": "eval/models/television_set_6099a956.glb"
+    },
+    {
+      "uid": "933fdfca5aa749d19b0750dc08bb0592",
+      "category": "television_set",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-069/933fdfca5aa749d19b0750dc08bb0592.glb",
+      "flat_path": "eval/models/television_set_933fdfca.glb"
+    },
+    {
+      "uid": "39076c677c0c49c399149016e390eea1",
+      "category": "television_set",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-005/39076c677c0c49c399149016e390eea1.glb",
+      "flat_path": "eval/models/television_set_39076c67.glb"
+    },
+    {
+      "uid": "1d95c634ec8f4a30ab43363b4de346a2",
+      "category": "television_set",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-084/1d95c634ec8f4a30ab43363b4de346a2.glb",
+      "flat_path": "eval/models/television_set_1d95c634.glb"
+    },
+    {
+      "uid": "ba34ae6d766048a18b234580a515fad0",
+      "category": "television_set",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-126/ba34ae6d766048a18b234580a515fad0.glb",
+      "flat_path": "eval/models/television_set_ba34ae6d.glb"
+    },
+    {
+      "uid": "1d3e592e28224d239ef77e03923c563b",
+      "category": "television_set",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-020/1d3e592e28224d239ef77e03923c563b.glb",
+      "flat_path": "eval/models/television_set_1d3e592e.glb"
+    },
+    {
+      "uid": "c5b7ba13492f4fc39aeeb49a4f3ad298",
+      "category": "television_set",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-038/c5b7ba13492f4fc39aeeb49a4f3ad298.glb",
+      "flat_path": "eval/models/television_set_c5b7ba13.glb"
+    },
+    {
+      "uid": "99de8bd7fb8d40c39989ddac0f98214a",
+      "category": "computer_keyboard",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-143/99de8bd7fb8d40c39989ddac0f98214a.glb",
+      "flat_path": "eval/models/computer_keyboard_99de8bd7.glb"
+    },
+    {
+      "uid": "8537a184f2d441aebd214689c0cd918a",
+      "category": "computer_keyboard",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-106/8537a184f2d441aebd214689c0cd918a.glb",
+      "flat_path": "eval/models/computer_keyboard_8537a184.glb"
+    },
+    {
+      "uid": "a884bf6ce8b74648b6813564a443824a",
+      "category": "computer_keyboard",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-007/a884bf6ce8b74648b6813564a443824a.glb",
+      "flat_path": "eval/models/computer_keyboard_a884bf6c.glb"
+    },
+    {
+      "uid": "b50191176b6a4509aabca39d93bf7c18",
+      "category": "computer_keyboard",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-100/b50191176b6a4509aabca39d93bf7c18.glb",
+      "flat_path": "eval/models/computer_keyboard_b5019117.glb"
+    },
+    {
+      "uid": "f9945610ba8f40679ff07c690d4560f0",
+      "category": "computer_keyboard",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-049/f9945610ba8f40679ff07c690d4560f0.glb",
+      "flat_path": "eval/models/computer_keyboard_f9945610.glb"
+    },
+    {
+      "uid": "1509b394dcfa4451ba7ebdaf7fc7a808",
+      "category": "computer_keyboard",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-094/1509b394dcfa4451ba7ebdaf7fc7a808.glb",
+      "flat_path": "eval/models/computer_keyboard_1509b394.glb"
+    },
+    {
+      "uid": "9f8958d54d96451d911c75f65ff072da",
+      "category": "computer_keyboard",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-094/9f8958d54d96451d911c75f65ff072da.glb",
+      "flat_path": "eval/models/computer_keyboard_9f8958d5.glb"
+    },
+    {
+      "uid": "7474b28305914cb984443b4a822db768",
+      "category": "computer_keyboard",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-068/7474b28305914cb984443b4a822db768.glb",
+      "flat_path": "eval/models/computer_keyboard_7474b283.glb"
+    },
+    {
+      "uid": "557bc13b763c4f51bccc831c7cc1119c",
+      "category": "computer_keyboard",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-098/557bc13b763c4f51bccc831c7cc1119c.glb",
+      "flat_path": "eval/models/computer_keyboard_557bc13b.glb"
+    },
+    {
+      "uid": "fef52ffd517b4e56a3df2073a8dff903",
+      "category": "computer_keyboard",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-145/fef52ffd517b4e56a3df2073a8dff903.glb",
+      "flat_path": "eval/models/computer_keyboard_fef52ffd.glb"
+    },
+    {
+      "uid": "6fb5032d4c0f45c3b767c1a8d694ec70",
+      "category": "monitor_(computer_equipment) computer_monitor",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-063/6fb5032d4c0f45c3b767c1a8d694ec70.glb",
+      "flat_path": "eval/models/monitor_(computer_equipment) computer_monitor_6fb5032d.glb"
+    },
+    {
+      "uid": "dda99212e94c44cea83e958e03b7c205",
+      "category": "monitor_(computer_equipment) computer_monitor",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-138/dda99212e94c44cea83e958e03b7c205.glb",
+      "flat_path": "eval/models/monitor_(computer_equipment) computer_monitor_dda99212.glb"
+    },
+    {
+      "uid": "85a79f745d484ec08d85b29992d7d576",
+      "category": "monitor_(computer_equipment) computer_monitor",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-085/85a79f745d484ec08d85b29992d7d576.glb",
+      "flat_path": "eval/models/monitor_(computer_equipment) computer_monitor_85a79f74.glb"
+    },
+    {
+      "uid": "1d779259b2df4ee7b9e7e9ee2dd56ac9",
+      "category": "monitor_(computer_equipment) computer_monitor",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-030/1d779259b2df4ee7b9e7e9ee2dd56ac9.glb",
+      "flat_path": "eval/models/monitor_(computer_equipment) computer_monitor_1d779259.glb"
+    },
+    {
+      "uid": "2149d4ef4b3946e6813a9f3e262d214d",
+      "category": "monitor_(computer_equipment) computer_monitor",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-015/2149d4ef4b3946e6813a9f3e262d214d.glb",
+      "flat_path": "eval/models/monitor_(computer_equipment) computer_monitor_2149d4ef.glb"
+    },
+    {
+      "uid": "9ff1333690904e8db55023e3abb275c4",
+      "category": "monitor_(computer_equipment) computer_monitor",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-054/9ff1333690904e8db55023e3abb275c4.glb",
+      "flat_path": "eval/models/monitor_(computer_equipment) computer_monitor_9ff13336.glb"
+    },
+    {
+      "uid": "4c2c75123a644d4eb7324bb5235c6a86",
+      "category": "monitor_(computer_equipment) computer_monitor",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-055/4c2c75123a644d4eb7324bb5235c6a86.glb",
+      "flat_path": "eval/models/monitor_(computer_equipment) computer_monitor_4c2c7512.glb"
+    },
+    {
+      "uid": "e5cd149f7ca34a94a2704500d4d1bcfc",
+      "category": "monitor_(computer_equipment) computer_monitor",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-057/e5cd149f7ca34a94a2704500d4d1bcfc.glb",
+      "flat_path": "eval/models/monitor_(computer_equipment) computer_monitor_e5cd149f.glb"
+    },
+    {
+      "uid": "e20ebbfd0fa440c38a6bd1bb3f22a2f1",
+      "category": "monitor_(computer_equipment) computer_monitor",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-128/e20ebbfd0fa440c38a6bd1bb3f22a2f1.glb",
+      "flat_path": "eval/models/monitor_(computer_equipment) computer_monitor_e20ebbfd.glb"
+    },
+    {
+      "uid": "091031aeaf3f41b7bc0b9d8b682e5f54",
+      "category": "monitor_(computer_equipment) computer_monitor",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-011/091031aeaf3f41b7bc0b9d8b682e5f54.glb",
+      "flat_path": "eval/models/monitor_(computer_equipment) computer_monitor_091031ae.glb"
+    },
+    {
+      "uid": "ae3dcd8addb54abbb4c3b520571f1909",
+      "category": "sword",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-124/ae3dcd8addb54abbb4c3b520571f1909.glb",
+      "flat_path": "eval/models/sword_ae3dcd8a.glb"
+    },
+    {
+      "uid": "814a3d5f916e4439aa4bac2aa7b812ec",
+      "category": "sword",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-096/814a3d5f916e4439aa4bac2aa7b812ec.glb",
+      "flat_path": "eval/models/sword_814a3d5f.glb"
+    },
+    {
+      "uid": "ac1ceaf3568c4f7ca335851279f922fc",
+      "category": "sword",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-112/ac1ceaf3568c4f7ca335851279f922fc.glb",
+      "flat_path": "eval/models/sword_ac1ceaf3.glb"
+    },
+    {
+      "uid": "1df1993ed316495da5e6c64dd863e4bb",
+      "category": "sword",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-081/1df1993ed316495da5e6c64dd863e4bb.glb",
+      "flat_path": "eval/models/sword_1df1993e.glb"
+    },
+    {
+      "uid": "b23587bc6da94bbfb817d5902897a33e",
+      "category": "sword",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-128/b23587bc6da94bbfb817d5902897a33e.glb",
+      "flat_path": "eval/models/sword_b23587bc.glb"
+    },
+    {
+      "uid": "811eef1dba0e4223b8287b0abb849e3d",
+      "category": "sword",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-053/811eef1dba0e4223b8287b0abb849e3d.glb",
+      "flat_path": "eval/models/sword_811eef1d.glb"
+    },
+    {
+      "uid": "5b26f8d60eec4e579e89cc559fa9f2e1",
+      "category": "sword",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-051/5b26f8d60eec4e579e89cc559fa9f2e1.glb",
+      "flat_path": "eval/models/sword_5b26f8d6.glb"
+    },
+    {
+      "uid": "c5449158fed94b30895e91504e479ac5",
+      "category": "sword",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-030/c5449158fed94b30895e91504e479ac5.glb",
+      "flat_path": "eval/models/sword_c5449158.glb"
+    },
+    {
+      "uid": "fb0291f77665442fb5e54473a8d12b3f",
+      "category": "sword",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-055/fb0291f77665442fb5e54473a8d12b3f.glb",
+      "flat_path": "eval/models/sword_fb0291f7.glb"
+    },
+    {
+      "uid": "f2b54451866748f2a7c7d9afe2f2bee5",
+      "category": "sword",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-069/f2b54451866748f2a7c7d9afe2f2bee5.glb",
+      "flat_path": "eval/models/sword_f2b54451.glb"
+    },
+    {
+      "uid": "b45efecfd928440b9e7283789e5a9c3d",
+      "category": "gun",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-059/b45efecfd928440b9e7283789e5a9c3d.glb",
+      "flat_path": "eval/models/gun_b45efecf.glb"
+    },
+    {
+      "uid": "6bd564e520994c568488a685750d67f0",
+      "category": "gun",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-001/6bd564e520994c568488a685750d67f0.glb",
+      "flat_path": "eval/models/gun_6bd564e5.glb"
+    },
+    {
+      "uid": "9e45e03e727b47adbc2a68b1db5ed53a",
+      "category": "gun",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-025/9e45e03e727b47adbc2a68b1db5ed53a.glb",
+      "flat_path": "eval/models/gun_9e45e03e.glb"
+    },
+    {
+      "uid": "80425f5e117b481087f04c47f55bfafc",
+      "category": "gun",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-105/80425f5e117b481087f04c47f55bfafc.glb",
+      "flat_path": "eval/models/gun_80425f5e.glb"
+    },
+    {
+      "uid": "a756c1cefb544d48a9f1250e542cd4a5",
+      "category": "gun",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-022/a756c1cefb544d48a9f1250e542cd4a5.glb",
+      "flat_path": "eval/models/gun_a756c1ce.glb"
+    },
+    {
+      "uid": "04d150d363594b2d9a7781ed76340eec",
+      "category": "gun",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-000/04d150d363594b2d9a7781ed76340eec.glb",
+      "flat_path": "eval/models/gun_04d150d3.glb"
+    },
+    {
+      "uid": "7970fdd20e194128a84ed8353a0e4826",
+      "category": "gun",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-039/7970fdd20e194128a84ed8353a0e4826.glb",
+      "flat_path": "eval/models/gun_7970fdd2.glb"
+    },
+    {
+      "uid": "91eac5560b7b4a959dff530a030b645a",
+      "category": "gun",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-069/91eac5560b7b4a959dff530a030b645a.glb",
+      "flat_path": "eval/models/gun_91eac556.glb"
+    },
+    {
+      "uid": "07b981b3b9584bf99236f706484fc193",
+      "category": "gun",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-121/07b981b3b9584bf99236f706484fc193.glb",
+      "flat_path": "eval/models/gun_07b981b3.glb"
+    },
+    {
+      "uid": "adfb3f9a6b954150a894216c1c020a6d",
+      "category": "gun",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-081/adfb3f9a6b954150a894216c1c020a6d.glb",
+      "flat_path": "eval/models/gun_adfb3f9a.glb"
+    },
+    {
+      "uid": "5bcb852453234edbaee83fdf6bbdb679",
+      "category": "rifle",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-032/5bcb852453234edbaee83fdf6bbdb679.glb",
+      "flat_path": "eval/models/rifle_5bcb8524.glb"
+    },
+    {
+      "uid": "0fbb21a2778e41a6b437c668436acbd7",
+      "category": "rifle",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-084/0fbb21a2778e41a6b437c668436acbd7.glb",
+      "flat_path": "eval/models/rifle_0fbb21a2.glb"
+    },
+    {
+      "uid": "6101793f444f40b0b2c238a7b2eb6e78",
+      "category": "rifle",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-082/6101793f444f40b0b2c238a7b2eb6e78.glb",
+      "flat_path": "eval/models/rifle_6101793f.glb"
+    },
+    {
+      "uid": "2148cca2447d455d90b2001df1614a7a",
+      "category": "rifle",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-031/2148cca2447d455d90b2001df1614a7a.glb",
+      "flat_path": "eval/models/rifle_2148cca2.glb"
+    },
+    {
+      "uid": "9f0ea94c07814620be748dbc7bfd24b2",
+      "category": "rifle",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-009/9f0ea94c07814620be748dbc7bfd24b2.glb",
+      "flat_path": "eval/models/rifle_9f0ea94c.glb"
+    },
+    {
+      "uid": "90a24635b1c24a3e947fe97a071fa7f2",
+      "category": "rifle",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-030/90a24635b1c24a3e947fe97a071fa7f2.glb",
+      "flat_path": "eval/models/rifle_90a24635.glb"
+    },
+    {
+      "uid": "0ed9cef4af5e40e6951ef3c276c2e44c",
+      "category": "rifle",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-085/0ed9cef4af5e40e6951ef3c276c2e44c.glb",
+      "flat_path": "eval/models/rifle_0ed9cef4.glb"
+    },
+    {
+      "uid": "a5e6d96267c445ec8e62a61926086e66",
+      "category": "rifle",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-146/a5e6d96267c445ec8e62a61926086e66.glb",
+      "flat_path": "eval/models/rifle_a5e6d962.glb"
+    },
+    {
+      "uid": "a2d68504fe714b7cbb125ae72bfd2789",
+      "category": "rifle",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-006/a2d68504fe714b7cbb125ae72bfd2789.glb",
+      "flat_path": "eval/models/rifle_a2d68504.glb"
+    },
+    {
+      "uid": "48f60e8cc54f4e64961f2e3ebcac5432",
+      "category": "rifle",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-038/48f60e8cc54f4e64961f2e3ebcac5432.glb",
+      "flat_path": "eval/models/rifle_48f60e8c.glb"
+    },
+    {
+      "uid": "f405dd5b3e304f66bb4502467ca7fec2",
+      "category": "shield",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-136/f405dd5b3e304f66bb4502467ca7fec2.glb",
+      "flat_path": "eval/models/shield_f405dd5b.glb"
+    },
+    {
+      "uid": "6e6984811b3c4e9ea5fd16e1fa47517e",
+      "category": "shield",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-110/6e6984811b3c4e9ea5fd16e1fa47517e.glb",
+      "flat_path": "eval/models/shield_6e698481.glb"
+    },
+    {
+      "uid": "041ee3f9d8ce453dbdc1a696431041c6",
+      "category": "shield",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-000/041ee3f9d8ce453dbdc1a696431041c6.glb",
+      "flat_path": "eval/models/shield_041ee3f9.glb"
+    },
+    {
+      "uid": "9d5448676ce94a8c82d120630577ebcd",
+      "category": "shield",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-147/9d5448676ce94a8c82d120630577ebcd.glb",
+      "flat_path": "eval/models/shield_9d544867.glb"
+    },
+    {
+      "uid": "0d097d04f0b04eb7adb0d6132dd910c4",
+      "category": "shield",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-098/0d097d04f0b04eb7adb0d6132dd910c4.glb",
+      "flat_path": "eval/models/shield_0d097d04.glb"
+    },
+    {
+      "uid": "9626b82200e44a5ea4a0ac5cd8020e3f",
+      "category": "shield",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-077/9626b82200e44a5ea4a0ac5cd8020e3f.glb",
+      "flat_path": "eval/models/shield_9626b822.glb"
+    },
+    {
+      "uid": "2cfd0923c01d461d9513f63464bcbaab",
+      "category": "shield",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-043/2cfd0923c01d461d9513f63464bcbaab.glb",
+      "flat_path": "eval/models/shield_2cfd0923.glb"
+    },
+    {
+      "uid": "96e4033e6ec64c1b826f9180a34af241",
+      "category": "shield",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-030/96e4033e6ec64c1b826f9180a34af241.glb",
+      "flat_path": "eval/models/shield_96e4033e.glb"
+    },
+    {
+      "uid": "c21e2a4d650b41abb3b24540494ea71f",
+      "category": "shield",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-079/c21e2a4d650b41abb3b24540494ea71f.glb",
+      "flat_path": "eval/models/shield_c21e2a4d.glb"
+    },
+    {
+      "uid": "094e79ef6fd844dd97f2389564b48bd0",
+      "category": "shield",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-125/094e79ef6fd844dd97f2389564b48bd0.glb",
+      "flat_path": "eval/models/shield_094e79ef.glb"
+    },
+    {
+      "uid": "b4f4d8eaa2754572b59caecbeac20228",
+      "category": "armor",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-117/b4f4d8eaa2754572b59caecbeac20228.glb",
+      "flat_path": "eval/models/armor_b4f4d8ea.glb"
+    },
+    {
+      "uid": "10355beb06ab40b4ad2c05381a8eba6a",
+      "category": "armor",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-138/10355beb06ab40b4ad2c05381a8eba6a.glb",
+      "flat_path": "eval/models/armor_10355beb.glb"
+    },
+    {
+      "uid": "f719e6cbbdf34716ae4a26508bb2b601",
+      "category": "armor",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-127/f719e6cbbdf34716ae4a26508bb2b601.glb",
+      "flat_path": "eval/models/armor_f719e6cb.glb"
+    },
+    {
+      "uid": "d766481551eb4ab69ab1b26cc2518e33",
+      "category": "armor",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-158/d766481551eb4ab69ab1b26cc2518e33.glb",
+      "flat_path": "eval/models/armor_d7664815.glb"
+    },
+    {
+      "uid": "52de419237fa42ffac21b38c4b13bffe",
+      "category": "armor",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-118/52de419237fa42ffac21b38c4b13bffe.glb",
+      "flat_path": "eval/models/armor_52de4192.glb"
+    },
+    {
+      "uid": "a739fbc9d88c4daf9f730dd9f6778c68",
+      "category": "armor",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-140/a739fbc9d88c4daf9f730dd9f6778c68.glb",
+      "flat_path": "eval/models/armor_a739fbc9.glb"
+    },
+    {
+      "uid": "23d81fc03c1f460fbc636dc21b03870d",
+      "category": "armor",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-068/23d81fc03c1f460fbc636dc21b03870d.glb",
+      "flat_path": "eval/models/armor_23d81fc0.glb"
+    },
+    {
+      "uid": "ab00012a6fde4fee9de684f914702bf1",
+      "category": "armor",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-064/ab00012a6fde4fee9de684f914702bf1.glb",
+      "flat_path": "eval/models/armor_ab00012a.glb"
+    },
+    {
+      "uid": "ea16c46502394e9b8959aa146e77fe5a",
+      "category": "armor",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-049/ea16c46502394e9b8959aa146e77fe5a.glb",
+      "flat_path": "eval/models/armor_ea16c465.glb"
+    },
+    {
+      "uid": "63b20235d5134bf1877168cb2e232a0c",
+      "category": "armor",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-101/63b20235d5134bf1877168cb2e232a0c.glb",
+      "flat_path": "eval/models/armor_63b20235.glb"
+    },
+    {
+      "uid": "69e4410cd50d4bd1bbd83cdbe442dc06",
+      "category": "soccer_ball",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-024/69e4410cd50d4bd1bbd83cdbe442dc06.glb",
+      "flat_path": "eval/models/soccer_ball_69e4410c.glb"
+    },
+    {
+      "uid": "3ceae2eee6264843a77aaaf298134744",
+      "category": "soccer_ball",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-141/3ceae2eee6264843a77aaaf298134744.glb",
+      "flat_path": "eval/models/soccer_ball_3ceae2ee.glb"
+    },
+    {
+      "uid": "6ef2e4a19ece4c568698e298c925bd3c",
+      "category": "soccer_ball",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-114/6ef2e4a19ece4c568698e298c925bd3c.glb",
+      "flat_path": "eval/models/soccer_ball_6ef2e4a1.glb"
+    },
+    {
+      "uid": "649f10d75f86431ea0930ba454d11c31",
+      "category": "soccer_ball",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-072/649f10d75f86431ea0930ba454d11c31.glb",
+      "flat_path": "eval/models/soccer_ball_649f10d7.glb"
+    },
+    {
+      "uid": "85f5c6a7905245f291458cc6f2518ee1",
+      "category": "soccer_ball",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-104/85f5c6a7905245f291458cc6f2518ee1.glb",
+      "flat_path": "eval/models/soccer_ball_85f5c6a7.glb"
+    },
+    {
+      "uid": "72ecd4deff5f4886adc2455581f0333d",
+      "category": "soccer_ball",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-130/72ecd4deff5f4886adc2455581f0333d.glb",
+      "flat_path": "eval/models/soccer_ball_72ecd4de.glb"
+    },
+    {
+      "uid": "e38b0fd0db924e948160d611ce5cd93c",
+      "category": "soccer_ball",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-106/e38b0fd0db924e948160d611ce5cd93c.glb",
+      "flat_path": "eval/models/soccer_ball_e38b0fd0.glb"
+    },
+    {
+      "uid": "a9ed84b06e6549e486aa585129a1cf48",
+      "category": "soccer_ball",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-058/a9ed84b06e6549e486aa585129a1cf48.glb",
+      "flat_path": "eval/models/soccer_ball_a9ed84b0.glb"
+    },
+    {
+      "uid": "a0458a0969c8482d95ed22f4c0f1fa4c",
+      "category": "soccer_ball",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-054/a0458a0969c8482d95ed22f4c0f1fa4c.glb",
+      "flat_path": "eval/models/soccer_ball_a0458a09.glb"
+    },
+    {
+      "uid": "b45d9f4370104ee28a5d84652201a6d6",
+      "category": "soccer_ball",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-062/b45d9f4370104ee28a5d84652201a6d6.glb",
+      "flat_path": "eval/models/soccer_ball_b45d9f43.glb"
+    },
+    {
+      "uid": "6e329d48dfe34854b89eb40e5ee4daae",
+      "category": "skateboard",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-059/6e329d48dfe34854b89eb40e5ee4daae.glb",
+      "flat_path": "eval/models/skateboard_6e329d48.glb"
+    },
+    {
+      "uid": "59e9c369ae7148378c496aef09fa7cf1",
+      "category": "skateboard",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-089/59e9c369ae7148378c496aef09fa7cf1.glb",
+      "flat_path": "eval/models/skateboard_59e9c369.glb"
+    },
+    {
+      "uid": "c60420a840134dc9b4646f43911906d1",
+      "category": "skateboard",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-140/c60420a840134dc9b4646f43911906d1.glb",
+      "flat_path": "eval/models/skateboard_c60420a8.glb"
+    },
+    {
+      "uid": "a3cd551df1d2452691bec6c8476184f4",
+      "category": "skateboard",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-041/a3cd551df1d2452691bec6c8476184f4.glb",
+      "flat_path": "eval/models/skateboard_a3cd551d.glb"
+    },
+    {
+      "uid": "ccf0420eec274052a3877474908f8266",
+      "category": "skateboard",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-088/ccf0420eec274052a3877474908f8266.glb",
+      "flat_path": "eval/models/skateboard_ccf0420e.glb"
+    },
+    {
+      "uid": "10fcf145c71b460cb90473981ffb8ec7",
+      "category": "skateboard",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-125/10fcf145c71b460cb90473981ffb8ec7.glb",
+      "flat_path": "eval/models/skateboard_10fcf145.glb"
+    },
+    {
+      "uid": "eadf631145d24b7789b0fc82648833f2",
+      "category": "skateboard",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-147/eadf631145d24b7789b0fc82648833f2.glb",
+      "flat_path": "eval/models/skateboard_eadf6311.glb"
+    },
+    {
+      "uid": "0ec178daec3b40de9d993b6a3b68411f",
+      "category": "skateboard",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-014/0ec178daec3b40de9d993b6a3b68411f.glb",
+      "flat_path": "eval/models/skateboard_0ec178da.glb"
+    },
+    {
+      "uid": "08318294c24f4ccf968bfa046a327003",
+      "category": "skateboard",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-097/08318294c24f4ccf968bfa046a327003.glb",
+      "flat_path": "eval/models/skateboard_08318294.glb"
+    },
+    {
+      "uid": "f990c2aef575427d83c17850b7fc6df6",
+      "category": "skateboard",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-124/f990c2aef575427d83c17850b7fc6df6.glb",
+      "flat_path": "eval/models/skateboard_f990c2ae.glb"
+    },
+    {
+      "uid": "ead85ab8ade140249ac6393267079596",
+      "category": "guitar",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-060/ead85ab8ade140249ac6393267079596.glb",
+      "flat_path": "eval/models/guitar_ead85ab8.glb"
+    },
+    {
+      "uid": "81f220dcbff842ed859b6adf199a336a",
+      "category": "guitar",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-114/81f220dcbff842ed859b6adf199a336a.glb",
+      "flat_path": "eval/models/guitar_81f220dc.glb"
+    },
+    {
+      "uid": "df7ea68fd0454418850a3bdc80109615",
+      "category": "guitar",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-076/df7ea68fd0454418850a3bdc80109615.glb",
+      "flat_path": "eval/models/guitar_df7ea68f.glb"
+    },
+    {
+      "uid": "a1ad2734fdf14d0b90e90aea8a6c1dad",
+      "category": "guitar",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-138/a1ad2734fdf14d0b90e90aea8a6c1dad.glb",
+      "flat_path": "eval/models/guitar_a1ad2734.glb"
+    },
+    {
+      "uid": "0321b21b146546929495f7d2fa597418",
+      "category": "guitar",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-000/0321b21b146546929495f7d2fa597418.glb",
+      "flat_path": "eval/models/guitar_0321b21b.glb"
+    },
+    {
+      "uid": "4142c4c8d5b8439eb40f68680f265df9",
+      "category": "guitar",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-071/4142c4c8d5b8439eb40f68680f265df9.glb",
+      "flat_path": "eval/models/guitar_4142c4c8.glb"
+    },
+    {
+      "uid": "4281970c9fe94a778df26fa6f0c58a96",
+      "category": "guitar",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-070/4281970c9fe94a778df26fa6f0c58a96.glb",
+      "flat_path": "eval/models/guitar_4281970c.glb"
+    },
+    {
+      "uid": "d401ca5456a24c2db734a1deb04f931a",
+      "category": "guitar",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-141/d401ca5456a24c2db734a1deb04f931a.glb",
+      "flat_path": "eval/models/guitar_d401ca54.glb"
+    },
+    {
+      "uid": "5241c8c7cc954b6f822cd1d80d0579a2",
+      "category": "guitar",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-002/5241c8c7cc954b6f822cd1d80d0579a2.glb",
+      "flat_path": "eval/models/guitar_5241c8c7.glb"
+    },
+    {
+      "uid": "b0bba8e98d31421a86f82875d15e097e",
+      "category": "guitar",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-113/b0bba8e98d31421a86f82875d15e097e.glb",
+      "flat_path": "eval/models/guitar_b0bba8e9.glb"
+    },
+    {
+      "uid": "7b66f863f989420fb4c26f875dbaf9eb",
+      "category": "piano",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-039/7b66f863f989420fb4c26f875dbaf9eb.glb",
+      "flat_path": "eval/models/piano_7b66f863.glb"
+    },
+    {
+      "uid": "1880032c6a634cf18b6e58e0972d4e90",
+      "category": "piano",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-027/1880032c6a634cf18b6e58e0972d4e90.glb",
+      "flat_path": "eval/models/piano_1880032c.glb"
+    },
+    {
+      "uid": "f8f17f86486d4a15a8404b345fa76de0",
+      "category": "piano",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-074/f8f17f86486d4a15a8404b345fa76de0.glb",
+      "flat_path": "eval/models/piano_f8f17f86.glb"
+    },
+    {
+      "uid": "a491ef8d85a24b7390a9b05840a202f1",
+      "category": "piano",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-086/a491ef8d85a24b7390a9b05840a202f1.glb",
+      "flat_path": "eval/models/piano_a491ef8d.glb"
+    },
+    {
+      "uid": "fc9cc06615084298b4c0c0a02244f356",
+      "category": "piano",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-130/fc9cc06615084298b4c0c0a02244f356.glb",
+      "flat_path": "eval/models/piano_fc9cc066.glb"
+    },
+    {
+      "uid": "1204c7003a554471acebffc28248271e",
+      "category": "piano",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-097/1204c7003a554471acebffc28248271e.glb",
+      "flat_path": "eval/models/piano_1204c700.glb"
+    },
+    {
+      "uid": "b0a1e64c90fa4705be2d6cc180594dce",
+      "category": "piano",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-107/b0a1e64c90fa4705be2d6cc180594dce.glb",
+      "flat_path": "eval/models/piano_b0a1e64c.glb"
+    },
+    {
+      "uid": "330287dc3a334d6b934a72274f277c71",
+      "category": "piano",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-007/330287dc3a334d6b934a72274f277c71.glb",
+      "flat_path": "eval/models/piano_330287dc.glb"
+    },
+    {
+      "uid": "aafcb75617a44ccf9e6aedc3cb0b638b",
+      "category": "piano",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-083/aafcb75617a44ccf9e6aedc3cb0b638b.glb",
+      "flat_path": "eval/models/piano_aafcb756.glb"
+    },
+    {
+      "uid": "f1aa479977a74a608d362679ed5ca721",
+      "category": "piano",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-043/f1aa479977a74a608d362679ed5ca721.glb",
+      "flat_path": "eval/models/piano_f1aa4799.glb"
+    },
+    {
+      "uid": "h9m9VF9Uqy0oTp1vLmb7KjEfQic",
+      "category": "shoe",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-074/h9m9VF9Uqy0oTp1vLmb7KjEfQic.glb",
+      "flat_path": "eval/models/shoe_h9m9VF9U.glb"
+    },
+    {
+      "uid": "a10d3269ea37452fba09d91e97b36367",
+      "category": "shoe",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-009/a10d3269ea37452fba09d91e97b36367.glb",
+      "flat_path": "eval/models/shoe_a10d3269.glb"
+    },
+    {
+      "uid": "b601649de568470db6e9d8d5c9c76b73",
+      "category": "shoe",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-047/b601649de568470db6e9d8d5c9c76b73.glb",
+      "flat_path": "eval/models/shoe_b601649d.glb"
+    },
+    {
+      "uid": "1389004d1eb945078e9176a4b1818b99",
+      "category": "shoe",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-015/1389004d1eb945078e9176a4b1818b99.glb",
+      "flat_path": "eval/models/shoe_1389004d.glb"
+    },
+    {
+      "uid": "513258ba2c2a4592a77ac1913bd83238",
+      "category": "shoe",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-016/513258ba2c2a4592a77ac1913bd83238.glb",
+      "flat_path": "eval/models/shoe_513258ba.glb"
+    },
+    {
+      "uid": "51e39c197f6f46748b6023fc48cac396",
+      "category": "shoe",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-030/51e39c197f6f46748b6023fc48cac396.glb",
+      "flat_path": "eval/models/shoe_51e39c19.glb"
+    },
+    {
+      "uid": "9b5caa6314774a91be5045b91066a709",
+      "category": "shoe",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-106/9b5caa6314774a91be5045b91066a709.glb",
+      "flat_path": "eval/models/shoe_9b5caa63.glb"
+    },
+    {
+      "uid": "bfce6e6485744250b75615b3d97c88dc",
+      "category": "shoe",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-114/bfce6e6485744250b75615b3d97c88dc.glb",
+      "flat_path": "eval/models/shoe_bfce6e64.glb"
+    },
+    {
+      "uid": "e04250f955dc404ca21eeba3f27aa2f8",
+      "category": "shoe",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-156/e04250f955dc404ca21eeba3f27aa2f8.glb",
+      "flat_path": "eval/models/shoe_e04250f9.glb"
+    },
+    {
+      "uid": "adb078c42d0746798efaa3e4686afd33",
+      "category": "shoe",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-144/adb078c42d0746798efaa3e4686afd33.glb",
+      "flat_path": "eval/models/shoe_adb078c4.glb"
+    },
+    {
+      "uid": "193b5e63672a40788c838e1307a1a6d7",
+      "category": "sunglasses",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-152/193b5e63672a40788c838e1307a1a6d7.glb",
+      "flat_path": "eval/models/sunglasses_193b5e63.glb"
+    },
+    {
+      "uid": "341b1485ae0d4e2b9ac030e5d332aa78",
+      "category": "sunglasses",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-018/341b1485ae0d4e2b9ac030e5d332aa78.glb",
+      "flat_path": "eval/models/sunglasses_341b1485.glb"
+    },
+    {
+      "uid": "1145d066f66442b9a4af629c039d83c2",
+      "category": "sunglasses",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-109/1145d066f66442b9a4af629c039d83c2.glb",
+      "flat_path": "eval/models/sunglasses_1145d066.glb"
+    },
+    {
+      "uid": "0d36b35461ce4138aaf0c43f8584ba6c",
+      "category": "sunglasses",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-051/0d36b35461ce4138aaf0c43f8584ba6c.glb",
+      "flat_path": "eval/models/sunglasses_0d36b354.glb"
+    },
+    {
+      "uid": "c601af58d0874673ab9d2032863fa30a",
+      "category": "sunglasses",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-088/c601af58d0874673ab9d2032863fa30a.glb",
+      "flat_path": "eval/models/sunglasses_c601af58.glb"
+    },
+    {
+      "uid": "91c3a29f67a640a0a142ae9f68486ac4",
+      "category": "sunglasses",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-075/91c3a29f67a640a0a142ae9f68486ac4.glb",
+      "flat_path": "eval/models/sunglasses_91c3a29f.glb"
+    },
+    {
+      "uid": "59d9581baffd46f7941a6188b77a18c6",
+      "category": "sunglasses",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-012/59d9581baffd46f7941a6188b77a18c6.glb",
+      "flat_path": "eval/models/sunglasses_59d9581b.glb"
+    },
+    {
+      "uid": "c3c8b8b037354369a3f9892530b346b0",
+      "category": "sunglasses",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-137/c3c8b8b037354369a3f9892530b346b0.glb",
+      "flat_path": "eval/models/sunglasses_c3c8b8b0.glb"
+    },
+    {
+      "uid": "ea9725ad867c42a684bc58d21039e8bd",
+      "category": "sunglasses",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-091/ea9725ad867c42a684bc58d21039e8bd.glb",
+      "flat_path": "eval/models/sunglasses_ea9725ad.glb"
+    },
+    {
+      "uid": "a9e9aef9d630407f9956eca64d54719e",
+      "category": "sunglasses",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-089/a9e9aef9d630407f9956eca64d54719e.glb",
+      "flat_path": "eval/models/sunglasses_a9e9aef9.glb"
+    },
+    {
+      "uid": "cf443036d07547abbfd1c1805225b04c",
+      "category": "necklace",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-123/cf443036d07547abbfd1c1805225b04c.glb",
+      "flat_path": "eval/models/necklace_cf443036.glb"
+    },
+    {
+      "uid": "031ec8b3708d40979d32e5fcc96a8c3b",
+      "category": "necklace",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-000/031ec8b3708d40979d32e5fcc96a8c3b.glb",
+      "flat_path": "eval/models/necklace_031ec8b3.glb"
+    },
+    {
+      "uid": "347f0780a7a048b8bd32226ae2af53cf",
+      "category": "necklace",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-001/347f0780a7a048b8bd32226ae2af53cf.glb",
+      "flat_path": "eval/models/necklace_347f0780.glb"
+    },
+    {
+      "uid": "358228c22c4d4502b2a8a69d63cbe3b1",
+      "category": "necklace",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-143/358228c22c4d4502b2a8a69d63cbe3b1.glb",
+      "flat_path": "eval/models/necklace_358228c2.glb"
+    },
+    {
+      "uid": "c2fb0d2c346f4130a179b660e2cfb66e",
+      "category": "necklace",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-047/c2fb0d2c346f4130a179b660e2cfb66e.glb",
+      "flat_path": "eval/models/necklace_c2fb0d2c.glb"
+    },
+    {
+      "uid": "28bda26575024a38bfe1464c40e0e2e8",
+      "category": "necklace",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-137/28bda26575024a38bfe1464c40e0e2e8.glb",
+      "flat_path": "eval/models/necklace_28bda265.glb"
+    },
+    {
+      "uid": "889283edb4294336a69780657f9d20d6",
+      "category": "necklace",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-045/889283edb4294336a69780657f9d20d6.glb",
+      "flat_path": "eval/models/necklace_889283ed.glb"
+    },
+    {
+      "uid": "d8bbf05dae0f4faa9142b3845e4a86bd",
+      "category": "necklace",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-081/d8bbf05dae0f4faa9142b3845e4a86bd.glb",
+      "flat_path": "eval/models/necklace_d8bbf05d.glb"
+    },
+    {
+      "uid": "80373bf703e54fc89cc50614dc10359d",
+      "category": "necklace",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-046/80373bf703e54fc89cc50614dc10359d.glb",
+      "flat_path": "eval/models/necklace_80373bf7.glb"
+    },
+    {
+      "uid": "269e532c269e40f4be3bb8208e206ecc",
+      "category": "necklace",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-109/269e532c269e40f4be3bb8208e206ecc.glb",
+      "flat_path": "eval/models/necklace_269e532c.glb"
+    },
+    {
+      "uid": "d04da8a35ae0491a93c77e806dd60abb",
+      "category": "ring",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-129/d04da8a35ae0491a93c77e806dd60abb.glb",
+      "flat_path": "eval/models/ring_d04da8a3.glb"
+    },
+    {
+      "uid": "827c084126194e1a9577c101ea4942f8",
+      "category": "ring",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-069/827c084126194e1a9577c101ea4942f8.glb",
+      "flat_path": "eval/models/ring_827c0841.glb"
+    },
+    {
+      "uid": "6c77086d062543ea8a476d306254702a",
+      "category": "ring",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-139/6c77086d062543ea8a476d306254702a.glb",
+      "flat_path": "eval/models/ring_6c77086d.glb"
+    },
+    {
+      "uid": "2f6d2837fea045a1b5d976f51157a9df",
+      "category": "ring",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-157/2f6d2837fea045a1b5d976f51157a9df.glb",
+      "flat_path": "eval/models/ring_2f6d2837.glb"
+    },
+    {
+      "uid": "0721b4cc16664fb59b23b1a32370b13d",
+      "category": "ring",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-142/0721b4cc16664fb59b23b1a32370b13d.glb",
+      "flat_path": "eval/models/ring_0721b4cc.glb"
+    },
+    {
+      "uid": "10db7ee30d594d56900a0b79086e458f",
+      "category": "ring",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-024/10db7ee30d594d56900a0b79086e458f.glb",
+      "flat_path": "eval/models/ring_10db7ee3.glb"
+    },
+    {
+      "uid": "473d3302496d4c62b86a5ad31f7aa374",
+      "category": "ring",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-142/473d3302496d4c62b86a5ad31f7aa374.glb",
+      "flat_path": "eval/models/ring_473d3302.glb"
+    },
+    {
+      "uid": "85fe5b8c70e44492856b5ef37dd87e50",
+      "category": "ring",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-117/85fe5b8c70e44492856b5ef37dd87e50.glb",
+      "flat_path": "eval/models/ring_85fe5b8c.glb"
+    },
+    {
+      "uid": "e30b4da9ebdb41e997fd8bc455d43e0b",
+      "category": "ring",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-004/e30b4da9ebdb41e997fd8bc455d43e0b.glb",
+      "flat_path": "eval/models/ring_e30b4da9.glb"
+    },
+    {
+      "uid": "dd4794ed162a4fcbaca147beeccc9c96",
+      "category": "ring",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-119/dd4794ed162a4fcbaca147beeccc9c96.glb",
+      "flat_path": "eval/models/ring_dd4794ed.glb"
+    },
+    {
+      "uid": "c3102c6cd57c4e60abe4ce9d0c3a41d3",
+      "category": "vase",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-123/c3102c6cd57c4e60abe4ce9d0c3a41d3.glb",
+      "flat_path": "eval/models/vase_c3102c6c.glb"
+    },
+    {
+      "uid": "b217bb1abb8e40beae7d3d29b9e283c7",
+      "category": "vase",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-001/b217bb1abb8e40beae7d3d29b9e283c7.glb",
+      "flat_path": "eval/models/vase_b217bb1a.glb"
+    },
+    {
+      "uid": "23d2476cfa48463ea8bb9f94cbafdcc6",
+      "category": "vase",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-094/23d2476cfa48463ea8bb9f94cbafdcc6.glb",
+      "flat_path": "eval/models/vase_23d2476c.glb"
+    },
+    {
+      "uid": "2b84cfd2dcb74c56b1715a44766ed325",
+      "category": "vase",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-135/2b84cfd2dcb74c56b1715a44766ed325.glb",
+      "flat_path": "eval/models/vase_2b84cfd2.glb"
+    },
+    {
+      "uid": "42ab0a962b964b9cb42e54cfee8ea443",
+      "category": "vase",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-067/42ab0a962b964b9cb42e54cfee8ea443.glb",
+      "flat_path": "eval/models/vase_42ab0a96.glb"
+    },
+    {
+      "uid": "8ef2078713b64532819fc7749fefc349",
+      "category": "vase",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-001/8ef2078713b64532819fc7749fefc349.glb",
+      "flat_path": "eval/models/vase_8ef20787.glb"
+    },
+    {
+      "uid": "d061b6a017e240fc873966b703483f76",
+      "category": "vase",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-089/d061b6a017e240fc873966b703483f76.glb",
+      "flat_path": "eval/models/vase_d061b6a0.glb"
+    },
+    {
+      "uid": "5db43db370394c7481d8b28a30b0858a",
+      "category": "vase",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-138/5db43db370394c7481d8b28a30b0858a.glb",
+      "flat_path": "eval/models/vase_5db43db3.glb"
+    },
+    {
+      "uid": "7840f800d754463b98044d056ed6b34f",
+      "category": "vase",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-149/7840f800d754463b98044d056ed6b34f.glb",
+      "flat_path": "eval/models/vase_7840f800.glb"
+    },
+    {
+      "uid": "c5b9bc57a58a43debee5d39efa6a516f",
+      "category": "vase",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-073/c5b9bc57a58a43debee5d39efa6a516f.glb",
+      "flat_path": "eval/models/vase_c5b9bc57.glb"
+    },
+    {
+      "uid": "ed49e5aca8a6445dbbe3ae88bad8e5f7",
+      "category": "sculpture",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-157/ed49e5aca8a6445dbbe3ae88bad8e5f7.glb",
+      "flat_path": "eval/models/sculpture_ed49e5ac.glb"
+    },
+    {
+      "uid": "650b5892cc4649d8a6649a8b8d6f452e",
+      "category": "sculpture",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-087/650b5892cc4649d8a6649a8b8d6f452e.glb",
+      "flat_path": "eval/models/sculpture_650b5892.glb"
+    },
+    {
+      "uid": "a8e5239b1b2445b8b8e97cb1c3e3d60f",
+      "category": "sculpture",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-017/a8e5239b1b2445b8b8e97cb1c3e3d60f.glb",
+      "flat_path": "eval/models/sculpture_a8e5239b.glb"
+    },
+    {
+      "uid": "f9c0755c8c9448f3a643f0e452c6a996",
+      "category": "sculpture",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-112/f9c0755c8c9448f3a643f0e452c6a996.glb",
+      "flat_path": "eval/models/sculpture_f9c0755c.glb"
+    },
+    {
+      "uid": "f13b94e000d14309a2ef175054b661a6",
+      "category": "sculpture",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-141/f13b94e000d14309a2ef175054b661a6.glb",
+      "flat_path": "eval/models/sculpture_f13b94e0.glb"
+    },
+    {
+      "uid": "971482f2119e42a08a3da428ff5b3a29",
+      "category": "sculpture",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-013/971482f2119e42a08a3da428ff5b3a29.glb",
+      "flat_path": "eval/models/sculpture_971482f2.glb"
+    },
+    {
+      "uid": "f69d75ec88ec46888619dd48087d89a2",
+      "category": "sculpture",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-104/f69d75ec88ec46888619dd48087d89a2.glb",
+      "flat_path": "eval/models/sculpture_f69d75ec.glb"
+    },
+    {
+      "uid": "73bc5f5503de4782b8425fbbb8384f72",
+      "category": "sculpture",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-037/73bc5f5503de4782b8425fbbb8384f72.glb",
+      "flat_path": "eval/models/sculpture_73bc5f55.glb"
+    },
+    {
+      "uid": "09b0ec9c1e774f4ba418e0e4905ae010",
+      "category": "sculpture",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-088/09b0ec9c1e774f4ba418e0e4905ae010.glb",
+      "flat_path": "eval/models/sculpture_09b0ec9c.glb"
+    },
+    {
+      "uid": "bbd60c6a76754d668c98f08c9ddf6bb9",
+      "category": "sculpture",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-113/bbd60c6a76754d668c98f08c9ddf6bb9.glb",
+      "flat_path": "eval/models/sculpture_bbd60c6a.glb"
+    },
+    {
+      "uid": "09032fd39ff343a8900ed9969835151b",
+      "category": "figurine",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-154/09032fd39ff343a8900ed9969835151b.glb",
+      "flat_path": "eval/models/figurine_09032fd3.glb"
+    },
+    {
+      "uid": "dc352fcadd69463cb0a99c61b21c3f5c",
+      "category": "figurine",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-024/dc352fcadd69463cb0a99c61b21c3f5c.glb",
+      "flat_path": "eval/models/figurine_dc352fca.glb"
+    },
+    {
+      "uid": "343915fbdd0c46aabee09257e724095b",
+      "category": "figurine",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-014/343915fbdd0c46aabee09257e724095b.glb",
+      "flat_path": "eval/models/figurine_343915fb.glb"
+    },
+    {
+      "uid": "8c3d449a43594c09a6289733c02891a9",
+      "category": "figurine",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-126/8c3d449a43594c09a6289733c02891a9.glb",
+      "flat_path": "eval/models/figurine_8c3d449a.glb"
+    },
+    {
+      "uid": "668237aabbf54beeb347bbaa7be930c7",
+      "category": "figurine",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-000/668237aabbf54beeb347bbaa7be930c7.glb",
+      "flat_path": "eval/models/figurine_668237aa.glb"
+    },
+    {
+      "uid": "3d78e01d40cd4532932ad8180bf9137d",
+      "category": "figurine",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-099/3d78e01d40cd4532932ad8180bf9137d.glb",
+      "flat_path": "eval/models/figurine_3d78e01d.glb"
+    },
+    {
+      "uid": "dcfac118b89b4b8f842a6d521486f54d",
+      "category": "figurine",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-040/dcfac118b89b4b8f842a6d521486f54d.glb",
+      "flat_path": "eval/models/figurine_dcfac118.glb"
+    },
+    {
+      "uid": "74fca33df78243a8b6e38fe788d54239",
+      "category": "figurine",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-006/74fca33df78243a8b6e38fe788d54239.glb",
+      "flat_path": "eval/models/figurine_74fca33d.glb"
+    },
+    {
+      "uid": "49868f0b7cc84b93a7aeff01fcd64546",
+      "category": "figurine",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-046/49868f0b7cc84b93a7aeff01fcd64546.glb",
+      "flat_path": "eval/models/figurine_49868f0b.glb"
+    },
+    {
+      "uid": "2e5e0055a9c64ff5868892ee7b07946a",
+      "category": "figurine",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-049/2e5e0055a9c64ff5868892ee7b07946a.glb",
+      "flat_path": "eval/models/figurine_2e5e0055.glb"
+    },
+    {
+      "uid": "e3d00c2464094794b4b416159ffe01b4",
+      "category": "mask",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-102/e3d00c2464094794b4b416159ffe01b4.glb",
+      "flat_path": "eval/models/mask_e3d00c24.glb"
+    },
+    {
+      "uid": "a2a202875da94dab8040e5e78198b989",
+      "category": "mask",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-003/a2a202875da94dab8040e5e78198b989.glb",
+      "flat_path": "eval/models/mask_a2a20287.glb"
+    },
+    {
+      "uid": "dcbfa579c19b4908857b92428922c1ab",
+      "category": "mask",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-003/dcbfa579c19b4908857b92428922c1ab.glb",
+      "flat_path": "eval/models/mask_dcbfa579.glb"
+    },
+    {
+      "uid": "08196534325b47a593e69d62a8871973",
+      "category": "mask",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-152/08196534325b47a593e69d62a8871973.glb",
+      "flat_path": "eval/models/mask_08196534.glb"
+    },
+    {
+      "uid": "3bcc1e221d194ba49f8ebcea7459b853",
+      "category": "mask",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-026/3bcc1e221d194ba49f8ebcea7459b853.glb",
+      "flat_path": "eval/models/mask_3bcc1e22.glb"
+    },
+    {
+      "uid": "61870a045c734b8c9420f24dda8ded44",
+      "category": "mask",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-157/61870a045c734b8c9420f24dda8ded44.glb",
+      "flat_path": "eval/models/mask_61870a04.glb"
+    },
+    {
+      "uid": "60702d5f661048219e17138ccd4f9416",
+      "category": "mask",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-044/60702d5f661048219e17138ccd4f9416.glb",
+      "flat_path": "eval/models/mask_60702d5f.glb"
+    },
+    {
+      "uid": "e3f411a7470a4ae4af6b6279bba85463",
+      "category": "mask",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-018/e3f411a7470a4ae4af6b6279bba85463.glb",
+      "flat_path": "eval/models/mask_e3f411a7.glb"
+    },
+    {
+      "uid": "3e5e246251af4df58b40657a94087698",
+      "category": "mask",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-096/3e5e246251af4df58b40657a94087698.glb",
+      "flat_path": "eval/models/mask_3e5e2462.glb"
+    },
+    {
+      "uid": "47140dafc57b4cb387346ff633319b57",
+      "category": "mask",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-005/47140dafc57b4cb387346ff633319b57.glb",
+      "flat_path": "eval/models/mask_47140daf.glb"
+    },
+    {
+      "uid": "f5beb76618cb40c9adcc4b3a40c615a3",
+      "category": "globe",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-006/f5beb76618cb40c9adcc4b3a40c615a3.glb",
+      "flat_path": "eval/models/globe_f5beb766.glb"
+    },
+    {
+      "uid": "bbb2e0eeb0b34247b8a70655c780fad5",
+      "category": "globe",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-090/bbb2e0eeb0b34247b8a70655c780fad5.glb",
+      "flat_path": "eval/models/globe_bbb2e0ee.glb"
+    },
+    {
+      "uid": "f3192b5891b74770a09ee628fc4f240b",
+      "category": "globe",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-064/f3192b5891b74770a09ee628fc4f240b.glb",
+      "flat_path": "eval/models/globe_f3192b58.glb"
+    },
+    {
+      "uid": "579d800896d6489aa1563097358d15d7",
+      "category": "globe",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-096/579d800896d6489aa1563097358d15d7.glb",
+      "flat_path": "eval/models/globe_579d8008.glb"
+    },
+    {
+      "uid": "0025d57953fc4c8a80a44e59294e6841",
+      "category": "globe",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-000/0025d57953fc4c8a80a44e59294e6841.glb",
+      "flat_path": "eval/models/globe_0025d579.glb"
+    },
+    {
+      "uid": "d86b51c741984d1fb89a5e17bfea5cc4",
+      "category": "globe",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-137/d86b51c741984d1fb89a5e17bfea5cc4.glb",
+      "flat_path": "eval/models/globe_d86b51c7.glb"
+    },
+    {
+      "uid": "1136bdef8ce448e5bc9e199db0f1aead",
+      "category": "globe",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-014/1136bdef8ce448e5bc9e199db0f1aead.glb",
+      "flat_path": "eval/models/globe_1136bdef.glb"
+    },
+    {
+      "uid": "4058be3d4340463a8cd6fcb40b684488",
+      "category": "globe",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-140/4058be3d4340463a8cd6fcb40b684488.glb",
+      "flat_path": "eval/models/globe_4058be3d.glb"
+    },
+    {
+      "uid": "a89e6f5e85fd485abe64f9b26eb14a57",
+      "category": "globe",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-018/a89e6f5e85fd485abe64f9b26eb14a57.glb",
+      "flat_path": "eval/models/globe_a89e6f5e.glb"
+    },
+    {
+      "uid": "a0d301249f9243ba9bbec30a99873f57",
+      "category": "globe",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-020/a0d301249f9243ba9bbec30a99873f57.glb",
+      "flat_path": "eval/models/globe_a0d30124.glb"
+    },
+    {
+      "uid": "f9bfe0b1877e4d378551549eed8625f2",
+      "category": "windmill",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-057/f9bfe0b1877e4d378551549eed8625f2.glb",
+      "flat_path": "eval/models/windmill_f9bfe0b1.glb"
+    },
+    {
+      "uid": "30deb775546f4059905c687933a32d1f",
+      "category": "windmill",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-031/30deb775546f4059905c687933a32d1f.glb",
+      "flat_path": "eval/models/windmill_30deb775.glb"
+    },
+    {
+      "uid": "2db604287805482f857a28c458f2bf9b",
+      "category": "windmill",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-133/2db604287805482f857a28c458f2bf9b.glb",
+      "flat_path": "eval/models/windmill_2db60428.glb"
+    },
+    {
+      "uid": "3164d92d88454f48b244182ef198fe97",
+      "category": "windmill",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-073/3164d92d88454f48b244182ef198fe97.glb",
+      "flat_path": "eval/models/windmill_3164d92d.glb"
+    },
+    {
+      "uid": "c246a807312f448f81ef14896d7bb665",
+      "category": "windmill",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-019/c246a807312f448f81ef14896d7bb665.glb",
+      "flat_path": "eval/models/windmill_c246a807.glb"
+    },
+    {
+      "uid": "9b061aa01d1a401bbb02617c954b8778",
+      "category": "windmill",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-040/9b061aa01d1a401bbb02617c954b8778.glb",
+      "flat_path": "eval/models/windmill_9b061aa0.glb"
+    },
+    {
+      "uid": "b09a49034a4b4f5991793a270793474e",
+      "category": "windmill",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-064/b09a49034a4b4f5991793a270793474e.glb",
+      "flat_path": "eval/models/windmill_b09a4903.glb"
+    },
+    {
+      "uid": "777d2796645948e48b112c27218344d8",
+      "category": "windmill",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-084/777d2796645948e48b112c27218344d8.glb",
+      "flat_path": "eval/models/windmill_777d2796.glb"
+    },
+    {
+      "uid": "b4f65f62d5c543e39fc89aa3a08dd1e9",
+      "category": "windmill",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-018/b4f65f62d5c543e39fc89aa3a08dd1e9.glb",
+      "flat_path": "eval/models/windmill_b4f65f62.glb"
+    },
+    {
+      "uid": "870394045570459587face4cf047c06b",
+      "category": "windmill",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-121/870394045570459587face4cf047c06b.glb",
+      "flat_path": "eval/models/windmill_87039404.glb"
+    },
+    {
+      "uid": "0b0a1a9146214d09b6840773c1da173b",
+      "category": "fireplug",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-011/0b0a1a9146214d09b6840773c1da173b.glb",
+      "flat_path": "eval/models/fireplug_0b0a1a91.glb"
+    },
+    {
+      "uid": "3bd786986e974eab9f90cb3f09e2834d",
+      "category": "fireplug",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-107/3bd786986e974eab9f90cb3f09e2834d.glb",
+      "flat_path": "eval/models/fireplug_3bd78698.glb"
+    },
+    {
+      "uid": "e6dbdb8aa5174be78fd944c21ec72e5d",
+      "category": "fireplug",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-154/e6dbdb8aa5174be78fd944c21ec72e5d.glb",
+      "flat_path": "eval/models/fireplug_e6dbdb8a.glb"
+    },
+    {
+      "uid": "3fe1264287384fb7a5898022619aa543",
+      "category": "fireplug",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-118/3fe1264287384fb7a5898022619aa543.glb",
+      "flat_path": "eval/models/fireplug_3fe12642.glb"
+    },
+    {
+      "uid": "c58368b5f05849ed935ab5819b87b187",
+      "category": "fireplug",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-001/c58368b5f05849ed935ab5819b87b187.glb",
+      "flat_path": "eval/models/fireplug_c58368b5.glb"
+    },
+    {
+      "uid": "858fd2535a9b4f4ebd69da6f958d0b21",
+      "category": "fireplug",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-159/858fd2535a9b4f4ebd69da6f958d0b21.glb",
+      "flat_path": "eval/models/fireplug_858fd253.glb"
+    },
+    {
+      "uid": "aa9ee13ff6b4452bbc5bf6b4f7d45cd8",
+      "category": "fireplug",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-003/aa9ee13ff6b4452bbc5bf6b4f7d45cd8.glb",
+      "flat_path": "eval/models/fireplug_aa9ee13f.glb"
+    },
+    {
+      "uid": "d21894ed7af24cf2aef2752ad5026dd1",
+      "category": "fireplug",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-063/d21894ed7af24cf2aef2752ad5026dd1.glb",
+      "flat_path": "eval/models/fireplug_d21894ed.glb"
+    },
+    {
+      "uid": "f9b4fecdfd5f4b0585ab35d7b09ed015",
+      "category": "fireplug",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-023/f9b4fecdfd5f4b0585ab35d7b09ed015.glb",
+      "flat_path": "eval/models/fireplug_f9b4fecd.glb"
+    },
+    {
+      "uid": "dfdb7fe660714b698790a1e336f8d6aa",
+      "category": "fireplug",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-101/dfdb7fe660714b698790a1e336f8d6aa.glb",
+      "flat_path": "eval/models/fireplug_dfdb7fe6.glb"
+    },
+    {
+      "uid": "1e12902adda84120a0d3b68a44df1847",
+      "category": "lamppost",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-059/1e12902adda84120a0d3b68a44df1847.glb",
+      "flat_path": "eval/models/lamppost_1e12902a.glb"
+    },
+    {
+      "uid": "c8cee098f2cc46b4b30062aa459651a2",
+      "category": "lamppost",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-089/c8cee098f2cc46b4b30062aa459651a2.glb",
+      "flat_path": "eval/models/lamppost_c8cee098.glb"
+    },
+    {
+      "uid": "e427c94cb6ae428fbbd22a8054934e67",
+      "category": "lamppost",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-116/e427c94cb6ae428fbbd22a8054934e67.glb",
+      "flat_path": "eval/models/lamppost_e427c94c.glb"
+    },
+    {
+      "uid": "7548a8a72b5e4f788151618ebd441c70",
+      "category": "lamppost",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-141/7548a8a72b5e4f788151618ebd441c70.glb",
+      "flat_path": "eval/models/lamppost_7548a8a7.glb"
+    },
+    {
+      "uid": "57ea5da0b3c449c0b89634fdd35625ae",
+      "category": "lamppost",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-038/57ea5da0b3c449c0b89634fdd35625ae.glb",
+      "flat_path": "eval/models/lamppost_57ea5da0.glb"
+    },
+    {
+      "uid": "0f51b550f7e741d191657f7b39ef2175",
+      "category": "lamppost",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-058/0f51b550f7e741d191657f7b39ef2175.glb",
+      "flat_path": "eval/models/lamppost_0f51b550.glb"
+    },
+    {
+      "uid": "9ec5bdd5993f4cec9a99aaa8dccb5ed7",
+      "category": "lamppost",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-021/9ec5bdd5993f4cec9a99aaa8dccb5ed7.glb",
+      "flat_path": "eval/models/lamppost_9ec5bdd5.glb"
+    },
+    {
+      "uid": "fe87bbdfe4c24b26a40542bac106baea",
+      "category": "lamppost",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-035/fe87bbdfe4c24b26a40542bac106baea.glb",
+      "flat_path": "eval/models/lamppost_fe87bbdf.glb"
+    },
+    {
+      "uid": "5405ef962b9447a99dc35c98e28fad41",
+      "category": "lamppost",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-054/5405ef962b9447a99dc35c98e28fad41.glb",
+      "flat_path": "eval/models/lamppost_5405ef96.glb"
+    },
+    {
+      "uid": "5e449a73f9214903bbc77b03fc423b62",
+      "category": "lamppost",
+      "file_path": "/home/aenoris/.objaverse/hf-objaverse-v1/glbs/000-142/5e449a73f9214903bbc77b03fc423b62.glb",
+      "flat_path": "eval/models/lamppost_5e449a73.glb"
+    }
+  ],
+  "total_size_mb": 819.8
+}

@@ -100,6 +100,11 @@ class FAISSIndex:
         with open(self.metadata_path, 'w') as f:
             json.dump([m.to_dict() for m in self.metadata], f, indent=2)
 
+    def save(self):
+        """Public method to save index and metadata."""
+        with self._lock:
+            self._save()
+
     def add(
         self,
         embedding: list[float] | np.ndarray,
@@ -206,6 +211,17 @@ class FAISSIndex:
                 self._save()
 
             return list(range(start_idx, self.index.ntotal))
+
+    def clear(self):
+        """Clear all vectors and metadata from the index."""
+        with self._lock:
+            # Create fresh index
+            self.index = faiss.IndexHNSWFlat(self.embedding_dim, self.HNSW_M)
+            self.index.hnsw.efConstruction = self.HNSW_EF_CONSTRUCTION
+            self.index.hnsw.efSearch = self.HNSW_EF_SEARCH
+            self.metadata = []
+            self._save()
+            print(f"[FAISSIndex] Cleared index")
 
     def search(
         self,

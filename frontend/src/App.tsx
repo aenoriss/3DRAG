@@ -424,39 +424,64 @@ function App() {
   }
 
   const uploadBatch = async (files: File[]) => {
-    // Show batch processing state
+    const CHUNK_SIZE = 10  // Upload 10 files at a time (RunPod has 20MB limit)
+    const total = files.length
+
+    // Show upload progress
     setProcessingModels([{
       id: 'batch',
-      name: `Processing ${files.length} models...`,
+      name: `Uploading 0/${total}...`,
       status: 'processing'
     }])
 
     try {
-      const formData = new FormData()
-      files.forEach(file => {
-        formData.append('files', file)
+      // 1. Start batch session
+      console.log(`[batch] Starting session for ${total} files...`)
+      const startRes = await fetch(`${API_URL}/models/batch/start?total=${total}&clear=true`, {
+        method: 'POST'
       })
+      if (!startRes.ok) throw new Error('Failed to start batch session')
+      const { session_id } = await startRes.json()
+      console.log(`[batch] Session: ${session_id}`)
 
-      console.log(`[batch] Uploading ${files.length} files...`)
+      // 2. Upload in chunks - each chunk is processed immediately on RunPod
+      let totalProcessed = 0
+      for (let i = 0; i < files.length; i += CHUNK_SIZE) {
+        const chunk = files.slice(i, i + CHUNK_SIZE)
+        const chunkNum = Math.floor(i / CHUNK_SIZE) + 1
+        const totalChunks = Math.ceil(files.length / CHUNK_SIZE)
 
-      const res = await fetch(`${API_URL}/models/batch?clear=true`, {
-        method: 'POST',
-        body: formData,
-      })
+        setProcessingModels([{
+          id: 'batch',
+          name: `Processing chunk ${chunkNum}/${totalChunks} (${totalProcessed}/${total} done)`,
+          status: 'processing'
+        }])
 
-      if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.detail || 'Batch upload failed')
+        const formData = new FormData()
+        chunk.forEach(file => formData.append('files', file))
+
+        console.log(`[batch] Sending chunk ${chunkNum}/${totalChunks}...`)
+        const uploadRes = await fetch(`${API_URL}/models/batch/upload/${session_id}`, {
+          method: 'POST',
+          body: formData
+        })
+
+        if (!uploadRes.ok) {
+          const err = await uploadRes.json()
+          throw new Error(err.detail || 'Upload failed')
+        }
+
+        const { processed } = await uploadRes.json()
+        totalProcessed = processed
+
+        console.log(`[batch] Chunk ${chunkNum} done, total processed: ${totalProcessed}`)
       }
-
-      const result = await res.json()
-      console.log('[batch] Result:', result)
 
       setProcessingModels([{
         id: 'batch',
-        name: `Processed ${result.added}/${result.total} models in ${result.time_sec?.toFixed(1)}s`,
-        status: result.failed > 0 ? 'error' : 'done',
-        error: result.failed > 0 ? `${result.failed} failed` : undefined
+        name: `Done: ${totalProcessed}/${total} models processed`,
+        status: totalProcessed < total ? 'error' : 'done',
+        error: totalProcessed < total ? `${total - totalProcessed} failed` : undefined
       }])
 
       // Refresh models list

@@ -353,20 +353,217 @@ async def upload_model(
         raise HTTPException(500, f"Processing failed: {str(e)}")
 
 
+# Batch upload staging area
+batch_staging: dict[str, list] = {}  # session_id -> list of model dicts
+
+
+@app.post("/models/batch/start")
+async def batch_start(
+    total: int = Query(..., description="Total number of files to upload"),
+    clear: bool = Query(True, description="Clear existing index before processing")
+):
+    """Start a batch upload session."""
+    import uuid
+    import shutil
+    from dataset_generator import DATASET_DIR
+
+    session_id = str(uuid.uuid4())[:8]
+    batch_staging[session_id] = {"total_received": 0, "total_processed": 0}
+
+    # Clear index if requested
+    if clear:
+        index: FAISSIndex = app.state.index
+        index.clear()
+
+        previews_dir = DATASET_DIR / "previews"
+        if previews_dir.exists():
+            shutil.rmtree(previews_dir)
+        previews_dir.mkdir(parents=True, exist_ok=True)
+
+        print(f"[batch] Session {session_id}: Cleared index, expecting {total} files")
+
+    await ws_manager.broadcast({
+        "type": "batch_start",
+        "session_id": session_id,
+        "total": total,
+        "clear": clear
+    })
+
+    return {"session_id": session_id, "total": total}
+
+
+@app.post("/models/batch/upload/{session_id}")
+async def batch_upload(
+    session_id: str,
+    files: list[UploadFile] = File(...)
+):
+    """Upload files to bucket, then process on RunPod via URLs."""
+    import base64
+    from pathlib import Path
+    from runpod_client import process_models_urls
+    from dataset_generator import DATASET_DIR
+    from storage import upload_file
+
+    if session_id not in batch_staging:
+        raise HTTPException(404, "Session not found")
+
+    supported = ['.glb', '.gltf', '.obj', '.stl', '.ply', '.fbx', '.dae', '.3ds']
+
+    # Upload to bucket and collect URLs
+    models = []
+    for file in files:
+        ext = Path(file.filename).suffix.lower() if file.filename else ''
+        if ext not in supported:
+            continue
+
+        model_bytes = await file.read()
+        idx = batch_staging[session_id]["total_received"]
+        model_id = f"batch_{idx}_{Path(file.filename).stem}"
+
+        # Upload to bucket
+        key = f"models/{session_id}/{model_id}{ext}"
+        url = upload_file(model_bytes, key)
+
+        models.append({
+            "model_id": model_id,
+            "name": Path(file.filename).stem,
+            "url": url,
+            "extension": ext.lstrip('.')
+        })
+        batch_staging[session_id]["total_received"] += 1
+
+    if not models:
+        return {"received": batch_staging[session_id]["total_received"], "processed": 0}
+
+    # Send URLs to RunPod (much smaller payload!)
+    print(f"[batch] Session {session_id}: Processing {len(models)} models via URLs...")
+    result = await process_models_urls(models)
+
+    # Add results to index
+    index: FAISSIndex = app.state.index
+    previews_dir = DATASET_DIR / "previews"
+    previews_dir.mkdir(parents=True, exist_ok=True)
+
+    added = 0
+    for r in result.get("results", []):
+        if "error" in r:
+            continue
+        try:
+            index.add(
+                embedding=r["embedding"],
+                model_id=r["model_id"],
+                name=r.get("name", ""),
+                category=None,
+                file_path=None,
+                caption=r.get("caption", ""),
+                save=False
+            )
+            if r.get("preview"):
+                preview_bytes = base64.b64decode(r["preview"])
+                preview_path = previews_dir / f"{r['model_id']}.jpg"
+                preview_path.write_bytes(preview_bytes)
+            added += 1
+            batch_staging[session_id]["total_processed"] += 1
+        except Exception as e:
+            print(f"[batch] Error: {e}")
+
+    index.save()
+
+    total_received = batch_staging[session_id]["total_received"]
+    total_processed = batch_staging[session_id]["total_processed"]
+
+    await ws_manager.broadcast({
+        "type": "batch_progress",
+        "session_id": session_id,
+        "received": total_received,
+        "processed": total_processed
+    })
+
+    print(f"[batch] Session {session_id}: {total_processed}/{total_received} processed")
+    return {"received": total_received, "processed": total_processed, "added": added}
+
+
+@app.post("/models/batch/process/{session_id}")
+async def batch_process(session_id: str):
+    """Process all uploaded files in a batch session."""
+    from runpod_client import process_models_batch
+    from dataset_generator import DATASET_DIR
+    import base64
+
+    if session_id not in batch_staging:
+        raise HTTPException(404, "Session not found")
+
+    models = batch_staging.pop(session_id)
+    if not models:
+        raise HTTPException(400, "No files in session")
+
+    print(f"[batch] Session {session_id}: Processing {len(models)} models...")
+
+    # Send to RunPod
+    result = await process_models_batch(models)
+
+    if "error" in result:
+        raise HTTPException(500, result["error"])
+
+    # Add results to index
+    index: FAISSIndex = app.state.index
+    previews_dir = DATASET_DIR / "previews"
+    previews_dir.mkdir(parents=True, exist_ok=True)
+
+    added = 0
+    failed = 0
+    for r in result.get("results", []):
+        if "error" in r:
+            failed += 1
+            continue
+
+        try:
+            index.add(
+                embedding=r["embedding"],
+                model_id=r["model_id"],
+                name=r.get("name", ""),
+                category=None,
+                file_path=None,
+                caption=r.get("caption", ""),
+                save=False
+            )
+
+            if r.get("preview"):
+                preview_bytes = base64.b64decode(r["preview"])
+                preview_path = previews_dir / f"{r['model_id']}.jpg"
+                preview_path.write_bytes(preview_bytes)
+
+            added += 1
+        except Exception as e:
+            print(f"[batch] Error adding {r.get('model_id')}: {e}")
+            failed += 1
+
+    index.save()
+
+    await ws_manager.broadcast({
+        "type": "batch_complete",
+        "session_id": session_id,
+        "added": added,
+        "failed": failed,
+        "time_sec": result.get("time_sec", 0)
+    })
+
+    return {
+        "added": added,
+        "failed": failed,
+        "total": len(models),
+        "time_sec": result.get("time_sec", 0)
+    }
+
+
 @app.post("/models/batch")
 async def upload_models_batch(
     files: list[UploadFile] = File(...),
     clear: bool = Query(True, description="Clear existing index before processing")
 ):
     """
-    Upload and process multiple 3D model files in a single batch.
-
-    Sends all files to RunPod for batch processing (render, caption, embed).
-    Much faster than uploading one by one.
-
-    Args:
-        files: List of 3D model files (GLB, OBJ, etc.)
-        clear: If True, clears existing index before adding new models
+    Legacy: Upload and process multiple 3D model files in a single batch.
+    For large batches, use /models/batch/start + /upload + /process instead.
     """
     from runpod_client import process_models_batch
     from pathlib import Path

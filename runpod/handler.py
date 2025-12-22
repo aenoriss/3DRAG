@@ -364,6 +364,104 @@ def handler(event):
             except Exception as e:
                 return {"error": f"Processing failed: {str(e)}"}
 
+        # Process models from URLs (bucket-based workflow)
+        if "models_urls" in input_data:
+            import gc
+            import requests
+            start = time.time()
+
+            models = input_data["models_urls"]
+            print(f"[handler] Processing {len(models)} models from URLs...")
+
+            from modules.renderer import render_model_bytes
+            from modules.captioner import caption_images_batch
+            from modules.embedder import embed_texts_batch
+
+            all_results = []
+
+            # Download and render each model
+            render_data = []
+            for model in models:
+                model_id = model.get("model_id", "unknown")
+                model_name = model.get("name", "uploaded")
+                url = model.get("url")
+                file_ext = model.get("extension", "glb")
+
+                try:
+                    # Download from URL
+                    print(f"  Downloading {model_id}...", flush=True)
+                    resp = requests.get(url, timeout=30)
+                    resp.raise_for_status()
+                    model_bytes = resp.content
+
+                    # Render
+                    images, images_b64 = render_model_bytes(model_bytes, file_ext, num_views=1)
+
+                    if images:
+                        render_data.append({
+                            "model_id": model_id,
+                            "name": model_name,
+                            "image": images[0],
+                            "image_b64": images_b64[0] if images_b64 else None
+                        })
+                    else:
+                        all_results.append({
+                            "model_id": model_id,
+                            "name": model_name,
+                            "error": "Render failed"
+                        })
+                except Exception as e:
+                    print(f"  Error {model_id}: {e}", flush=True)
+                    all_results.append({
+                        "model_id": model_id,
+                        "name": model_name,
+                        "error": str(e)
+                    })
+
+            if render_data:
+                # Caption batch
+                images = [d["image"] for d in render_data]
+                captions = caption_images_batch(images)
+                del images
+
+                # Embed batch
+                embeddings = embed_texts_batch(captions)
+
+                # Build results
+                for i, data in enumerate(render_data):
+                    if i < len(embeddings) and embeddings[i]:
+                        all_results.append({
+                            "model_id": data["model_id"],
+                            "name": data["name"],
+                            "caption": captions[i] if i < len(captions) else "",
+                            "embedding": embeddings[i],
+                            "preview": data["image_b64"]
+                        })
+                    else:
+                        all_results.append({
+                            "model_id": data["model_id"],
+                            "name": data["name"],
+                            "error": "Embedding failed"
+                        })
+
+            elapsed = time.time() - start
+            successful = len([r for r in all_results if "embedding" in r])
+
+            STATS["total_requests"] += 1
+            STATS["total_models"] += successful
+            STATS["total_time_sec"] += elapsed
+
+            gc.collect()
+
+            print(f"[handler] URL batch complete: {successful}/{len(models)} in {elapsed:.1f}s")
+
+            return {
+                "results": all_results,
+                "processed": successful,
+                "requested": len(models),
+                "time_sec": round(elapsed, 3)
+            }
+
         # Process batch of models from bytes (for folder uploads)
         if "models_batch" in input_data:
             import base64
