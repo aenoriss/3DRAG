@@ -351,20 +351,73 @@ async def process_bucket_files(
         "batch_size": batch_size
     })
 
-    # 4. Process in batches
+    # 4. Process in batches CONCURRENTLY
     start_time = time.time()
-    total_added = 0
-    total_failed = 0
     previews_dir = DATASET_DIR / "previews"
     previews_dir.mkdir(parents=True, exist_ok=True)
 
+    # Split into batches
+    batches = []
     for batch_idx in range(0, total, batch_size):
         batch = model_files[batch_idx:batch_idx + batch_size]
-        batch_num = batch_idx // batch_size + 1
-        total_batches = (total + batch_size - 1) // batch_size
+        batches.append(batch)
 
-        print(f"[storage] Processing batch {batch_num}/{total_batches} ({len(batch)} models)...")
+    total_batches = len(batches)
+    print(f"[storage] Sending {total_batches} batches concurrently...")
 
+    await ws_manager.broadcast({
+        "type": "bucket_process_progress",
+        "batch": 0,
+        "total_batches": total_batches,
+        "processed": 0,
+        "failed": 0,
+        "total": total,
+        "message": f"Sending {total_batches} batches to RunPod..."
+    })
+
+    # Send all batches concurrently
+    async def process_batch(batch, batch_num):
+        print(f"[storage] Batch {batch_num}/{total_batches}: Sending {len(batch)} models...")
+        return await process_models_urls(batch)
+
+    tasks = [process_batch(batch, i + 1) for i, batch in enumerate(batches)]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    # Process results
+    total_added = 0
+    total_failed = 0
+
+    for batch_num, (batch, result) in enumerate(zip(batches, results), 1):
+        if isinstance(result, Exception):
+            print(f"[storage] Batch {batch_num} failed: {result}")
+            total_failed += len(batch)
+            continue
+
+        for r in result.get("results", []):
+            if "error" in r:
+                total_failed += 1
+                continue
+
+            try:
+                index.add(
+                    embedding=r["embedding"],
+                    model_id=r["model_id"],
+                    name=r.get("name", ""),
+                    category=None,
+                    file_path=None,
+                    caption=r.get("caption", ""),
+                    save=False
+                )
+                if r.get("preview"):
+                    preview_bytes = base64.b64decode(r["preview"])
+                    preview_path = previews_dir / f"{r['model_id']}.jpg"
+                    preview_path.write_bytes(preview_bytes)
+                total_added += 1
+            except Exception as e:
+                print(f"[storage] Index error: {e}")
+                total_failed += 1
+
+        # Update progress after each batch result is processed
         await ws_manager.broadcast({
             "type": "bucket_process_progress",
             "batch": batch_num,
@@ -373,37 +426,6 @@ async def process_bucket_files(
             "failed": total_failed,
             "total": total
         })
-
-        try:
-            result = await process_models_urls(batch)
-
-            for r in result.get("results", []):
-                if "error" in r:
-                    total_failed += 1
-                    continue
-
-                try:
-                    index.add(
-                        embedding=r["embedding"],
-                        model_id=r["model_id"],
-                        name=r.get("name", ""),
-                        category=None,
-                        file_path=None,
-                        caption=r.get("caption", ""),
-                        save=False
-                    )
-                    if r.get("preview"):
-                        preview_bytes = base64.b64decode(r["preview"])
-                        preview_path = previews_dir / f"{r['model_id']}.jpg"
-                        preview_path.write_bytes(preview_bytes)
-                    total_added += 1
-                except Exception as e:
-                    print(f"[storage] Index error: {e}")
-                    total_failed += 1
-
-        except Exception as e:
-            print(f"[storage] Batch {batch_num} failed: {e}")
-            total_failed += len(batch)
 
     # 5. Save index
     index.save()
