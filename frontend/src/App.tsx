@@ -52,6 +52,9 @@ function App() {
   const [currentPrefix, setCurrentPrefix] = useState('')
   const [files, setFiles] = useState<BucketFile[]>([])
   const [isLoadingFiles, setIsLoadingFiles] = useState(false)
+  const [isLoadingFolders, setIsLoadingFolders] = useState(false)
+  const [folderDropdownOpen, setFolderDropdownOpen] = useState(false)
+  const [loadSuccess, setLoadSuccess] = useState<string | null>(null)
 
   // Processing state
   const [processing, setProcessing] = useState<ProcessingState>({
@@ -164,24 +167,34 @@ function App() {
   }
 
   const fetchFolders = async (prefix: string) => {
+    setIsLoadingFolders(true)
     try {
       const res = await fetch(`${API_URL}/storage/folders?prefix=${encodeURIComponent(prefix)}`)
       const data = await res.json()
       setFolders(data.folders || [])
     } catch (err) {
       console.error('Failed to fetch folders:', err)
+      setError('Failed to load folders')
+    } finally {
+      setIsLoadingFolders(false)
     }
   }
 
   const fetchFiles = async (prefix: string) => {
     setIsLoadingFiles(true)
+    setLoadSuccess(null)
     try {
       const res = await fetch(`${API_URL}/storage/files?prefix=${encodeURIComponent(prefix)}&limit=5000`)
       const data = await res.json()
       setFiles(data.files || [])
+      if (data.files?.length > 0) {
+        setLoadSuccess(`Loaded ${data.files.length} models from ${prefix || 'root'}`)
+        setTimeout(() => setLoadSuccess(null), 3000)
+      }
     } catch (err) {
       console.error('Failed to fetch files:', err)
       setFiles([])
+      setError('Failed to load files')
     } finally {
       setIsLoadingFiles(false)
     }
@@ -301,6 +314,13 @@ function App() {
       </header>
 
       <div className="max-w-7xl mx-auto p-6 space-y-6">
+        {/* Success Message */}
+        {loadSuccess && (
+          <div className="p-4 bg-green-500/20 border border-green-500/50 rounded-lg flex justify-between items-center animate-pulse">
+            <span className="text-green-400">{loadSuccess}</span>
+          </div>
+        )}
+
         {/* Error Banner */}
         {error && (
           <div className="p-4 bg-red-500/20 border border-red-500/50 rounded-lg flex justify-between items-center">
@@ -410,28 +430,59 @@ function App() {
             ))}
           </div>
 
-          {/* Folders */}
+          {/* Folder Dropdown */}
           {folders.length > 0 && (
-            <div className="mb-4">
-              <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Folders</p>
-              <div className="flex flex-wrap gap-2">
+            <div className="mb-4 relative">
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Select Folder</p>
+              <div className="flex items-center gap-2">
                 {currentPrefix && (
                   <button
                     onClick={goBack}
-                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm flex items-center gap-2 transition-colors"
+                    disabled={isLoadingFiles || isLoadingFolders}
+                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm flex items-center gap-2 transition-colors"
                   >
                     <span>←</span> Back
                   </button>
                 )}
-                {folders.map(folder => (
+                <div className="relative flex-1 max-w-md">
                   <button
-                    key={folder}
-                    onClick={() => selectFolder(folder)}
-                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm flex items-center gap-2 transition-colors"
+                    onClick={() => setFolderDropdownOpen(!folderDropdownOpen)}
+                    disabled={isLoadingFiles || isLoadingFolders}
+                    className="w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm flex items-center justify-between gap-2 transition-colors border border-gray-600"
                   >
-                    <span className="text-yellow-400">📁</span> {folder}
+                    <span className="flex items-center gap-2">
+                      {isLoadingFolders ? (
+                        <span className="animate-spin">⏳</span>
+                      ) : (
+                        <span className="text-yellow-400">📁</span>
+                      )}
+                      {isLoadingFolders ? 'Loading...' : 'Select a folder'}
+                    </span>
+                    <span className={`transition-transform ${folderDropdownOpen ? 'rotate-180' : ''}`}>▼</span>
                   </button>
-                ))}
+                  {folderDropdownOpen && !isLoadingFolders && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-gray-700 border border-gray-600 rounded-lg shadow-xl z-10 max-h-60 overflow-y-auto">
+                      {folders.map(folder => (
+                        <button
+                          key={folder}
+                          onClick={() => {
+                            selectFolder(folder)
+                            setFolderDropdownOpen(false)
+                          }}
+                          disabled={isLoadingFiles}
+                          className="w-full px-4 py-2 text-left text-sm hover:bg-gray-600 disabled:opacity-50 flex items-center gap-2 transition-colors"
+                        >
+                          <span className="text-yellow-400">📁</span> {folder}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {isLoadingFiles && (
+                  <span className="text-sm text-gray-400 flex items-center gap-2">
+                    <span className="animate-spin">⏳</span> Loading files...
+                  </span>
+                )}
               </div>
             </div>
           )}
