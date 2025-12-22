@@ -77,6 +77,8 @@ function App() {
   // Index state
   const [models, setModels] = useState<Model[]>([])
   const [totalIndexed, setTotalIndexed] = useState(0)
+  const [modelsLoading, setModelsLoading] = useState(false)
+  const [hasMoreModels, setHasMoreModels] = useState(true)
   const [wsConnected, setWsConnected] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [completionStats, setCompletionStats] = useState<{added: number, failed: number, time: number} | null>(null)
@@ -87,7 +89,7 @@ function App() {
   // Fetch bucket info on mount
   useEffect(() => {
     fetchBucket()
-    fetchModels()
+    fetchModels(true)
   }, [])
 
   // WebSocket connection
@@ -153,7 +155,7 @@ function App() {
           failed: data.failed,
           time: data.time_sec
         })
-        fetchModels()
+        fetchModels(true)  // Reset and reload
         break
     }
   }
@@ -212,14 +214,31 @@ function App() {
     }
   }
 
-  const fetchModels = async () => {
+  const PAGE_SIZE = 48
+
+  const fetchModels = async (reset = false) => {
+    if (modelsLoading) return
+    setModelsLoading(true)
+
     try {
-      const res = await fetch(`${API_URL}/models?limit=500`)
+      const skip = reset ? 0 : models.length
+      const res = await fetch(`${API_URL}/models?skip=${skip}&limit=${PAGE_SIZE}`)
       const data = await res.json()
-      setModels(data.models || [])
+
+      const newModels = data.models || []
+      setModels(prev => reset ? newModels : [...prev, ...newModels])
       setTotalIndexed(data.total || 0)
+      setHasMoreModels(skip + newModels.length < (data.total || 0))
     } catch (err) {
       console.error('Failed to fetch models:', err)
+    } finally {
+      setModelsLoading(false)
+    }
+  }
+
+  const loadMoreModels = () => {
+    if (hasMoreModels && !modelsLoading) {
+      fetchModels(false)
     }
   }
 
@@ -240,6 +259,7 @@ function App() {
       if (res.ok) {
         setModels([])
         setTotalIndexed(0)
+        setHasMoreModels(false)
         setIndexedUrls(new Set())
         setLoadSuccess('Index cleared')
         setTimeout(() => setLoadSuccess(null), 3000)
@@ -731,7 +751,7 @@ function App() {
               Indexed Models ({totalIndexed})
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {models.slice(0, 24).map(model => (
+              {models.map(model => (
                 <div
                   key={model.id}
                   onClick={() => setViewingModel({ id: model.id, name: model.name })}
@@ -756,10 +776,16 @@ function App() {
                 </div>
               ))}
             </div>
-            {models.length > 24 && (
-              <p className="text-center text-gray-500 text-sm mt-4">
-                ... and {models.length - 24} more models
-              </p>
+            {hasMoreModels && (
+              <div className="text-center mt-6">
+                <button
+                  onClick={loadMoreModels}
+                  disabled={modelsLoading}
+                  className="px-6 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 rounded-lg text-sm font-medium transition-colors"
+                >
+                  {modelsLoading ? 'Loading...' : `Load More (${models.length}/${totalIndexed})`}
+                </button>
+              </div>
             )}
           </section>
         )}
