@@ -46,9 +46,10 @@ def _check_egl():
 RENDER_SIZE = 384
 BACKGROUND_COLOR = [0.5, 0.5, 0.5, 1.0]
 
-# Stitched view settings (2x2 grid of 4 views)
-STITCH_VIEWS = True  # Enable 4-view stitching by default
-STITCH_GRID_SIZE = 2  # 2x2 grid
+# Stitched view settings (3x2 grid of 6 views)
+STITCH_VIEWS = True  # Enable 6-view stitching by default
+STITCH_GRID_COLS = 3  # 3 columns
+STITCH_GRID_ROWS = 2  # 2 rows
 STITCH_VIEW_SIZE = RENDER_SIZE  # Each view in the grid
 
 # Parallel rendering settings
@@ -57,13 +58,14 @@ STITCH_VIEW_SIZE = RENDER_SIZE  # Each view in the grid
 MAX_RENDER_WORKERS = int(os.getenv("RENDER_WORKERS", "16"))
 
 
-def stitch_views(images: List[Image.Image], grid_size: int = 2) -> Image.Image:
+def stitch_views(images: List[Image.Image], cols: int = 3, rows: int = 2) -> Image.Image:
     """
     Stitch multiple view images into a grid.
 
     Args:
-        images: List of PIL Images to stitch (expects 4 for 2x2 grid)
-        grid_size: Grid dimension (2 = 2x2 grid)
+        images: List of PIL Images to stitch (expects 6 for 3x2 grid)
+        cols: Number of columns in grid
+        rows: Number of rows in grid
 
     Returns:
         Single PIL Image with all views stitched together
@@ -71,8 +73,8 @@ def stitch_views(images: List[Image.Image], grid_size: int = 2) -> Image.Image:
     if not images:
         raise ValueError("No images to stitch")
 
-    # Ensure we have exactly grid_size^2 images
-    expected = grid_size * grid_size
+    # Ensure we have exactly cols * rows images
+    expected = cols * rows
     if len(images) < expected:
         # Duplicate last image to fill grid
         while len(images) < expected:
@@ -83,12 +85,12 @@ def stitch_views(images: List[Image.Image], grid_size: int = 2) -> Image.Image:
     w, h = images[0].size
 
     # Create output image
-    output = Image.new('RGB', (w * grid_size, h * grid_size))
+    output = Image.new('RGB', (w * cols, h * rows))
 
     # Paste images in grid
     for i, img in enumerate(images):
-        row = i // grid_size
-        col = i % grid_size
+        row = i // cols
+        col = i % cols
         output.paste(img.convert('RGB'), (col * w, row * h))
 
     return output
@@ -152,19 +154,20 @@ def render_model(
     if stitch is None:
         stitch = STITCH_VIEWS
 
-    # Camera positions (elevation, azimuth) - arranged for good coverage
-    # For stitched: front, right side, back, left side (consistent rotation)
+    # Camera positions (elevation, azimuth) - 6 views for complete coverage
+    # Layout in 3x2 grid: [front, right, back] / [left, top, bottom]
     CAMERA_POSITIONS = [
-        (0, 0),    # Front
-        (0, 90),   # Right side
-        (0, 180),  # Back
-        (0, 270),  # Left side
-        (45, 45),  # Angled top (extra, for 5-view mode if needed)
+        (0, 0),     # Front
+        (0, 90),    # Right side
+        (0, 180),   # Back
+        (0, 270),   # Left side
+        (90, 0),    # Top (looking down)
+        (-90, 0),   # Bottom (looking up)
     ]
 
-    # For stitched mode, always render 4 views
+    # For stitched mode, always render 6 views
     if stitch:
-        num_views = 4
+        num_views = 6
 
     # Load mesh
     mesh_path = Path(model_path)
@@ -230,9 +233,9 @@ def render_model(
             color, _ = renderer.render(scene)
             raw_images.append(Image.fromarray(color))
 
-        # Stitch views into 2x2 grid if enabled
-        if stitch and len(raw_images) >= 4:
-            stitched = stitch_views(raw_images[:4], grid_size=STITCH_GRID_SIZE)
+        # Stitch views into 3x2 grid if enabled
+        if stitch and len(raw_images) >= 6:
+            stitched = stitch_views(raw_images[:6], cols=STITCH_GRID_COLS, rows=STITCH_GRID_ROWS)
             if return_pil:
                 images.append(stitched)
 
