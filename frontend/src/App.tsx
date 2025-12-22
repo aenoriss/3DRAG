@@ -76,6 +76,7 @@ function App() {
 
   // Index state
   const [models, setModels] = useState<Model[]>([])
+  const [totalIndexed, setTotalIndexed] = useState(0)
   const [wsConnected, setWsConnected] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [completionStats, setCompletionStats] = useState<{added: number, failed: number, time: number} | null>(null)
@@ -213,9 +214,10 @@ function App() {
 
   const fetchModels = async () => {
     try {
-      const res = await fetch(`${API_URL}/models`)
+      const res = await fetch(`${API_URL}/models?limit=500`)
       const data = await res.json()
       setModels(data.models || [])
+      setTotalIndexed(data.total || 0)
     } catch (err) {
       console.error('Failed to fetch models:', err)
     }
@@ -237,6 +239,7 @@ function App() {
       const res = await fetch(`${API_URL}/dataset`, { method: 'DELETE' })
       if (res.ok) {
         setModels([])
+        setTotalIndexed(0)
         setIndexedUrls(new Set())
         setLoadSuccess('Index cleared')
         setTimeout(() => setLoadSuccess(null), 3000)
@@ -346,9 +349,9 @@ function App() {
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-400">
-              {models.length} models indexed
+              {totalIndexed} models indexed
             </span>
-            {models.length > 0 && (
+            {totalIndexed > 0 && (
               <button
                 onClick={clearIndex}
                 className="px-3 py-1 text-xs bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded transition-colors"
@@ -722,10 +725,10 @@ function App() {
         )}
 
         {/* Indexed Models */}
-        {models.length > 0 && searchResults.length === 0 && (
+        {totalIndexed > 0 && searchResults.length === 0 && (
           <section className="bg-gray-800 rounded-xl border border-gray-700 p-6">
             <h2 className="text-lg font-semibold mb-4">
-              Indexed Models ({models.length})
+              Indexed Models ({totalIndexed})
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {models.slice(0, 24).map(model => (
