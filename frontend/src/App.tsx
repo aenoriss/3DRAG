@@ -55,6 +55,7 @@ function App() {
   const [isLoadingFolders, setIsLoadingFolders] = useState(false)
   const [folderDropdownOpen, setFolderDropdownOpen] = useState(false)
   const [loadSuccess, setLoadSuccess] = useState<string | null>(null)
+  const [indexedUrls, setIndexedUrls] = useState<Set<string>>(new Set())
 
   // Processing state
   const [processing, setProcessing] = useState<ProcessingState>({
@@ -66,7 +67,6 @@ function App() {
     total: 0
   })
   const [batchSize, setBatchSize] = useState(100)
-  const [clearIndex, setClearIndex] = useState(true)
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('')
@@ -184,11 +184,20 @@ function App() {
     setIsLoadingFiles(true)
     setLoadSuccess(null)
     try {
-      const res = await fetch(`${API_URL}/storage/files?prefix=${encodeURIComponent(prefix)}&limit=5000`)
-      const data = await res.json()
-      setFiles(data.files || [])
-      if (data.files?.length > 0) {
-        setLoadSuccess(`Loaded ${data.files.length} models from ${prefix || 'root'}`)
+      // Fetch files and indexed URLs in parallel
+      const [filesRes, indexedRes] = await Promise.all([
+        fetch(`${API_URL}/storage/files?prefix=${encodeURIComponent(prefix)}&limit=5000`),
+        fetch(`${API_URL}/storage/indexed`)
+      ])
+      const filesData = await filesRes.json()
+      const indexedData = await indexedRes.json()
+
+      setFiles(filesData.files || [])
+      setIndexedUrls(new Set(indexedData.urls || []))
+
+      if (filesData.files?.length > 0) {
+        const indexed = (filesData.files as BucketFile[]).filter(f => indexedData.urls?.includes(f.url)).length
+        setLoadSuccess(`Loaded ${filesData.files.length} models (${indexed} indexed)`)
         setTimeout(() => setLoadSuccess(null), 3000)
       }
     } catch (err) {
@@ -207,6 +216,31 @@ function App() {
       setModels(data.models || [])
     } catch (err) {
       console.error('Failed to fetch models:', err)
+    }
+  }
+
+  const fetchIndexedUrls = async () => {
+    try {
+      const res = await fetch(`${API_URL}/storage/indexed`)
+      const data = await res.json()
+      setIndexedUrls(new Set(data.urls || []))
+    } catch (err) {
+      console.error('Failed to fetch indexed URLs:', err)
+    }
+  }
+
+  const clearIndex = async () => {
+    if (!confirm('Clear all indexed models and previews?')) return
+    try {
+      const res = await fetch(`${API_URL}/dataset`, { method: 'DELETE' })
+      if (res.ok) {
+        setModels([])
+        setIndexedUrls(new Set())
+        setLoadSuccess('Index cleared')
+        setTimeout(() => setLoadSuccess(null), 3000)
+      }
+    } catch (err: any) {
+      setError('Failed to clear index: ' + err.message)
     }
   }
 
@@ -233,10 +267,18 @@ function App() {
   const processFiles = async () => {
     if (files.length === 0) return
 
+    // Count unindexed files
+    const unindexedCount = files.filter(f => !indexedUrls.has(f.url)).length
+    if (unindexedCount === 0) {
+      setLoadSuccess('All files already indexed')
+      setTimeout(() => setLoadSuccess(null), 3000)
+      return
+    }
+
     setError(null)
     try {
       const res = await fetch(
-        `${API_URL}/storage/process?prefix=${encodeURIComponent(currentPrefix)}&clear=${clearIndex}&batch_size=${batchSize}`,
+        `${API_URL}/storage/process?prefix=${encodeURIComponent(currentPrefix)}&batch_size=${batchSize}`,
         { method: 'POST' }
       )
       if (!res.ok) {
@@ -304,6 +346,14 @@ function App() {
             <span className="text-sm text-gray-400">
               {models.length} models indexed
             </span>
+            {models.length > 0 && (
+              <button
+                onClick={clearIndex}
+                className="px-3 py-1 text-xs bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded transition-colors"
+              >
+                Clear Index
+              </button>
+            )}
             <span className={`px-3 py-1 rounded-full text-xs ${
               wsConnected ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
             }`}>
@@ -521,33 +571,28 @@ function App() {
                     </select>
                   </div>
 
-                  {/* Clear index checkbox */}
-                  <label className="flex items-center gap-2 text-sm text-gray-400 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={clearIndex}
-                      onChange={(e) => setClearIndex(e.target.checked)}
-                      disabled={processing.isProcessing}
-                      className="rounded bg-gray-700 border-gray-600"
-                    />
-                    Clear existing
-                  </label>
-
                   {/* Process button */}
-                  <button
-                    onClick={processFiles}
-                    disabled={processing.isProcessing || files.length === 0}
-                    className="px-6 py-2 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-medium transition-colors flex items-center gap-2"
-                  >
-                    {processing.isProcessing ? (
-                      <>
-                        <span className="animate-spin">⚙️</span>
-                        Processing...
-                      </>
-                    ) : (
-                      <>Process All</>
-                    )}
-                  </button>
+                  {(() => {
+                    const unindexed = files.filter(f => !indexedUrls.has(f.url)).length
+                    return (
+                      <button
+                        onClick={processFiles}
+                        disabled={processing.isProcessing || unindexed === 0}
+                        className="px-6 py-2 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-medium transition-colors flex items-center gap-2"
+                      >
+                        {processing.isProcessing ? (
+                          <>
+                            <span className="animate-spin">⚙️</span>
+                            Processing...
+                          </>
+                        ) : unindexed === 0 ? (
+                          <>All Indexed ✓</>
+                        ) : (
+                          <>Process {unindexed} Unindexed</>
+                        )}
+                      </button>
+                    )
+                  })()}
                 </div>
               </div>
 
@@ -556,19 +601,26 @@ function App() {
                 <table className="w-full text-sm">
                   <thead className="bg-gray-700 sticky top-0">
                     <tr>
+                      <th className="text-left px-4 py-2 text-gray-400 font-medium w-8">Status</th>
                       <th className="text-left px-4 py-2 text-gray-400 font-medium">Name</th>
                       <th className="text-left px-4 py-2 text-gray-400 font-medium">Format</th>
                       <th className="text-right px-4 py-2 text-gray-400 font-medium">Size</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {files.slice(0, 100).map(file => (
-                      <tr key={file.key} className="border-t border-gray-600/50">
-                        <td className="px-4 py-2 truncate max-w-xs">{file.name}</td>
-                        <td className="px-4 py-2 text-gray-400">.{file.extension}</td>
-                        <td className="px-4 py-2 text-right text-gray-400">{formatBytes(file.size)}</td>
-                      </tr>
-                    ))}
+                    {files.slice(0, 100).map(file => {
+                      const isIndexed = indexedUrls.has(file.url)
+                      return (
+                        <tr key={file.key} className={`border-t border-gray-600/50 ${isIndexed ? 'bg-green-500/10' : ''}`}>
+                          <td className="px-4 py-2 text-center">
+                            {isIndexed ? <span className="text-green-400" title="Indexed">✓</span> : <span className="text-gray-500">○</span>}
+                          </td>
+                          <td className="px-4 py-2 truncate max-w-xs">{file.name}</td>
+                          <td className="px-4 py-2 text-gray-400">.{file.extension}</td>
+                          <td className="px-4 py-2 text-right text-gray-400">{formatBytes(file.size)}</td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
                 {files.length > 100 && (

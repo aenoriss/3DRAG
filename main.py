@@ -296,9 +296,9 @@ async def list_bucket_files(
 async def process_bucket_files(
     prefix: str = Query("", description="Folder prefix containing models"),
     limit: int = Query(0, description="Max files to process (0 = all)"),
-    clear: bool = Query(True, description="Clear index before processing"),
+    clear: bool = Query(False, description="Clear index before processing"),
     batch_size: int = Query(100, ge=1, le=500, description="Models per batch"),
-    skip_indexed: bool = Query(False, description="Skip already indexed models (for resume)")
+    skip_indexed: bool = Query(True, description="Skip already indexed models")
 ):
     """
     Process 3D models directly from bucket.
