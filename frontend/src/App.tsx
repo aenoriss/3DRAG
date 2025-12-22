@@ -90,6 +90,7 @@ function App() {
   useEffect(() => {
     fetchBucket()
     fetchModels(true)
+    fetchIndexedUrls()
   }, [])
 
   // WebSocket connection
