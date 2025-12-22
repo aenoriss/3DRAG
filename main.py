@@ -383,16 +383,29 @@ async def process_bucket_files(
     tasks = [process_batch(batch, i + 1) for i, batch in enumerate(batches)]
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
-    # Process results
+    # Check for failures first - if any batch failed, cleanup and abort
+    for batch_num, result in enumerate(results, 1):
+        if isinstance(result, Exception):
+            error_msg = f"Batch {batch_num} failed: {result}"
+            print(f"[storage] {error_msg} - cleaning up...")
+
+            # Cleanup: re-clear index and previews
+            index.clear()
+            if previews_dir.exists():
+                shutil.rmtree(previews_dir)
+            previews_dir.mkdir(parents=True, exist_ok=True)
+
+            await ws_manager.broadcast({
+                "type": "bucket_process_error",
+                "error": error_msg
+            })
+            raise HTTPException(500, error_msg)
+
+    # All batches succeeded - now index results
     total_added = 0
     total_failed = 0
 
-    for batch_num, (batch, result) in enumerate(zip(batches, results), 1):
-        if isinstance(result, Exception):
-            print(f"[storage] Batch {batch_num} failed: {result}")
-            total_failed += len(batch)
-            continue
-
+    for batch_num, result in enumerate(results, 1):
         for r in result.get("results", []):
             if "error" in r:
                 total_failed += 1
@@ -417,7 +430,6 @@ async def process_bucket_files(
                 print(f"[storage] Index error: {e}")
                 total_failed += 1
 
-        # Update progress after each batch result is processed
         await ws_manager.broadcast({
             "type": "bucket_process_progress",
             "batch": batch_num,
