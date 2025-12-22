@@ -58,8 +58,10 @@ def startup():
     print("=== Worker Ready ===")
 
 
-# Initialize on import
-startup()
+# Initialize only in main process (not in multiprocessing workers)
+import multiprocessing
+if multiprocessing.current_process().name == "MainProcess":
+    startup()
 
 
 INTERNAL_BATCH_SIZE = 250  # Smaller batches to prevent disk full
