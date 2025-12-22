@@ -7,7 +7,5 @@ pillow
 pydantic
 python-multipart
 python-dotenv
-trimesh
-pyrender
-PyOpenGL
+boto3
 websockets

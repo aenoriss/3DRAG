@@ -4,3 +4,5 @@ __pycache__/
 models.index
 metadata.json
 dataset/
+previews/
+eval/
