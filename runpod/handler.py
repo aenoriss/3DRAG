@@ -364,7 +364,134 @@ def handler(event):
             except Exception as e:
                 return {"error": f"Processing failed: {str(e)}"}
 
-        return {"error": "No valid input. Use 'uids', 'text', 'model_bytes', or 'stats'."}
+        # Process batch of models from bytes (for folder uploads)
+        if "models_batch" in input_data:
+            import base64
+            import gc
+            start = time.time()
+
+            models = input_data["models_batch"]
+            print(f"[handler] Processing batch of {len(models)} uploaded models...")
+
+            from modules.renderer import render_models_bytes_batch, MAX_RENDER_WORKERS
+            from modules.captioner import caption_images_batch
+            from modules.embedder import embed_texts_batch
+
+            all_results = []
+            batch_size = 50  # Process in sub-batches for memory efficiency
+
+            for batch_start in range(0, len(models), batch_size):
+                batch_end = min(batch_start + batch_size, len(models))
+                batch = models[batch_start:batch_end]
+                batch_num = batch_start // batch_size + 1
+                total_batches = (len(models) + batch_size - 1) // batch_size
+
+                print(f"  Sub-batch {batch_num}/{total_batches}: {len(batch)} models", flush=True)
+
+                # Prepare models for parallel rendering
+                render_input = []
+                model_names = {}  # model_id -> name mapping
+                for model in batch:
+                    model_id = model.get("model_id", "unknown")
+                    model_names[model_id] = model.get("name", "uploaded")
+                    try:
+                        model_bytes = base64.b64decode(model["bytes_b64"])
+                        render_input.append({
+                            "model_id": model_id,
+                            "bytes": model_bytes,
+                            "extension": model.get("extension", "glb")
+                        })
+                    except Exception as e:
+                        all_results.append({
+                            "model_id": model_id,
+                            "name": model_names[model_id],
+                            "error": f"Decode failed: {str(e)}"
+                        })
+
+                if not render_input:
+                    continue
+
+                # Parallel render all models in batch (uses multiprocessing + 4-view stitching)
+                t0 = time.time()
+                render_results = render_models_bytes_batch(
+                    render_input,
+                    num_views=1,  # Ignored when STITCH_VIEWS=True
+                    max_workers=MAX_RENDER_WORKERS
+                )
+                print(f"    Render: {time.time() - t0:.1f}s ({len(render_results)} models)", flush=True)
+
+                # Collect successful renders
+                render_data = []
+                for result in render_results:
+                    model_id = result["model_id"]
+                    if result.get("success") and result.get("images"):
+                        render_data.append({
+                            "model_id": model_id,
+                            "name": model_names.get(model_id, "uploaded"),
+                            "image": result["images"][0],
+                            "image_b64": result["images_b64"][0] if result.get("images_b64") else None
+                        })
+                    else:
+                        all_results.append({
+                            "model_id": model_id,
+                            "name": model_names.get(model_id, "uploaded"),
+                            "error": result.get("error", "Render failed")
+                        })
+
+                if not render_data:
+                    continue
+
+                # Caption batch (GPU - runs on main process)
+                t0 = time.time()
+                images = [d["image"] for d in render_data]
+                captions = caption_images_batch(images)
+                print(f"    Caption: {time.time() - t0:.1f}s ({len(captions)} images)", flush=True)
+                del images
+
+                # Embed batch (GPU - runs on main process)
+                t0 = time.time()
+                embeddings = embed_texts_batch(captions)
+                print(f"    Embed: {time.time() - t0:.1f}s ({len(embeddings)} captions)", flush=True)
+
+                # Build results
+                for i, data in enumerate(render_data):
+                    if i < len(embeddings) and embeddings[i]:
+                        all_results.append({
+                            "model_id": data["model_id"],
+                            "name": data["name"],
+                            "caption": captions[i] if i < len(captions) else "",
+                            "embedding": embeddings[i],
+                            "preview": data["image_b64"]
+                        })
+                    else:
+                        all_results.append({
+                            "model_id": data["model_id"],
+                            "name": data["name"],
+                            "error": "Embedding failed"
+                        })
+
+                # Cleanup
+                del render_input, render_results, render_data, captions, embeddings
+                gc.collect()
+
+            elapsed = time.time() - start
+            successful = len([r for r in all_results if "embedding" in r])
+
+            STATS["total_requests"] += 1
+            STATS["total_models"] += successful
+            STATS["total_time_sec"] += elapsed
+
+            print(f"[handler] Batch complete: {successful}/{len(models)} successful in {elapsed:.1f}s")
+
+            return {
+                "results": all_results,
+                "processed": successful,
+                "requested": len(models),
+                "time_sec": round(elapsed, 3),
+                "time_per_model": round(elapsed / successful, 3) if successful else 0
+            }
+
+        return {"error": "No valid input. Use 'uids', 'text', 'model_bytes', 'models_batch', or 'stats'."}
 
     except Exception as e:
         import traceback

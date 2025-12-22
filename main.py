@@ -353,6 +353,152 @@ async def upload_model(
         raise HTTPException(500, f"Processing failed: {str(e)}")
 
 
+@app.post("/models/batch")
+async def upload_models_batch(
+    files: list[UploadFile] = File(...),
+    clear: bool = Query(True, description="Clear existing index before processing")
+):
+    """
+    Upload and process multiple 3D model files in a single batch.
+
+    Sends all files to RunPod for batch processing (render, caption, embed).
+    Much faster than uploading one by one.
+
+    Args:
+        files: List of 3D model files (GLB, OBJ, etc.)
+        clear: If True, clears existing index before adding new models
+    """
+    from runpod_client import process_models_batch
+    from pathlib import Path
+    from dataset_generator import DATASET_DIR
+    import base64
+    import shutil
+
+    supported = ['.glb', '.gltf', '.obj', '.stl', '.ply', '.fbx', '.dae', '.3ds']
+
+    # Validate files
+    valid_files = []
+    for file in files:
+        ext = Path(file.filename).suffix.lower() if file.filename else ''
+        if ext in supported:
+            valid_files.append((file, ext))
+
+    if not valid_files:
+        raise HTTPException(400, f"No valid 3D files. Supported: {supported}")
+
+    print(f"[batch] Processing {len(valid_files)} files (clear={clear})")
+
+    # Broadcast start
+    await ws_manager.broadcast({
+        "type": "batch_start",
+        "total": len(valid_files),
+        "clear": clear
+    })
+
+    try:
+        # Clear index if requested
+        if clear:
+            index: FAISSIndex = app.state.index
+            index.clear()
+
+            # Clear previews
+            previews_dir = DATASET_DIR / "previews"
+            if previews_dir.exists():
+                shutil.rmtree(previews_dir)
+            previews_dir.mkdir(parents=True, exist_ok=True)
+
+            print(f"[batch] Cleared index and previews")
+
+        # Prepare batch payload
+        models = []
+        for i, (file, ext) in enumerate(valid_files):
+            model_bytes = await file.read()
+            model_id = f"batch_{i}_{Path(file.filename).stem}"
+            model_name = Path(file.filename).stem
+
+            models.append({
+                "model_id": model_id,
+                "name": model_name,
+                "bytes_b64": base64.b64encode(model_bytes).decode(),
+                "extension": ext.lstrip('.')
+            })
+
+        print(f"[batch] Sending {len(models)} models to RunPod...")
+
+        # Send to RunPod
+        result = await process_models_batch(models)
+
+        if "error" in result:
+            raise HTTPException(500, result["error"])
+
+        # Add results to index
+        index: FAISSIndex = app.state.index
+        previews_dir = DATASET_DIR / "previews"
+        previews_dir.mkdir(parents=True, exist_ok=True)
+
+        added = 0
+        failed = 0
+        for r in result.get("results", []):
+            if "error" in r:
+                failed += 1
+                continue
+
+            try:
+                index.add(
+                    embedding=r["embedding"],
+                    model_id=r["model_id"],
+                    name=r.get("name", ""),
+                    category=None,
+                    file_path=None,
+                    caption=r.get("caption", ""),
+                    save=False  # Save once at the end
+                )
+
+                # Save preview
+                if r.get("preview"):
+                    preview_bytes = base64.b64decode(r["preview"])
+                    preview_path = previews_dir / f"{r['model_id']}.jpg"
+                    preview_path.write_bytes(preview_bytes)
+
+                added += 1
+            except Exception as e:
+                print(f"[batch] Error adding {r.get('model_id')}: {e}")
+                failed += 1
+
+        # Save index
+        index.save()
+
+        # Broadcast complete
+        await ws_manager.broadcast({
+            "type": "batch_complete",
+            "added": added,
+            "failed": failed,
+            "total": len(valid_files),
+            "time_sec": result.get("time_sec", 0)
+        })
+
+        print(f"[batch] Complete: {added} added, {failed} failed")
+
+        return {
+            "status": "complete",
+            "added": added,
+            "failed": failed,
+            "total": len(valid_files),
+            "time_sec": result.get("time_sec", 0),
+            "time_per_model": result.get("time_per_model", 0)
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[batch] Error: {e}")
+        await ws_manager.broadcast({
+            "type": "batch_error",
+            "error": str(e)
+        })
+        raise HTTPException(500, f"Batch processing failed: {str(e)}")
+
+
 @app.delete("/models/{model_id}")
 async def delete_model(model_id: str):
     """

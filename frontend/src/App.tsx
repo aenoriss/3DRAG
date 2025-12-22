@@ -206,6 +206,33 @@ function App() {
       case 'dataset_cancelled':
         setDatasetStatus(null)
         break
+
+      case 'batch_start':
+        setProcessingModels([{
+          id: 'batch',
+          name: `Processing ${data.total} models...`,
+          status: 'processing'
+        }])
+        break
+
+      case 'batch_complete':
+        setProcessingModels([{
+          id: 'batch',
+          name: `Processed ${data.added}/${data.total} models in ${data.time_sec?.toFixed(1)}s`,
+          status: data.failed > 0 ? 'error' : 'done',
+          error: data.failed > 0 ? `${data.failed} failed` : undefined
+        }])
+        fetchModels()
+        break
+
+      case 'batch_error':
+        setProcessingModels([{
+          id: 'batch',
+          name: 'Batch processing failed',
+          status: 'error',
+          error: data.error
+        }])
+        break
     }
   }
 
@@ -280,8 +307,55 @@ function App() {
     e.preventDefault()
     setIsDragging(false)
 
-    const files = Array.from(e.dataTransfer.files)
-    await uploadFiles(files)
+    // Check if items contain directories
+    const items = Array.from(e.dataTransfer.items)
+    const files: File[] = []
+
+    // Helper to recursively get files from directory
+    const getFilesFromEntry = async (entry: FileSystemEntry): Promise<File[]> => {
+      if (entry.isFile) {
+        return new Promise((resolve) => {
+          (entry as FileSystemFileEntry).file((file) => resolve([file]))
+        })
+      } else if (entry.isDirectory) {
+        const dirReader = (entry as FileSystemDirectoryEntry).createReader()
+        return new Promise((resolve) => {
+          const allFiles: File[] = []
+          const readEntries = () => {
+            dirReader.readEntries(async (entries) => {
+              if (entries.length === 0) {
+                resolve(allFiles)
+              } else {
+                for (const entry of entries) {
+                  const entryFiles = await getFilesFromEntry(entry)
+                  allFiles.push(...entryFiles)
+                }
+                readEntries() // Continue reading (directories can have >100 entries)
+              }
+            })
+          }
+          readEntries()
+        })
+      }
+      return []
+    }
+
+    // Process each dropped item
+    for (const item of items) {
+      const entry = item.webkitGetAsEntry?.()
+      if (entry) {
+        const entryFiles = await getFilesFromEntry(entry)
+        files.push(...entryFiles)
+      } else if (item.kind === 'file') {
+        const file = item.getAsFile()
+        if (file) files.push(file)
+      }
+    }
+
+    if (files.length > 0) {
+      console.log(`Processing ${files.length} files from drop`)
+      await uploadFiles(files)
+    }
   }, [])
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -295,49 +369,107 @@ function App() {
   const uploadFiles = async (files: File[]) => {
     const supportedExtensions = ['.glb', '.gltf', '.obj', '.stl', '.ply', '.fbx', '.dae', '.3ds', '.off']
 
-    for (const file of files) {
+    // Filter valid files
+    const validFiles = files.filter(file => {
       const ext = '.' + file.name.split('.').pop()?.toLowerCase()
-      if (!supportedExtensions.includes(ext)) {
-        setError(`Unsupported format: ${ext}. Supported: ${supportedExtensions.join(', ')}`)
-        continue
+      return supportedExtensions.includes(ext)
+    })
+
+    if (validFiles.length === 0) {
+      setError(`No valid 3D files found. Supported: ${supportedExtensions.join(', ')}`)
+      return
+    }
+
+    // Use batch upload for multiple files (>1)
+    if (validFiles.length > 1) {
+      await uploadBatch(validFiles)
+      return
+    }
+
+    // Single file upload (original logic)
+    const file = validFiles[0]
+    const modelId = `model_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    const modelName = file.name.replace(/\.[^/.]+$/, '')
+
+    setProcessingModels(prev => [
+      ...prev,
+      { id: modelId, name: modelName, status: 'processing' }
+    ])
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('model_id', modelId)
+      formData.append('name', modelName)
+      formData.append('include_stats', 'true')
+
+      const res = await fetch(`${API_URL}/models`, {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.detail || 'Upload failed')
       }
-
-      const modelId = `model_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      const modelName = file.name.replace(/\.[^/.]+$/, '')
-
-      // Add to processing list immediately
-      setProcessingModels(prev => [
-        ...prev,
-        { id: modelId, name: modelName, status: 'processing' }
-      ])
-
-      try {
-        const formData = new FormData()
-        formData.append('file', file)
-        formData.append('model_id', modelId)
-        formData.append('name', modelName)
-        formData.append('include_stats', 'true')
-
-        const res = await fetch(`${API_URL}/models`, {
-          method: 'POST',
-          body: formData,
-        })
-
-        if (!res.ok) {
-          const error = await res.json()
-          throw new Error(error.detail || 'Upload failed')
-        }
-
-        // Model added successfully - WebSocket will handle the rest
-      } catch (err: any) {
-        setProcessingModels(prev =>
-          prev.map(m =>
-            m.id === modelId
-              ? { ...m, status: 'error', error: err.message }
-              : m
-          )
+    } catch (err: any) {
+      setProcessingModels(prev =>
+        prev.map(m =>
+          m.id === modelId
+            ? { ...m, status: 'error', error: err.message }
+            : m
         )
+      )
+    }
+  }
+
+  const uploadBatch = async (files: File[]) => {
+    // Show batch processing state
+    setProcessingModels([{
+      id: 'batch',
+      name: `Processing ${files.length} models...`,
+      status: 'processing'
+    }])
+
+    try {
+      const formData = new FormData()
+      files.forEach(file => {
+        formData.append('files', file)
+      })
+
+      console.log(`[batch] Uploading ${files.length} files...`)
+
+      const res = await fetch(`${API_URL}/models/batch?clear=true`, {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.detail || 'Batch upload failed')
       }
+
+      const result = await res.json()
+      console.log('[batch] Result:', result)
+
+      setProcessingModels([{
+        id: 'batch',
+        name: `Processed ${result.added}/${result.total} models in ${result.time_sec?.toFixed(1)}s`,
+        status: result.failed > 0 ? 'error' : 'done',
+        error: result.failed > 0 ? `${result.failed} failed` : undefined
+      }])
+
+      // Refresh models list
+      fetchModels()
+
+    } catch (err: any) {
+      console.error('[batch] Error:', err)
+      setProcessingModels([{
+        id: 'batch',
+        name: 'Batch upload failed',
+        status: 'error',
+        error: err.message
+      }])
     }
   }
 
@@ -763,10 +895,10 @@ function App() {
         >
           <div className="text-5xl mb-4">📦</div>
           <p className="text-lg font-medium">
-            {isDragging ? 'Drop your 3D models here' : 'Drag & drop 3D models'}
+            {isDragging ? 'Drop your 3D models here' : 'Drag & drop 3D models or folders'}
           </p>
           <p className="text-gray-500 mt-2">
-            GLB, GLTF, OBJ, STL, PLY, FBX, DAE
+            GLB, GLTF, OBJ, STL, PLY, FBX, DAE • Supports folder drops
           </p>
           <input
             ref={fileInputRef}
@@ -775,6 +907,7 @@ function App() {
             accept=".glb,.gltf,.obj,.stl,.ply,.fbx,.dae,.3ds,.off"
             onChange={handleFileSelect}
             className="hidden"
+            {...{ webkitdirectory: "", directory: "" } as any}
           />
         </div>
 
