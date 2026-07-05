@@ -48,6 +48,10 @@ The index is a FAISS `IndexHNSWFlat` (M=32, efConstruction=40, efSearch=64). HNS
 
 RunPod handles everything expensive (download, render, caption, embed) as a serverless job that scales to zero between batches. The API splits a batch across idle workers so they run concurrently. The always-on FastAPI host, by contrast, stays cheap. It holds the FAISS index, embeds queries on CPU, serves preview images, and streams progress over a WebSocket. For big batches, the API uploads models to the bucket first and sends RunPod a URL, which keeps the request payloads small.
 
+## Secondary highlights
+
+**Resume-safe bulk indexing.** Indexing a whole bucket can fail partway through a long run, so `/storage/process` can pick up where it left off. It reads the URLs already in the index, skips any candidate that matches, and processes only the remainder. A crashed 5000-model job restarts and finishes just the models still missing. A separate strict mode clears the index and rebuilds from scratch when you want a clean slate.
+
 ## Tech stack
 
 - Frontend: React 19, Vite, React Three Fiber (@react-three/fiber, drei), three.js, TypeScript, Tailwind v4
