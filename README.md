@@ -20,8 +20,9 @@ Retrieving 3D assets by keyword is painful. Most libraries only know whatever fi
 Two paths. Indexing is GPU-heavy and runs on RunPod. Search is light and runs on the CPU API host.
 
 ```mermaid
-flowchart TD
+flowchart LR
   subgraph Index [Indexing on RunPod GPU]
+    direction LR
     M[3D model] --> R[Headless render<br/>multi-view, EGL]
     R --> ST[Stitch views into one grid]
     ST --> C[Florence-2 caption]
