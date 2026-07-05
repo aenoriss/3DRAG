@@ -1,10 +1,10 @@
 # 3DRAG
 
-Search a library of 3D models with plain language. Type "wooden chair" or "armored knight" and get back matching GLBs you can spin around in the browser. Nothing embeds the geometry directly. Each model is rendered, described, and searched as text.
+Search a library of 3D models with plain language. Type "wooden chair" or "armored knight" and get back matching GLBs you can spin around in the browser. Nothing embeds the geometry directly; each model is rendered, described, and searched as text.
 
 ## Why I built it
 
-Retrieving 3D assets by keyword is painful. Most libraries only know whatever filename or tag someone happened to type. I wanted real semantic search over a big asset set (Objaverse) without training a 3D encoder or paying for one. So 3DRAG takes a shortcut: it renders each model to an image, has a vision model describe it, and embeds that description. A text query then searches the same space. The whole thing turns cross-modal 3D retrieval into plain text-to-text similarity, cheap to index and query.
+Retrieving 3D assets by keyword is painful. Most libraries only know whatever filename or tag someone happened to type. I wanted real semantic search over a big asset set (Objaverse) without training a 3D encoder or paying for one. 3DRAG takes a shortcut: it renders each model to an image, has a vision model describe it, and embeds that description. A text query then searches the same space. The whole thing turns cross-modal 3D retrieval into plain text-to-text similarity, cheap to index and query.
 
 ## What it does
 
@@ -39,6 +39,16 @@ The worker downloads a model with trimesh and renders several orthographic views
 ### The text bottleneck
 
 A model is represented by words; the geometry itself never becomes a vector. The rendered views produce a caption, `all-mpnet-base-v2` embeds it into 768 dimensions, and that vector lives in the index. A search query goes through the same model, so query-to-model matching is plain text-to-text cosine similarity. A caption drops fine geometric detail and leans on the vision model naming the object well. The index stays one text-embedding space, queries embed on CPU in milliseconds, and there is no 3D encoder to train or serve. (An alternate path embeds 1152-dim SigLIP2 image features; the default is the 768-dim text route.)
+
+```mermaid
+flowchart LR
+  MV[Rendered views] --> CAP[Florence-2 caption<br/>words]
+  CAP --> ME[all-mpnet-base-v2<br/>768d vector]
+  QT[Text query] --> QE[all-mpnet-base-v2<br/>768d vector]
+  ME --> TS[(One text-embedding space)]
+  QE --> TS
+  TS --> MATCH[text-to-text cosine match]
+```
 
 ### FAISS HNSW
 
