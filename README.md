@@ -1,10 +1,10 @@
 # 3DRAG
 
-Search a library of 3D models with plain language. Type "wooden chair" or "armored knight" and get back matching GLBs you can spin around in the browser. The catch is that nothing embeds the geometry directly. Each model is rendered, described, and searched as text.
+Search a library of 3D models with plain language. Type "wooden chair" or "armored knight" and get back matching GLBs you can spin around in the browser. Nothing embeds the geometry directly. Each model is rendered, described, and searched as text.
 
 ## Why I built it
 
-Retrieving 3D assets by keyword is painful. Most libraries only know whatever filename or tag someone happened to type. I wanted real semantic search over a big asset set (Objaverse) without training a 3D encoder or paying for one. So 3DRAG takes a shortcut: it renders each model to an image, has a vision model describe it, and embeds that description. A text query then searches the same space. The whole thing collapses cross-modal 3D retrieval into plain text-to-text similarity, which is cheap and works well enough to be genuinely useful.
+Retrieving 3D assets by keyword is painful. Most libraries only know whatever filename or tag someone happened to type. I wanted real semantic search over a big asset set (Objaverse) without training a 3D encoder or paying for one. So 3DRAG takes a shortcut: it renders each model to an image, has a vision model describe it, and embeds that description. A text query then searches the same space. The whole thing turns cross-modal 3D retrieval into plain text-to-text similarity, cheap to index and query.
 
 ## What it does
 
@@ -34,19 +34,19 @@ flowchart TD
 
 ### Rendering and captioning on RunPod
 
-The worker downloads a model with trimesh and renders several orthographic views headless, using pyrender over EGL. There is a gotcha here: pyrender's OpenGL contexts cannot be shared across threads. So rendering runs in a multiprocessing pool, with pyrender imported inside each worker process. Before captioning, the views are stitched into a single grid image, so the vision model sees front, side, back, and top in one shot. That costs a fraction of the tokens of four separate images. Florence-2 captions the grid, and that caption is what gets embedded.
+The worker downloads a model with trimesh and renders several orthographic views headless with pyrender over EGL. pyrender's OpenGL contexts cannot be shared across threads, so rendering runs in a multiprocessing pool with pyrender imported inside each worker process. Before captioning, the views are stitched into one grid image, so the vision model sees front, side, back, and top in a single pass at a fraction of the tokens. Florence-2 captions the grid, and that caption is what gets embedded.
 
 ### The text bottleneck
 
-Here is the load-bearing decision: a model is represented by words, and the geometry itself never becomes a vector. The rendered views produce a caption, `all-mpnet-base-v2` embeds that caption into 768 dimensions, and that vector is what lives in the index. A search query goes through the same model, so matching a query to a model is plain text-to-text cosine similarity. The trade is real. A caption throws away fine geometric detail and leans on the vision model naming the object well. In exchange, the whole index is one text-embedding space, queries embed on CPU in milliseconds, and there is no 3D encoder to train or serve. (An alternate path can embed 1152-dim SigLIP2 image features; the default is the 768-dim text route.)
+A model is represented by words; the geometry itself never becomes a vector. The rendered views produce a caption, `all-mpnet-base-v2` embeds it into 768 dimensions, and that vector lives in the index. A search query goes through the same model, so query-to-model matching is plain text-to-text cosine similarity. A caption drops fine geometric detail and leans on the vision model naming the object well. The index stays one text-embedding space, queries embed on CPU in milliseconds, and there is no 3D encoder to train or serve. (An alternate path embeds 1152-dim SigLIP2 image features; the default is the 768-dim text route.)
 
-### FAISS HNSW, and why deletes rebuild
+### FAISS HNSW
 
-The index is a FAISS `IndexHNSWFlat` (M=32, efConstruction=40, efSearch=64). HNSW needs no training and takes new vectors one at a time, which fits a dataset that grows as you index more models. The cost shows up on deletion: HNSW has no real remove, so taking one model out reconstructs every vector and rebuilds the graph from scratch. That is O(n) and fine at this scale, but it is the reason the index is append-friendly and delete-expensive. HNSW returns L2 distances, converted to a cosine similarity score with `1 - L2^2 / 2` for normalized vectors.
+The index is a FAISS `IndexHNSWFlat` (M=32, efConstruction=40, efSearch=64). HNSW needs no training and takes new vectors one at a time. It has no true delete, so removing a model rebuilds the graph. Adds stay cheap. It returns L2 distances, converted to a cosine score with `1 - L2^2 / 2` for normalized vectors.
 
 ### The GPU / CPU split
 
-RunPod handles everything expensive (download, render, caption, embed) as a serverless job that scales to zero between batches. The API splits a batch across idle workers so they run concurrently. The always-on FastAPI host, by contrast, stays cheap. It holds the FAISS index, embeds queries on CPU, serves preview images, and streams progress over a WebSocket. For big batches, the API uploads models to the bucket first and sends RunPod a URL, which keeps the request payloads small.
+RunPod handles everything expensive (download, render, caption, embed) as a serverless job that scales to zero between batches. The API splits a batch across idle workers so they run concurrently. The always-on FastAPI host does the light work: it holds the FAISS index, embeds queries on CPU, serves preview images, and streams progress over a WebSocket. For big batches it uploads models to the bucket first and passes RunPod a URL.
 
 ## Secondary highlights
 
@@ -99,4 +99,4 @@ Key endpoints: `GET /search?q=...&k=10`, `POST /storage/process` (index a bucket
 
 ## Status
 
-Working prototype. The text-bottleneck approach is the interesting part and the main limitation: retrieval is only as good as the captions, so it trades geometric precision for a cheap, trainable-free pipeline. The eval harness exists to keep that tradeoff honest.
+Working prototype. Retrieval is only as good as the captions the vision model produces. The eval harness measures exactly that.
