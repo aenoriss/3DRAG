@@ -4,7 +4,7 @@ Search a library of 3D models with plain language. Type "wooden chair" or "armor
 
 ## Why I built it
 
-Retrieving 3D assets by keyword is painful because most libraries only have whatever filename or tag someone typed. I wanted semantic search over a real asset set (Objaverse) without training a 3D encoder or paying for one. So instead of embedding meshes, 3DRAG turns each model into a rendered picture, has a vision model describe it, and embeds that description. A text query then searches the same space. It collapses cross-modal 3D retrieval into text-to-text similarity, which is cheap and works well enough to be useful.
+Retrieving 3D assets by keyword is painful. Most libraries only know whatever filename or tag someone happened to type. I wanted real semantic search over a big asset set (Objaverse) without training a 3D encoder or paying for one. So 3DRAG takes a shortcut: it renders each model to an image, has a vision model describe it, and embeds that description. A text query then searches the same space. The whole thing collapses cross-modal 3D retrieval into plain text-to-text similarity, which is cheap and works well enough to be genuinely useful.
 
 ## What it does
 
@@ -34,11 +34,11 @@ flowchart TD
 
 ### Rendering and captioning on RunPod
 
-The worker downloads a model with trimesh, then renders several orthographic views headless with pyrender over EGL. Because pyrender uses OpenGL contexts that cannot be shared across threads, rendering runs in a multiprocessing pool with pyrender imported inside each worker process, not at module load. The views are then stitched into a single grid image before captioning, so the vision model sees front, side, back, and top in one pass and spends a fraction of the vision tokens it would on four separate images. Florence-2 captions the grid, and the caption is what gets embedded.
+The worker downloads a model with trimesh and renders several orthographic views headless, using pyrender over EGL. There is a gotcha here: pyrender's OpenGL contexts cannot be shared across threads. So rendering runs in a multiprocessing pool, with pyrender imported inside each worker process. Before captioning, the views are stitched into a single grid image, so the vision model sees front, side, back, and top in one shot. That costs a fraction of the tokens of four separate images. Florence-2 captions the grid, and that caption is what gets embedded.
 
 ### The text bottleneck
 
-Geometry never becomes a vector. The rendered views produce a caption, `all-mpnet-base-v2` embeds that caption into 768 dimensions, and that is what lives in the index. A search query is embedded by the same model, so matching a query to a model is just text-to-text cosine similarity. The trade is real: a caption throws away fine geometric detail and depends on the vision model naming the object well. In exchange the whole index is one plain text-embedding space, queries embed on CPU in milliseconds, and there is no 3D encoder to train or serve. (An alternate path can embed 1152-dim SigLIP2 image features instead; the default is the 768-dim text route.)
+Here is the load-bearing decision: a model is represented by words, and the geometry itself never becomes a vector. The rendered views produce a caption, `all-mpnet-base-v2` embeds that caption into 768 dimensions, and that vector is what lives in the index. A search query goes through the same model, so matching a query to a model is plain text-to-text cosine similarity. The trade is real. A caption throws away fine geometric detail and leans on the vision model naming the object well. In exchange, the whole index is one text-embedding space, queries embed on CPU in milliseconds, and there is no 3D encoder to train or serve. (An alternate path can embed 1152-dim SigLIP2 image features; the default is the 768-dim text route.)
 
 ### FAISS HNSW, and why deletes rebuild
 
@@ -46,7 +46,7 @@ The index is a FAISS `IndexHNSWFlat` (M=32, efConstruction=40, efSearch=64). HNS
 
 ### The GPU / CPU split
 
-RunPod does everything expensive (download, render, caption, embed) as a serverless job that scales to zero between batches, and the API splits a batch across idle workers concurrently. The always-on FastAPI host stays cheap: it holds the FAISS index, embeds queries on CPU, serves preview images, and streams progress over a WebSocket. Uploading to the storage bucket first and sending RunPod a URL instead of raw bytes keeps the request payloads small on large batches.
+RunPod handles everything expensive (download, render, caption, embed) as a serverless job that scales to zero between batches. The API splits a batch across idle workers so they run concurrently. The always-on FastAPI host, by contrast, stays cheap. It holds the FAISS index, embeds queries on CPU, serves preview images, and streams progress over a WebSocket. For big batches, the API uploads models to the bucket first and sends RunPod a URL, which keeps the request payloads small.
 
 ## Tech stack
 
