@@ -37,20 +37,6 @@ flowchart LR
 
 The worker downloads a model with trimesh and renders several orthographic views headless with pyrender over EGL. pyrender's OpenGL contexts cannot be shared across threads, so rendering runs in a multiprocessing pool with pyrender imported inside each worker process. Before captioning, the views are stitched into one grid image, so the vision model sees front, side, back, and top in a single pass at a fraction of the tokens. Florence-2 captions the grid, and that caption is what gets embedded.
 
-### The text bottleneck
-
-A model is represented by words; the geometry itself never becomes a vector. The rendered views produce a caption, `all-mpnet-base-v2` embeds it into 768 dimensions, and that vector lives in the index. A search query goes through the same model, so query-to-model matching is plain text-to-text cosine similarity. A caption drops fine geometric detail and leans on the vision model naming the object well. The index stays one text-embedding space, queries embed on CPU in milliseconds, and there is no 3D encoder to train or serve. (An alternate path embeds 1152-dim SigLIP2 image features; the default is the 768-dim text route.)
-
-```mermaid
-flowchart LR
-  MV[Rendered views] --> CAP[Florence-2 caption<br/>words]
-  CAP --> ME[all-mpnet-base-v2<br/>768d vector]
-  QT[Text query] --> QE[all-mpnet-base-v2<br/>768d vector]
-  ME --> TS[(One text-embedding space)]
-  QE --> TS
-  TS --> MATCH[text-to-text cosine match]
-```
-
 ### FAISS HNSW
 
 The index is a FAISS `IndexHNSWFlat` (M=32, efConstruction=40, efSearch=64). HNSW needs no training and takes new vectors one at a time. It has no true delete, so removing a model rebuilds the graph. Adds stay cheap. It returns L2 distances, converted to a cosine score with `1 - L2^2 / 2` for normalized vectors.
